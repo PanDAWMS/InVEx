@@ -1,0 +1,120 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html class="no-js" lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<!-- Set the viewport width to device width for mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>{% block page_title %}{{ PAGE_TITLE }}{% endblock %}</title>
+
+<!-- Included base CSS Files -->
+
+<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">
+<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">
+<link rel="stylesheet" href="{% static "css/main-nav.css" %}">
+
+<!-- Main bar -->
+
+<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large" id="main-menu-small">
+  <button class="menu-icon" type="button" data-toggle="main-menu"></button>
+  <div class="title-bar-title">Menu</div>
+</div>
+
+
+<div class="top-bar stacked-for-large" id="main-menu">
+  <div class="top-bar-title">
+    <span data-responsive-toggle="responsive-menu" data-hide-for="medium">
+      <button class="menu-icon" type="button" data-toggle></button>
+    </span>
+    <strong><a href="#" style="color: #fefefe !important; font-weight: normal">{% block title %}  VAP {% endblock %}</a></strong>
+  </div>
+    <div class="top-bar-left">
+      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+        <li class="has-submenu">
+        <a href="#">Menu1</a>
+        <ul class="submenu menu vertical">
+            <li><a>Item1</a></li>
+        </ul>
+        </li>
+
+        <li>
+            <a href="#">Menu2</a>
+        </li>
+
+      </ul>
+    </div>
+
+
+    <div class="top-bar-right">
+        <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+
+            <li class="has-submenu">
+            <a href="#"><span class='help'>Help</span></a>
+            <ul class="submenu menu vertical">
+                <li><a href="#doc"><span class='help'>Help</span></a>
+            </ul>
+            </li>
+
+            <li>
+             <a href="#">Login</a>
+            </li>
+
+
+        </ul>
+    </div>
+</div>
+
+<!-- End Header and Nav -->
+<script src="{% static 'js/foundation/vendor/jquery.js' %}"></script>
+<script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
+<script>
+    $('#main-menu-small').foundation();
+    $('#main-menu').foundation();
+</script>
+</head>
+<body>
+
+<!-- sub-title and bread-crumbs -->
+<div class="top-subbar">
+
+    <!-- sub-title -->
+    <div class="left" id="div-subtitle">{% block subtitle %}Subtitle goes here{% endblock %}
+    </div>
+    <!-- End sub-title -->
+
+    <!-- bread-crumbs -->
+    <div class="right">
+          <span class="hide-for-small">
+              {% if built != None %} {{ built }} {% endif %}
+          </span>
+    </div>
+    <!-- End bread-crumbs -->
+
+</div>
+<!-- End sub-title and bread-crumbs -->
+
+{% block extra_css %}{% endblock %}
+
+<div class="large-12 columns" id="content">
+{% block body %} {% endblock %}
+</div>
+
+{% block extra_js %}{% endblock %}
+
+<script>
+    $(document).foundation();
+</script>
+
+</body>
+
+<!-- Footer -->
+<footer>
+    <div class="large-12 columns">
+        {% block helptext %} {% endblock %}
+        {% block bottom_copy %} {% endblock %}
+      </div>
+    </div>
+</footer>
+</html>
