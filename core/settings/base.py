@@ -25,9 +25,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'q0o-u7lb_g#gk3q9&h!9@*+2thggz)z4!+@#%_r=buc)*434ha'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', '::1','109.123.147.111', 'nosql.tpu.ru']
 
 
 # Application definition
@@ -131,5 +131,6 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    join(dirname(core.__file__), 'static'),
+    #join(dirname(core.__file__), 'static'),
+    "/data/vap/core/static"
 )
