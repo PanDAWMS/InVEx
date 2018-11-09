@@ -1,0 +1,8 @@
+core/settings/config.py
+core/settings/base.py
+# IntellijIdea files
+*.iml
+.idea
+out
+/core/settings/base.py
+/core/settings/config.py
