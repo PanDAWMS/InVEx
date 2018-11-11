@@ -16,6 +16,6 @@ def testmodule(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             }
 
-    response = render_to_response('testmodule.html', data, content_type='text/html')
+    response = render_to_response('testModule.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
