@@ -2,10 +2,149 @@
 {% block page_title %} VAP {% endblock %}
 {% block subtitle %}Visual analytics platform home{% endblock %}
 
-{% block extra_css %}{% endblock %}
+{% block extra_css %}
+
+{% endblock %}
 
 {% block body %}
 <h1>Welcome to Visual Analytics Platform!</h1>
+
+    <div class="vap_container">
+        <div class="container">
+          <div class="row">
+            <div class="col-sm">
+                <div class="card border-dark mb-3">
+                    <div class="card-header">Get Dataset</div>
+                    <div class="card-body">
+                        <form>
+                            <div class="custom-file">
+                              <input type="file" class="custom-file-input" id="customFile">
+                              <label class="custom-file-label" for="customFile">Choose file</label>
+                            </div>
+                        </form>
+                        <div class="pre-scrollable" id="initial-dataset"></div>
+                    </div>
+                </div>
+            </div>
+          </div>
+          <div class="row">
+
+          </div>
+        </div>
+        <div id="controls"></div>
+        <div class="container">
+            <div class="row">
+                <div class="col-3" id="controllers">
+                    <div class="card border-dark mb-3">
+                        <div class="card-header">Dimensions</div>
+                        <div class="card-body">
+                            <form id="dimensions_form">
+                                <div class="form-group form-inline vap-controllers">
+                                    <select class="form-control form-control-sm text-danger" id="x_dim">
+                                    </select>
+                                </div>
+                                <div class="form-group form-inline vap-controllers">
+                                    <select class="form-control form-control-sm text-primary" id="y_dim">
+                                    </select>
+                                </div>
+                                <div class="form-group form-inline vap-controllers">
+                                    <select class="form-control form-control-sm text-success" id="z_dim">
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="change_dim_btn">Change Dimensions</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card border-dark mb-3">
+                        <div class="card-header">Clustering</div>
+                        <div class="card-body">
+                            <form id="cluster_form">
+                                <div class="form-group">
+                                    <label for="cluster-selector">Choose clustering algorithm</label>
+                                    <select class="form-control form-control-sm" id="cluster-selector">
+                                      <option id="kmeans">K-Means</option>
+                                      <option id="dbscan">DBSCAN</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="cluster_btn">Clustering</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card border-dark mb-3">
+                        <div class="card-header">Sphere Radius</div>
+                        <div class="card-body">
+                            <form id="radius_form">
+                                <div class="form-group">
+                                    <label for="radiusRange">Spheres Radius</label>
+                                    <input type="range" class="custom-range" min="0" max="3" step="0.1" id="radiusRange">
+                                    <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="changeRadiusBtn">Change Radius</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card border-dark mb-3">
+                        <div class="card-header">Manage scene</div>
+                        <div class="card-body">
+                            <form>
+                              <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="resetBtn">Reset Camera</button>
+                              <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printBtn">Print Results</button>
+                          </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-11 mainPicture" id="picture">
+                    <div id="gui_container"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container pre-scrollable">
+            <div class="card border-dark mb-3">
+                <div class="card-header">Clustering results</div>
+                <div class="card-body" id="output">
+                </div>
+            </div>
+        </div>
+	</div>
+
+	<script>
+    // SETTING:
+		countOfEdges=24;
+		function onSceneResize() {
+			scene.onResize();
+		}
+		var scene=new Scene(document.getElementById("picture"), document.getElementById("controls"), document.getElementById("output"), 0.75, countOfEdges);
+		animate();
+		init();
+
+		window.addEventListener( "resize", onSceneResize, false );
+
+		function init() {
+			var dimNames=['ID', 'x1','x2','x3','x4','x5','x6'];
+			var dataArray=[[["1"], [32.56,7.84,34.52,36.72,16.28,37.32]], [["2"], [45.8,23.18,9.94,6.24,39.97,34.28]], [["3"],
+			[31.82,42.8,8.53,39.48,27.86,9.83]], [["4"], [34.78,34.5,28.26,8.78,32.47,21.01]], [["5"], [2.41,43.42,1.76,33.59,4.77,20.16]],
+			[["6"], [32.36,37.49,26.75,1.04,22.82,31.92]], [["7"], [23.35,12.91,10.71,33.71,27.57,24.01]], [["8"],
+			[33.51,17.38,23.06,33.46,28.03,49.16]], [["9"], [37.94,49.63,44.15,27.77,38.76,17.43]], [["10"],
+			[35.88,31.54,2.7,34.48,11.28,6.32]], [["11"], [19.12,43.76,13.94,17.63,26.58,48.55]], [["12"], [17.71,15.12,15.81,5.93,22.86,46.09]],
+			[["13"], [29.51,23.33,39.34,31.1,26.7,40.87]], [["14"], [12.44,26.7,29.64,39.38,10.56,41.2]], [["15"],
+			[21.98,29.51,41.93,30,15.33,29.71]], [["16"], [41.54,1.03,46.6,20.84,13.69,35.32]], [["17"], [15.22,22.03,46.34,32.45,35.35,37.4]],
+			[["18"], [14.37,27.76,12.81,13.93,26.27,41.67]], [["19"], [19.26,31.97,4.98,22.79,35.06,23.77]], [["20"], [23.04,8.94,49.86,37.94,30.78,36.91]]];
+			scene.setDimNames(dimNames);
+            scene.setDataArray(dataArray);
+            scene.printInitialDataset(5);
+
+			for ( i = 0; i < dataArray.length; i++ ){
+				scene.createSphere( dataArray[ i ], new THREE.Color( i%2, i%3%2, i%5%2 ) );
+			}
+			scene.createControlElements();
+
+		}
+		function animate() {
+
+			scene.animate();
+			requestAnimationFrame( animate );
+
+		}
+	</script>
 {% endblock %}
 
 {% block extra_js %}{% endblock %}

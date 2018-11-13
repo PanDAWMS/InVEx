@@ -17,10 +17,9 @@
 <!-- Bootstrap -->
 <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
 <!-- Include all compiled plugins (below), or include individual files as needed -->
-<script src="{% static "js/bootstrap.min.js" %}"></script>
 
 <style>
-    body {
+    .vap_container {
         font-size: 12px !important;
     }
     .container {
@@ -37,13 +36,6 @@
     }
     .mainPicture{
         height:750px;
-    }
-    .infoTableForSceneElement {
-        border-collapse: collapse;
-    }
-
-    .infoTableForSceneElement, .infoTableForSceneElement th, .infoTableForSceneElement td {
-        border: 1px solid black;
     }
     .vap-controllers {
         margin-bottom: 0 !important;
@@ -121,6 +113,11 @@
 <!-- End Header and Nav -->
 <script src="{% static 'js/foundation/vendor/jquery.js' %}"></script>
 <script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
+<script src="{% static "js/bootstrap.min.js" %}"></script>
+<script src="{% static "js/three.js" %}"></script>
+<script src="{% static "js/controls/OrbitControls.js" %}"></script>
+<script src="{% static "js/VAP/main.js" %}"></script>
+<script src="{% static "js/dat.gui.min.js" %}"></script>
 <script>
     $('#main-menu-small').foundation();
     $('#main-menu').foundation();
