@@ -19,6 +19,54 @@
 <!-- Include all compiled plugins (below), or include individual files as needed -->
 <script src="{% static "js/bootstrap.min.js" %}"></script>
 
+<style>
+    body {
+        font-size: 12px !important;
+    }
+    .container {
+        margin-left: 10px !important;
+        margin-right: 10px !important;
+    }
+    .row {
+        flex-wrap: nowrap !important;
+    }
+    .vap_container {
+        width: 100%;
+        height: 95vh;
+        overflow: auto;
+    }
+    .mainPicture{
+        height:750px;
+    }
+    .infoTableForSceneElement {
+        border-collapse: collapse;
+    }
+
+    .infoTableForSceneElement, .infoTableForSceneElement th, .infoTableForSceneElement td {
+        border: 1px solid black;
+    }
+    .vap-controllers {
+        margin-bottom: 0 !important;
+    }
+    .vap-controllers label {
+        margin-right: 5px;
+        font-weight: 600;
+    }
+    button.vap-controllers {
+        margin-top: 5px;
+        margin-bottom: 5px !important;
+    }
+    #table-results {
+        width: 80%;
+    }
+    #gui_container {
+        position: absolute;
+    }
+    #gui{
+      transform:translate(0, 0);
+    }
+</style>
+
 <!-- Main bar -->
 
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large" id="main-menu-small">

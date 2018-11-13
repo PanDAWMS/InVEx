@@ -3,7 +3,7 @@
 import os,sys
 
 try:
-    exec(open("[path to django-sensitive-data file]").read())
+    exec(open("/Users/maria/PyCharmProjects/vap/private/django-sensitive-data").read())
 except:
     print("Error with LOCAL_EXTRA_SETTINGS")
     sys.exit(1)
