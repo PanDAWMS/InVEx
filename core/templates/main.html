@@ -7,7 +7,6 @@
 
 {% block body %}
 <h1>Welcome to Visual Analytics Platform!</h1>
-
     <div class="vap_container">
         <div class="container">
           <div class="row">
@@ -15,11 +14,13 @@
                 <div class="card border-dark mb-3">
                     <div class="card-header">Get Dataset</div>
                     <div class="card-body">
-                        <form>
+                        <form action="" method="POST">
+                            {% csrf_token %}
                             <div class="custom-file">
-                              <input type="file" class="custom-file-input" id="customFile">
+                              <input type="file" class="custom-file-input" id="customFile" name="customFile">
                               <label class="custom-file-label" for="customFile">Choose file</label>
                             </div>
+                            <input type="submit" value="Submit">
                         </form>
                         <div class="pre-scrollable" id="initial-dataset"></div>
                     </div>
@@ -124,6 +125,12 @@
 
 		function init() {
 			var dimNames=['ID', 'x1','x2','x3','x4','x5','x6'];
+{#            var arr = Array();#}
+{#            if ( {{ new_file }} ) {#}
+{#                for (i in {{ dataset }}) {#}
+{#                    console.log(i);#}
+{#                }#}
+{#            }#}
 			var dataArray=[[["1"], [32.56,7.84,34.52,36.72,16.28,37.32]], [["2"], [45.8,23.18,9.94,6.24,39.97,34.28]], [["3"],
 			[31.82,42.8,8.53,39.48,27.86,9.83]], [["4"], [34.78,34.5,28.26,8.78,32.47,21.01]], [["5"], [2.41,43.42,1.76,33.59,4.77,20.16]],
 			[["6"], [32.36,37.49,26.75,1.04,22.82,31.92]], [["7"], [23.35,12.91,10.71,33.71,27.57,24.01]], [["8"],

@@ -7,6 +7,10 @@ from urllib.parse import urlencode, urlparse, parse_qs
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
+import os
+import pandas as pd
+from django.shortcuts import render
+from django.conf import settings
 
 
 def initRequest(request):
@@ -54,13 +58,50 @@ def initRequest(request):
 
 def main(request):
     valid, response = initRequest(request)
+
     if not valid: return response
 
-    data = {
-            'request': request,
-            'built': datetime.now().strftime("%H:%M:%S"),
-            }
+    if request.method == 'POST':
 
-    response = render_to_response('main.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
+        fpath = request.POST.get("customFile")
+        file_path = settings.BASE_DIR + '/datasets/' + fpath
+        dataset = load_csv(file_path)
+        slice = dataset.head()
+        columns = dataset.columns
+        # arr = [];
+        # for i in slice:
+
+
+        data = {
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'dataset': dataset,
+            'request': request.POST,
+            'fpath': fpath,
+            'new_file': True,
+            'slice': slice
+            }
+    else:
+        data = {
+                'built': datetime.now().strftime("%H:%M:%S"),
+                'dataset': [],
+                'new_file': False
+                }
+    return render(request, 'main.html', data, content_type='text/html')
+    # return render_to_response('main.html', data, content_type='text/html')
+    # patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    # return response
+
+def load_csv(path_to_file, index=False, column_names=False):
+    if not os.path.exists(path_to_file):
+        return None
+
+    if index:
+        index = 0
+    else:
+        index = None
+
+    if column_names:
+        column_names = 0
+    else:
+        column_names = None
+    return pd.read_csv(path_to_file, index_col=index, header=column_names)
