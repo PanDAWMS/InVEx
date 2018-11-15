@@ -65,26 +65,37 @@ def main(request):
 
         fpath = request.POST.get("customFile")
         file_path = settings.BASE_DIR + '/datasets/' + fpath
-        dataset = load_csv(file_path)
-        slice = dataset.head()
-        columns = dataset.columns
-        # arr = [];
-        # for i in slice:
+        dataset = load_csv(file_path, index='pandaid', column_names=True)
+        dataset = dataset.dropna(how='any')
+        dim_names = dataset.columns.tolist()
+        # norm_dataset = normalization(dataset)
+        slice = dataset.head(100)
+        slice = clean_dataset(slice)
+        norm_slice = normalization(slice)
+        norm_slice = clean_dataset(norm_slice)
+        #dataset = pandas_to_js_list(dataset)
+        #norm_dataset = pandas_to_js_list(norm_dataset)
+        norm_slice = pandas_to_js_list(norm_slice)
+
 
 
         data = {
             'built': datetime.now().strftime("%H:%M:%S"),
-            'dataset': dataset,
+            # 'dataset': dataset,
             'request': request.POST,
             'fpath': fpath,
             'new_file': True,
-            'slice': slice
+            'dim_names': dim_names,
+            # 'norm_dataset': norm_dataset,
+            'norm_slice': norm_slice
             }
     else:
         data = {
                 'built': datetime.now().strftime("%H:%M:%S"),
                 'dataset': [],
-                'new_file': False
+                'dim_names': [],
+                'new_file': False,
+                'norm_dataset': [],
                 }
     return render(request, 'main.html', data, content_type='text/html')
     # return render_to_response('main.html', data, content_type='text/html')
@@ -105,3 +116,22 @@ def load_csv(path_to_file, index=False, column_names=False):
     else:
         column_names = None
     return pd.read_csv(path_to_file, index_col=index, header=column_names)
+
+def pandas_to_js_list(dataset):
+    results = []
+    for i in range(len(dataset.index)):
+        results.append([[dataset.index[i]], [dataset.values[i].tolist()]])
+    return results
+
+def normalization(df):
+    return (df - df.mean()) / (df.max() - df.min())
+
+def clean_dataset(df):
+    to_drop = []
+    for item in df:
+        if df[item].dtypes == 'object':
+            to_drop.append(item)
+    df = df.drop(to_drop, 1)
+    df = df.dropna(axis=1, how='any')
+    df = df.dropna(axis=0, how='any')
+    return df

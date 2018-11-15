@@ -392,29 +392,28 @@ class Scene {
         table.appendChild(thead);
 		var row = document.createElement("tr");
 		thead.appendChild(row);
-        var cell = null;
+        var th = null;
         for(var i = 0; i < this.dimNames.length; ++i ) {
-			cell = document.createElement("th");
-			cell.innerText = this.dimNames[i].toString();
-			row.appendChild(cell);
+			th = document.createElement("th");
+			th.innerText = this.dimNames[i].toString();
+			row.appendChild(th);
 		}
         var tbody = document.createElement("tbody");
         table.appendChild(tbody);
-        console.log(this.dataArray);
-        for ( var j=0; j < nrows; ++j ){
+        for ( var j=0; j < nrows; ++j ) {
 			var obj	= this.dataArray[j];
 			row = document.createElement("tr");
-			tbody.appendChild(row);
 
-			cell = document.createElement("th");
-			cell.innerText = obj[0].toString();
-			row.appendChild(cell);
+			th = document.createElement("th");
+			th.innerText = obj[0];
+			row.appendChild(th);
 
-			for(var i = 0; i < obj[1].length; i++ ){
-				cell = document.createElement("td");
-				cell.innerText = obj[1][i].toString();
-				row.appendChild(cell);
+			for(var i = 0; i < obj[1].length; i++ ) {
+				var td = document.createElement("td");
+				td.innerText = obj[1][i];
+				row.appendChild(td);
 			}
+			tbody.appendChild(row);
 		}
         this.outputTable = table;
 		this.outputDiv.appendChild(this.outputTable);
