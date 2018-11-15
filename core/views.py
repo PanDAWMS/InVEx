@@ -66,18 +66,18 @@ def main(request):
         fpath = request.POST.get("customFile")
         file_path = settings.BASE_DIR + '/datasets/' + fpath
         dataset = load_csv(file_path, index='pandaid', column_names=True)
-        dataset = dataset.dropna(how='any')
-        dim_names = dataset.columns.tolist()
-        # norm_dataset = normalization(dataset)
+        idx = [dataset.index.name]
         slice = dataset.head(100)
-        slice = clean_dataset(slice)
-        norm_slice = normalization(slice)
-        norm_slice = clean_dataset(norm_slice)
+        clean_dataset(slice)
+        dropNA(slice)
+        columns = slice.columns.tolist()
+        norm_slice = normalization(slice, columns)
+        dropNA(norm_slice)
+        columns = norm_slice.columns.tolist()
+        dim_names = idx + columns
         #dataset = pandas_to_js_list(dataset)
         #norm_dataset = pandas_to_js_list(norm_dataset)
         norm_slice = pandas_to_js_list(norm_slice)
-
-
 
         data = {
             'built': datetime.now().strftime("%H:%M:%S"),
@@ -87,7 +87,8 @@ def main(request):
             'new_file': True,
             'dim_names': dim_names,
             # 'norm_dataset': norm_dataset,
-            'norm_slice': norm_slice
+            'norm_slice': norm_slice,
+            'idx': idx
             }
     else:
         data = {
@@ -95,7 +96,7 @@ def main(request):
                 'dataset': [],
                 'dim_names': [],
                 'new_file': False,
-                'norm_dataset': [],
+                'norm_slice': [],
                 }
     return render(request, 'main.html', data, content_type='text/html')
     # return render_to_response('main.html', data, content_type='text/html')
@@ -105,11 +106,6 @@ def main(request):
 def load_csv(path_to_file, index=False, column_names=False):
     if not os.path.exists(path_to_file):
         return None
-
-    if index:
-        index = 0
-    else:
-        index = None
 
     if column_names:
         column_names = 0
@@ -123,15 +119,17 @@ def pandas_to_js_list(dataset):
         results.append([[dataset.index[i]], [dataset.values[i].tolist()]])
     return results
 
-def normalization(df):
-    return (df - df.mean()) / (df.max() - df.min())
+def normalization(df, cols_to_norm):
+    return (df[cols_to_norm] - df[cols_to_norm].mean()) / (df[cols_to_norm].max() - df[cols_to_norm].min()) * 100
 
 def clean_dataset(df):
     to_drop = []
     for item in df:
         if df[item].dtypes == 'object':
             to_drop.append(item)
-    df = df.drop(to_drop, 1)
-    df = df.dropna(axis=1, how='any')
-    df = df.dropna(axis=0, how='any')
-    return df
+    df.drop(to_drop, 1, inplace=True)
+    df.drop('Unnamed: 0', 1, inplace=True)
+
+def dropNA(df):
+    df.dropna(axis=1, how='any', inplace=True)
+    df.dropna(axis=0, how='any', inplace=True)
