@@ -98,8 +98,12 @@ def main(request):
         # get names of all dimensiona
         dim_names = idx + columns
 
+        # get initial dataset statistics
+        stats = slice_copy.describe()
+
         norm_slice = pandas_to_js_list(norm_slice)
         real_data_slice = pandas_to_js_list(slice_copy)
+        stats_to_js = pandas_to_js_list(stats)
 
         data = {
             'built': datetime.now().strftime("%H:%M:%S"),
@@ -109,7 +113,8 @@ def main(request):
             'dim_names': dim_names,
             'norm_slice': norm_slice,
             'idx': idx,
-            'real_data_slice': real_data_slice
+            'real_data_slice': real_data_slice,
+            'stats': stats_to_js
             }
     else:
         data = {
@@ -118,7 +123,8 @@ def main(request):
                 'dim_names': [],
                 'new_file': False,
                 'norm_slice': [],
-                'real_data_slice': []
+                'real_data_slice': [],
+                'stats': []
                 }
     return render(request, 'main.html', data, content_type='text/html')
 

@@ -358,7 +358,7 @@ class Scene {
             if ( document.getElementById('table-results') ) {
 			    this.outputDiv.removeChild(this.outputTable);
 		    }
-			this.sceneObject.printAllElements();
+			this.sceneObject.printClusters("clusters-print");
         };
     }
 
@@ -371,8 +371,9 @@ class Scene {
 
     // print fragment of the initial dataset
     // nrows = the number of rows
-    printInitialDataset(nrows) {
-        var initial_dataset = document.getElementById("initial-dataset");
+    printDataset(dataset, elementID) {
+        var initial_dataset = document.getElementById(elementID);
+		console.log(initial_dataset);
         var table = document.createElement("table");
         table.setAttribute("id", "dataset");
 		table.classList.add("table", "table-sm", "table-hover");
@@ -388,8 +389,8 @@ class Scene {
 		}
         var tbody = document.createElement("tbody");
         table.appendChild(tbody);
-        for ( var j=0; j < nrows; ++j ) {
-			var obj	= this.realData[j];
+        for ( var j=0; j < dataset.length; ++j ) {
+			var obj	= dataset[j];
 			row = document.createElement("tr");
 
 			th = document.createElement("th");
@@ -404,11 +405,11 @@ class Scene {
 			tbody.appendChild(row);
 		}
         this.outputTable = table;
-		this.outputDiv.appendChild(this.outputTable);
         initial_dataset.appendChild(table);
     }
 
-	printAllElements(){
+	printClusters(elementID) {
+		var root = document.getElementById(elementID);
 		var table = document.createElement("table");
         table.setAttribute("id", "table-results");
 		table.classList.add("table", "table-sm", "table-hover");
@@ -452,7 +453,6 @@ class Scene {
 				cell.bgColor = obj.material.color.getHexString();
 			row.appendChild(cell);
 		}
-        this.outputTable = table;
-		this.outputDiv.appendChild(this.outputTable);
+        root.appendChild(table);
 	}
 }

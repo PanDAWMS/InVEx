@@ -8,27 +8,50 @@
 {% block body %}
 <h1>Welcome to Visual Analytics Platform!</h1>
     <div class="vap_container">
-        <div class="container">
+        <div class="container-fluid">
           <div class="row">
-            <div class="col-sm">
-                <div class="card border-dark mb-3">
-                    <div class="card-header">Get Dataset</div>
-                    <div class="card-body">
-                        <form action="" method="POST">
+            <div class="col">
+                <ul class="nav nav-tabs" id="tabs" role="tablist">
+                  <li class="nav-item">
+                    <a class="nav-link active" id="download-tab" data-toggle="tab" href="#download" role="tab" aria-controls="download" aria-selected="true">Download File</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="print-tab" data-toggle="tab" href="#print" role="tab" aria-controls="print" aria-selected="false">Print Data</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="stats-tab" data-toggle="tab" href="#stats" role="tab" aria-controls="stats" aria-selected="false">Statistics</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="clusters-tab" data-toggle="tab" href="#clusters" role="tab" aria-controls="clusters" aria-selected="false">Clusters</a>
+                  </li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="download" role="tabpanel" aria-labelledby="download-tab">
+                      <form action="" method="POST">
                             {% csrf_token %}
                             <div class="custom-file">
                               <input type="file" class="custom-file-input" id="customFile" name="customFile">
                               <label class="custom-file-label" for="customFile">Choose file</label>
                             </div>
+                            <br/><br/>
                             <input type="submit" value="Submit">
-                        </form>
-                        <div class="pre-scrollable" id="initial-dataset"></div>
-                    </div>
+                      </form>
+                  </div>
+                  <div class="tab-pane fade" id="print" role="tabpanel" aria-labelledby="print-tab">
+                      <div class="pre-scrollable" id="initial-dataset"></div>
+                  </div>
+                  <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                        <div class="pre-scrollable" id="dataset-stats"></div>
+                  </div>
+                  <div class="tab-pane fade" id="clusters" role="tabpanel" aria-labelledby="clusters-tab">
+                        <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printBtn">Print Results</button>
+                        <div class="pre-scrollable" id="clusters-print"></div>
+                  </div>
                 </div>
             </div>
           </div>
           <div class="row">
-
+            <br/>
           </div>
         </div>
         <div id="controls"></div>
@@ -87,7 +110,7 @@
                         <div class="card-body">
                             <form>
                               <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="resetBtn">Reset Camera</button>
-                              <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printBtn">Print Results</button>
+
                           </form>
                         </div>
                     </div>
@@ -97,17 +120,25 @@
                 </div>
             </div>
         </div>
-        <div class="container pre-scrollable" id="output"></div>
+{#        <div class="container pre-scrollable" id="output"></div>#}
 	</div>
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="{% static "js/bootstrap.min.js" %}"></script>
 {% endblock %}
 	<script>
     // SETTING:
 		countOfEdges=24;
+
+        $('#tabs a').on('click', function (e) {
+          e.preventDefault()
+          $(this).tab('show')
+        });
+
 		function onSceneResize() {
 			scene.onResize();
 		}
@@ -120,7 +151,9 @@
 		function init() {
             var dimNames = {{ dim_names|safe }};
             var dataArray = {{ norm_slice|safe }};
-            var realData = {{ real_data_slice|safe }}
+            var realData = {{ real_data_slice|safe }};
+            var stats = {{ stats|safe }};
+            console.log(stats);
 {#			var dataArray=[[["1"], [32.56,7.84,34.52,36.72,16.28,37.32]], [["2"], [45.8,23.18,9.94,6.24,39.97,34.28]], [["3"],#}
 {#			[31.82,42.8,8.53,39.48,27.86,9.83]], [["4"], [34.78,34.5,28.26,8.78,32.47,21.01]], [["5"], [2.41,43.42,1.76,33.59,4.77,20.16]],#}
 {#			[["6"], [32.36,37.49,26.75,1.04,22.82,31.92]], [["7"], [23.35,12.91,10.71,33.71,27.57,24.01]], [["8"],#}
@@ -133,9 +166,11 @@
             scene.setDimNames(dimNames);
             var new_dataArray = fix_array(dataArray);
             var new_realData = fix_array(realData);
+            var new_stats = fix_array(stats);
             scene.setDataArray(new_dataArray);
             scene.setRealData(new_realData);
-            scene.printInitialDataset(5);
+            scene.printDataset(new_realData, "initial-dataset");
+            scene.printDataset(new_stats, "dataset-stats");
 
 			for ( i = 0; i < new_dataArray.length; i++ ){
 				scene.createSphere( new_dataArray[ i ], new_realData[ i ], new THREE.Color( i%2, i%3%2, i%5%2 ) );
