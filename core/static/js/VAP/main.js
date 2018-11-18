@@ -63,7 +63,8 @@ class Scene {
 			this.width = 10;
 			this.proectionSubSpace = [0,1,2];
 			this.dimNames=[];
-            this.dataArray = [];
+            this.normData = [];
+			this.realData = [];
 			this.controlsDiv = controlsDiv;
 			this.outputDiv = outputDiv;
 			this.numberOfSegements = numberOfSegements;
@@ -74,23 +75,6 @@ class Scene {
 
 	}
 
-//    draw3DGrid() {
-//
-//     var gridXZ = new THREE.GridHelper(100, 10, 'gray', 'gray');
-//     gridXZ.position.set( 50,-0.1,50 );
-//     this.scene.add(gridXZ);
-//
-//     var gridXY = new THREE.GridHelper(100, 10, 'gray', 'gray');
-//     gridXY.position.set( 50,50,-0.1 );
-//     gridXY.rotation.x = Math.PI/2;
-//     this.scene.add(gridXY);
-//
-//     var gridYZ = new THREE.GridHelper(100, 10, 'gray', 'gray');
-//     gridYZ.position.set( -0.1,50,50 );
-//     gridYZ.rotation.z = Math.PI/2;
-//     this.scene.add(gridYZ);
-//
-// }
 
     initLight() {
         //Create a new ambient light
@@ -121,17 +105,22 @@ class Scene {
 		this.dimNames = dims;
 	}
 
-    setDataArray(dataArray) {
-        this.dataArray = dataArray;
+    setDataArray(normData) {
+        this.normData = normData;
     }
 
-	createSphere(data, col){
+	setRealData(realData) {
+		this.realData = realData;
+	}
+
+	createSphere(normData, realData, col){
 		var material = new THREE.MeshPhongMaterial( {color: col} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
-		sphere.position.x = data[1][this.proectionSubSpace[0]];
-		sphere.position.y = data[1][this.proectionSubSpace[1]];
-		sphere.position.z = data[1][this.proectionSubSpace[2]];
-		sphere.dataObject = data;
+		sphere.position.x = normData[1][this.proectionSubSpace[0]];
+		sphere.position.y = normData[1][this.proectionSubSpace[1]];
+		sphere.position.z = normData[1][this.proectionSubSpace[2]];
+		sphere.dataObject = normData;
+		sphere.realData = realData;
         //sphere.clone();
 		//data[3] = sphere;
 		this.groupOfSpheres.add(sphere);
@@ -174,8 +163,8 @@ class Scene {
                 var id = this.dimNames[0];
                 var id_value = this.selectedObject.dataObject[ 0 ];
                 gui_data[id] = id_value;
-                for(var i = 0; i < this.selectedObject.dataObject[1].length; i++) {
-                    gui_data[this.dimNames[i+1]] = this.selectedObject.dataObject[ 1 ][ i ]
+                for(var i = 0; i < this.selectedObject.realData[1].length; i++) {
+                    gui_data[this.dimNames[i+1]] = this.selectedObject.realData[ 1 ][ i ]
                 }
                 this.createGui();
                 if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
@@ -232,9 +221,9 @@ class Scene {
 		var i = 0;
 		for (i=0; i < oldGroup.children.length; ++i) {
 			if (this.selectedObject === oldGroup.children[i])
-				this.selectedObject = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].material.color);
+				this.selectedObject = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].material.color);
 			else {
-                var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].material.color);
+                var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].material.color);
             }
 		}
         this.scene.add(this.groupOfSpheres);
@@ -350,7 +339,6 @@ class Scene {
         radiusRange.value = this.defaultSpRad.toString();
 		changeRadiusBtn.onclick = function() {
             var radiusRange = document.getElementById("radiusRange");
-            console.log(radiusRange.value);
 			this.sceneObject.changeRad(parseInt(radiusRange.value));
         };
     }
@@ -401,7 +389,7 @@ class Scene {
         var tbody = document.createElement("tbody");
         table.appendChild(tbody);
         for ( var j=0; j < nrows; ++j ) {
-			var obj	= this.dataArray[j];
+			var obj	= this.realData[j];
 			row = document.createElement("tr");
 
 			th = document.createElement("th");
@@ -449,12 +437,12 @@ class Scene {
 			tbody.appendChild(row);
 
 			cell = document.createElement("th");
-			cell.innerText = obj.dataObject[0].toString();
+			cell.innerText = obj.realData[0].toString();
 			row.appendChild(cell);
 
-			for(var i = 0; i < obj.dataObject[1].length; i++ ){
+			for(var i = 0; i < obj.realData[1].length; i++ ){
 				cell = document.createElement("td");
-				cell.innerText = obj.dataObject[1][i].toString();
+				cell.innerText = obj.realData[1][i].toString();
 				row.appendChild(cell);
 			}
 			cell = document.createElement("td");

@@ -66,29 +66,50 @@ def main(request):
         fpath = request.POST.get("customFile")
         file_path = settings.BASE_DIR + '/datasets/' + fpath
         dataset = load_csv(file_path, index='pandaid', column_names=True)
+
+        # get index from DataFRame
         idx = [dataset.index.name]
+
+        # get slice of data from the initial DataFrame
         slice = dataset.head(100)
+
+        # create the copy of current data slice
+        slice_copy = slice.copy()
+
+        # clean data slice
         clean_dataset(slice)
         dropNA(slice)
+
+        # get all columns, that left after cleaning
         columns = slice.columns.tolist()
+
+        # normalization of the data slice
         norm_slice = normalization(slice, columns)
+
+        # cleaning data after normalization
         dropNA(norm_slice)
+
+        # get all columns, left after the second cleaning
         columns = norm_slice.columns.tolist()
+
+        # reduce the initial data slice with columns, which were left after cleaning and normalization
+        slice_copy = slice_copy.loc[:,columns]
+
+        # get names of all dimensiona
         dim_names = idx + columns
-        #dataset = pandas_to_js_list(dataset)
-        #norm_dataset = pandas_to_js_list(norm_dataset)
+
         norm_slice = pandas_to_js_list(norm_slice)
+        real_data_slice = pandas_to_js_list(slice_copy)
 
         data = {
             'built': datetime.now().strftime("%H:%M:%S"),
-            # 'dataset': dataset,
             'request': request.POST,
             'fpath': fpath,
             'new_file': True,
             'dim_names': dim_names,
-            # 'norm_dataset': norm_dataset,
             'norm_slice': norm_slice,
-            'idx': idx
+            'idx': idx,
+            'real_data_slice': real_data_slice
             }
     else:
         data = {
@@ -97,11 +118,9 @@ def main(request):
                 'dim_names': [],
                 'new_file': False,
                 'norm_slice': [],
+                'real_data_slice': []
                 }
     return render(request, 'main.html', data, content_type='text/html')
-    # return render_to_response('main.html', data, content_type='text/html')
-    # patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    # return response
 
 def load_csv(path_to_file, index=False, column_names=False):
     if not os.path.exists(path_to_file):
