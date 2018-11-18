@@ -88,7 +88,7 @@ class Scene {
     }
 
     createGui() {
-        this.dims_gui = new dat.GUI({ autoPlace: false });
+        this.dims_gui = new dat.GUI({ autoPlace: false, width: 300 });
 		//
 		//this.dims_gui = new dat.GUI();
         this.dims_gui.domElement.id = 'gui';
@@ -111,6 +111,10 @@ class Scene {
 
 	setRealData(realData) {
 		this.realData = realData;
+	}
+
+	setStats(stats) {
+		this.stats = stats;
 	}
 
 	createSphere(normData, realData, col){
@@ -141,13 +145,7 @@ class Scene {
 
 	onMouseClick(event) {
 		event.preventDefault();
-        if (this.dims_gui.__folders['Multidimensional Coordinates']) {
-            this.dims_gui.removeFolder(this.dims_folder);
-        }
-        if (this.selectedObject!=null) {
-            this.unSelectObject(this.selectedObject);
-            this.selectedObject = null;
-        }
+
 		this.intersects = this.getIntersects( event.layerX, event.layerY );
 		if ( this.intersects.length > 0 ) {
 			var res = this.intersects.filter( function ( res ) {
@@ -157,27 +155,60 @@ class Scene {
 			} )[ 0 ];
 
 			if ( res && res.object ) {
-				this.selectedObject = res.object;
-				this.selectObject(this.selectedObject);
-                var gui_data = {};
-                var id = this.dimNames[0];
-                var id_value = this.selectedObject.dataObject[ 0 ];
-                gui_data[id] = id_value;
-                for(var i = 0; i < this.selectedObject.realData[1].length; i++) {
-                    gui_data[this.dimNames[i+1]] = this.selectedObject.realData[ 1 ][ i ]
-                }
-                this.createGui();
-                if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
-                    this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
-                }
-                for (var key in gui_data) {
-                    this.dims_folder.add(gui_data, key).listen();
-                }
-                this.dims_folder.open();
+				if (res.object == this.selectedObject) {
+					this.unSelectObject(this.selectedObject);
+					this.selectedObject = null;
+					if (this.dims_gui.__folders['Multidimensional Coordinates']) {
+						this.dims_gui.removeFolder(this.dims_folder);
+					}
+				} else {
+					if (this.selectedObject != null) {
+						this.unSelectObject(this.selectedObject);
+							if (this.dims_gui.__folders['Multidimensional Coordinates']) {
+								this.dims_gui.removeFolder(this.dims_folder);
+							}
+					}
+					this.selectedObject = res.object;
+					this.selectObject(this.selectedObject);
+					var gui_data = {};
+					var id = this.dimNames[0];
+					var id_value = this.selectedObject.dataObject[ 0 ];
+					gui_data[id] = id_value;
+					for(var i = 0; i < this.selectedObject.realData[1].length; i++) {
+						gui_data[this.dimNames[i+1]] = this.selectedObject.realData[ 1 ][ i ];
+					}
+					this.createGui();
+					if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
+						this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
+					}
+					this.dims_folder.add(gui_data, id);
+					var counter = 0;
+					for (var key in gui_data) {
+						if (key != 'pandaid') {
+							var min = 0;
+							var max = 0;
+							for (var k = 0; k < this.stats.length; k++ ) {
+								if (this.stats[k][0] == 'min')
+									min = this.stats[k][1][counter];
+								if (this.stats[k][0] == 'max')
+									max = this.stats[k][1][counter];
+							}
+							this.dims_folder.add(gui_data, key, min, max).listen();
+							counter++;
+						}
+					}
+					this.dims_folder.open();
 
+				}
+
+			} else {
+				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
+					this.dims_gui.removeFolder(this.dims_folder);
+				}
 			}
 
 		}
+		console.log(this.selectedObject);
 
 	}
 
@@ -197,7 +228,6 @@ class Scene {
 		this.scene.remove(obj.selectedCircut);
 		obj.selectedCircut = null;
 		this.selectedObject.material.color.set( invertColor(this.selectedObject.material.color) );
-
 	}
 
 	getIntersects(x, y) {
