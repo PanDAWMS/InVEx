@@ -172,7 +172,7 @@ class Scene {
 				this.selectObject(this.selectedObject);
                 var gui_data = {};
                 var id = this.dimNames[0];
-                var id_value = this.selectedObject.dataObject[ 0 ][ 0 ];
+                var id_value = this.selectedObject.dataObject[ 0 ];
                 gui_data[id] = id_value;
                 for(var i = 0; i < this.selectedObject.dataObject[1].length; i++) {
                     gui_data[this.dimNames[i+1]] = this.selectedObject.dataObject[ 1 ][ i ]
