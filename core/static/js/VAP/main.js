@@ -429,7 +429,8 @@ class Scene {
 
 			for(var i = 0; i < obj[1].length; i++ ) {
 				var td = document.createElement("td");
-				td.innerText = obj[1][i];
+				var value = obj[1][i].toLocaleString(undefined, { maximumSignificantDigits: 3 });
+				td.innerText = value;
 				row.appendChild(td);
 			}
 			tbody.appendChild(row);
@@ -473,7 +474,8 @@ class Scene {
 
 			for(var i = 0; i < obj.realData[1].length; i++ ){
 				cell = document.createElement("td");
-				cell.innerText = obj.realData[1][i].toString();
+				var value = obj.realData[1][i].toLocaleString(undefined, { maximumSignificantDigits: 3 });
+				cell.innerText = value.toString();
 				row.appendChild(cell);
 			}
 			cell = document.createElement("td");
