@@ -122,22 +122,22 @@
 <body>
 
 <!-- sub-title and bread-crumbs -->
-<div class="top-subbar">
-
-    <!-- sub-title -->
-    <div class="left" id="div-subtitle">{% block subtitle %}Subtitle goes here{% endblock %}
-    </div>
-    <!-- End sub-title -->
-
-    <!-- bread-crumbs -->
-    <div class="right">
-          <span class="hide-for-small">
-              {% if built != None %} {{ built }} {% endif %}
-          </span>
-    </div>
-    <!-- End bread-crumbs -->
-
-</div>
+{#<div class="top-subbar">#}
+{##}
+{#    <!-- sub-title -->#}
+{#    <div class="left" id="div-subtitle">{% block subtitle %}Subtitle goes here{% endblock %}#}
+{#    </div>#}
+{#    <!-- End sub-title -->#}
+{##}
+{#    <!-- bread-crumbs -->#}
+{#    <div class="right">#}
+{#          <span class="hide-for-small">#}
+{#              {% if built != None %} {{ built }} {% endif %}#}
+{#          </span>#}
+{#    </div>#}
+{#    <!-- End bread-crumbs -->#}
+{##}
+{#</div>#}
 <!-- End sub-title and bread-crumbs -->
 
 {% block extra_css %}{% endblock %}
