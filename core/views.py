@@ -111,9 +111,9 @@ def main(request):
             'fpath': fpath,
             'new_file': True,
             'dim_names': dim_names,
-            'norm_slice': norm_slice,
+            'norm_dataset': norm_slice,
             'idx': idx,
-            'real_data_slice': real_data_slice,
+            'real_dataset': real_data_slice,
             'stats': stats_to_js
             }
     else:
