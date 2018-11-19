@@ -242,30 +242,42 @@ class Scene {
 					}
 					this.selectedObject = res.object;
 					this.selectObject(this.selectedObject);
+
+					// Set DAT.GUI Controllers
 					var gui_data = {};
-					var id = this.dimNames[0];
-					var id_value = this.selectedObject.dataObject[ 0 ];
-					gui_data[id] = id_value;
-					for(var i = 0; i < this.selectedObject.realData[1].length; i++) {
-						gui_data[this.dimNames[i+1]] = this.selectedObject.realData[ 1 ][ i ];
+					var id = this.dimNames[0]; // Dataset Index Name
+					var id_value = this.selectedObject.dataObject[ 0 ]; // Dataset Index Value
+					gui_data[id] = id_value; // Set the 1st GUI field
+
+					// Set GUI fields for all coordinates (real data values)
+					for( var i = 0; i < this.selectedObject.realData[ 1 ].length; i++ ) {
+						gui_data[this.dimNames[ i + 1 ]] = this.selectedObject.realData[ 1 ][ i ];
 					}
+
+					// Create DAT.GUI object
 					this.createGui();
+
+					// Create new Folder
 					if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
 						this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
 					}
-					this.dims_folder.add(gui_data, id);
+
+					// Add dataset index field to dat.gui.Controller
+					this.dims_folder.add( gui_data, id );
+
+					// Add sliders with real data values
 					var counter = 0;
-					for (var key in gui_data) {
-						if (key != 'pandaid') {
+					for ( var key in gui_data ) {
+						if ( key != id ) {
 							var min = 0;
 							var max = 0;
-							for (var k = 0; k < this.stats[0].length; k++ ) {
-								if (this.stats[0][k] == 'Min')
+							for ( var k = 0; k < this.stats[ 0 ].length; k++ ) {
+								if ( this.stats[0][k] == 'Min' )
 									min = this.stats[1][k][counter];
-								if (this.stats[0][k] == 'Max')
+								if ( this.stats[0][k] == 'Max' )
 									max = this.stats[1][k][counter];
 							}
-							this.dims_folder.add(gui_data, key, min, max).listen();
+							this.dims_folder.add( gui_data, key, min, max ).listen();
 							counter++;
 						}
 					}
@@ -273,17 +285,28 @@ class Scene {
 
 					for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
 						var current_controller = this.dims_folder.__controllers[ i ];
-						console.log(current_controller);
+						current_controller.selectedObject = this.selectedObject;
+						current_controller.dimNum = this.getDimNumber(current_controller.property);
+						current_controller.normValue = this.selectedObject.dataObject[1][current_controller.dimNum];
+						current_controller.subSpace = this.proectionSubSpace;
+
 						current_controller.onChange(function(value) {
 					   		console.log(value);
 						});
 
 						current_controller.onFinishChange(function(value) {
-						  	console.log("The new value is " + value);
+							var currDimName = this.property;
+							var initialValue = this.initialValue;
+							var newValue = value;
+							var normValue = this.normValue;
+							var newNormValue = ( initialValue * normValue ) / newValue;
+							this.selectedObject.dataObject[1][this.dimNum] = newNormValue;
+							var sphere = this.selectedObject;
+							sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
+												sphere.dataObject[1][this.subSpace[1]],
+												sphere.dataObject[1][this.subSpace[2]]);
 						});
 					}
-
-
 				}
 
 			} else {
@@ -295,6 +318,15 @@ class Scene {
 		}
 		console.log(this.selectedObject);
 
+	}
+
+	getDimNumber(dimName) {
+		var dim_num = 0;
+		for ( var j = 0; j < this.dimNames; j++) {
+			if (this.dimNames[j] == dimName)
+				dim_num = j;
+		}
+		return dim_num;
 	}
 
 	selectObject(obj){
