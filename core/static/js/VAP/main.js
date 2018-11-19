@@ -286,8 +286,7 @@ class Scene {
 					for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
 						var current_controller = this.dims_folder.__controllers[ i ];
 						current_controller.selectedObject = this.selectedObject;
-						current_controller.dimNum = this.getDimNumber(current_controller.property);
-						current_controller.normValue = this.selectedObject.dataObject[1][current_controller.dimNum];
+						current_controller.dimNames = this.dimNames;
 						current_controller.subSpace = this.proectionSubSpace;
 
 						current_controller.onChange(function(value) {
@@ -295,12 +294,20 @@ class Scene {
 						});
 
 						current_controller.onFinishChange(function(value) {
+							console.log(this.selectedObject.dataObject[1]);
 							var currDimName = this.property;
+							console.log("Current dimension is " + currDimName);
+							var currDimNum = this.dimNames.indexOf(currDimName) - 1;
+							console.log("Current dimension number is " + currDimNum);
 							var initialValue = this.initialValue;
-							var newValue = value;
-							var normValue = this.normValue;
-							var newNormValue = ( initialValue * normValue ) / newValue;
-							this.selectedObject.dataObject[1][this.dimNum] = newNormValue;
+							console.log("Initial value is " + initialValue);
+							console.log("New value is " + value);
+							var normValue = this.selectedObject.dataObject[1][currDimNum];
+							console.log("Current norm value is " + normValue);
+							var newNormValue = ( value * normValue ) / initialValue;
+							console.log("New norm value is " + newNormValue);
+							this.selectedObject.dataObject[1][currDimNum] = newNormValue;
+							console.log(this.selectedObject.dataObject[1]);
 							var sphere = this.selectedObject;
 							sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
 												sphere.dataObject[1][this.subSpace[1]],

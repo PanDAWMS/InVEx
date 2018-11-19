@@ -96,7 +96,7 @@ def new_csv_file_upload(request):
         return {}
 
     # get slice of data from the initial DataFrame
-    slice = dataset.head(100)
+    slice = dataset
 
     # create the copy of current data slice
     slice_copy = slice.copy()
@@ -144,10 +144,12 @@ def clusterize(request):
             operation = calc.KMeansClustering.KMeansClustering()
             operation.set_parameters(int(request.POST['numberofcl']))
             result = operation.process_data(dataset)
+            #accuracy = operation.accuracy(dataset)
             if result is not None:
                 op_history.append(dataset, operation)
                 data['clusters'] = result.tolist()
                 data['count_of_clusters'] = int(request.POST['numberofcl'])
+                #data['accuracy'] = accuracy
                 data['cluster_ready'] = True
             else:
                 print('couldn\'t clusterize')
