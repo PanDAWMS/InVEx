@@ -86,7 +86,7 @@ def prepare_basic(norm_dataset, real_dataset, op_history):
 def new_csv_file_upload(request):
     if 'customFile' in request.FILES:
         dataset = calc.importcsv.import_csv_file(io.StringIO(request.FILES['customFile'].read().decode('utf-8')),
-                                                 'pandaid',
+                                                 True,
                                                  True)
     else:
         return {}

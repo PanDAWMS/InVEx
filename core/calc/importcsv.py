@@ -4,6 +4,11 @@ import pandas as pd
 
 def import_csv_file(path_to_file, index=False, column_names=False):
 
+    if index:
+        index = 0
+    else:
+        index = None
+
     if column_names:
         column_names = 0
     else:
@@ -21,7 +26,7 @@ def clean_dataset(df):
         if df[item].dtypes == 'object':
             to_drop.append(item)
     df.drop(to_drop, 1, inplace=True)
-    df.drop('Unnamed: 0', 1, inplace=True)
+    #df.drop('Unnamed: 0', 1, inplace=True)
 
 
 def dropNA(df):
