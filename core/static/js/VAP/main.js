@@ -208,6 +208,7 @@ class Scene {
 		event.preventDefault();
 
 		this.intersects = this.getIntersects( event.layerX, event.layerY );
+		//this.intersects = this.getIntersects( event.clientX, event.clientY );
 		if ( this.intersects.length > 0 ) {
 			var res = this.intersects.filter( function ( res ) {
 
@@ -298,7 +299,6 @@ class Scene {
 
 		this.mouseVector.set( x, y, 0.5 );
 		this.raycaster.setFromCamera( this.mouseVector, this.camera );
-
 		return this.raycaster.intersectObject( this.groupOfSpheres, true );
 
 	}
@@ -529,6 +529,10 @@ class Scene {
 		for ( var j=0; j < this.groupOfSpheres.children.length; ++j ){
 			var obj	= this.groupOfSpheres.children[j];
 			row = document.createElement("tr");
+			if (this.selectObject==obj)
+				row.bgColor = invertColor(obj.material.color).getHexString();
+			else
+				row.bgColor = obj.material.color.getHexString();
 			tbody.appendChild(row);
 
 			cell = document.createElement("th");
@@ -541,12 +545,6 @@ class Scene {
 				cell.innerText = value.toString();
 				row.appendChild(cell);
 			}
-			cell = document.createElement("td");
-			if (this.selectObject==obj)
-				cell.bgColor = invertColor(obj.material.color).getHexString();
-			else
-				cell.bgColor = obj.material.color.getHexString();
-			row.appendChild(cell);
 		}
         root.appendChild(table);
 	}
