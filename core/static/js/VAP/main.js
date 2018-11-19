@@ -529,14 +529,14 @@ class Scene {
 		for ( var j=0; j < this.groupOfSpheres.children.length; ++j ){
 			var obj	= this.groupOfSpheres.children[j];
 			row = document.createElement("tr");
-			if (this.selectObject==obj)
-				row.bgColor = invertColor(obj.material.color).getHexString();
-			else
-				row.bgColor = obj.material.color.getHexString();
 			tbody.appendChild(row);
 
 			cell = document.createElement("th");
 			cell.innerText = obj.realData[0].toString();
+			if (this.selectObject==obj)
+				cell.bgColor = invertColor(obj.material.color).getHexString();
+			else
+				cell.bgColor = obj.material.color.getHexString();
 			row.appendChild(cell);
 
 			for(var i = 0; i < obj.realData[1].length; i++ ){
