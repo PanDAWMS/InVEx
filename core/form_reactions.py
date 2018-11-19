@@ -72,6 +72,9 @@ def prepare_basic(norm_dataset, real_dataset, op_history):
     met_numb = []
     for i in range(len(met_numb_or)):
         met_numb.append(met_numb_or[i].tolist())
+
+    corr_matrix = real_dataset.corr()
+
     data = {
         'norm_dataset': pandas_to_js_list(norm_dataset),
         'real_dataset': pandas_to_js_list(real_dataset),
@@ -79,6 +82,7 @@ def prepare_basic(norm_dataset, real_dataset, op_history):
         'metrics': [calc.basicstatistics.DESCRIPTION, met_numb],
         'operation_history': op_history,
         'idx': idx,
+        'corr_matrix': corr_matrix.values.tolist()
     }
     return data
 

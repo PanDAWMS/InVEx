@@ -2,7 +2,7 @@ from . import baseoperationclass
 import pandas as pd
 
 
-DESCRIPTION = ['Min', 'Max', 'Mean', 'Std', '25%Q', '50%Q', '75%Q', 'Sum']
+DESCRIPTION = ['Min', 'Max', 'Mean', 'Std', '25%', '50%', '75%', 'Sum', 'Skew', 'Median']
 
 
 class BasicStatistics(baseoperationclass.BaseOperationClass):
@@ -13,7 +13,8 @@ class BasicStatistics(baseoperationclass.BaseOperationClass):
 
     def process_data(self, dataset):
         self.results = [dataset.min(), dataset.max(), dataset.mean(), dataset.std(), dataset.quantile(0.25),
-                        dataset.quantile(0.5), dataset.quantile(0.75), dataset.sum()]
+                        dataset.quantile(0.5), dataset.quantile(0.75), dataset.sum(), dataset.skew(),
+                        dataset.median()]
         return self.results
 
     def save_results(self):

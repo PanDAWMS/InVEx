@@ -76,6 +76,7 @@ def main(request):
                 'norm_dataset': [],
                 'real_dataset': [],
                 'stats': [],
+                'corr_matrix': []
                 }
     data['built'] = datetime.now().strftime("%H:%M:%S")
     return render(request, 'main.html', data, content_type='text/html')
