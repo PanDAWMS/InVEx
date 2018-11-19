@@ -291,7 +291,7 @@ class Scene {
 						current_controller.subSpace = this.proectionSubSpace;
 
 						current_controller.onChange(function(value) {
-					   		console.log(value);
+					   		//console.log(value);
 						});
 
 						current_controller.onFinishChange(function(value) {
@@ -321,12 +321,7 @@ class Scene {
 	}
 
 	getDimNumber(dimName) {
-		var dim_num = 0;
-		for ( var j = 0; j < this.dimNames; j++) {
-			if (this.dimNames[j] == dimName)
-				dim_num = j;
-		}
-		return dim_num;
+		return this.dimNames.indexOf(dimName);
 	}
 
 	selectObject(obj){
