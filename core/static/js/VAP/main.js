@@ -83,6 +83,7 @@ class Scene {
 			this.selectedObject = null;
 			this.raycaster = new THREE.Raycaster();
 			this.mouseVector = new THREE.Vector3();
+			this.dragControls = null;
 
 			// init renderer
 			this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -132,9 +133,18 @@ class Scene {
 			this.outputTable = null;
 			this.sphereGeometry = new THREE.SphereGeometry( this.defaultSpRad, this.numberOfSegements, this.numberOfSegements);
             this.createGui();
-            //this.getClusterAlgorithm();
 
 	}
+
+	// setDragControls(objects) {
+	// 	this.dragControls = new THREE.DragControls(objects, this.camera, this.renderer.domElement);
+	// 	this.dragControls.addEventListener( 'dragstart', function () {
+	// 		controls.enabled = false;
+	// 	} );
+	// 	this.dragControls.addEventListener( 'dragend', function () {
+	// 		controls.enabled = true;
+	// 	} );
+	// }
 
 
     initLight() {
@@ -261,6 +271,19 @@ class Scene {
 					}
 					this.dims_folder.open();
 
+					for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
+						var current_controller = this.dims_folder.__controllers[ i ];
+						console.log(current_controller);
+						current_controller.onChange(function(value) {
+					   		console.log(value);
+						});
+
+						current_controller.onFinishChange(function(value) {
+						  	console.log("The new value is " + value);
+						});
+					}
+
+
 				}
 
 			} else {
@@ -320,7 +343,7 @@ class Scene {
         this.scene.add(this.groupOfSpheres);
 	}
 
-	moveSpheres(){
+	moveSpheres() {
 		var i = 0;
 		if (this.selectedObject!=null)
 			this.unSelectObject(this.selectedObject);

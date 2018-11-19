@@ -141,6 +141,7 @@
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
+<script src="{% static "js/controls/DragControls.js" %}"></script>
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -173,7 +174,7 @@
             var realData = {{ real_dataset|safe }};
             var statistics = {{ metrics|safe }};
             var corr_matrix = {{ corr_matrix|safe }};
-        console.log(corr_matrix);
+        console.log(dimNames.slice(1, dimNames.length-1));
 {#			var dataArray=[[["1"], [32.56,7.84,34.52,36.72,16.28,37.32]], [["2"], [45.8,23.18,9.94,6.24,39.97,34.28]], [["3"],#}
 {#			[31.82,42.8,8.53,39.48,27.86,9.83]], [["4"], [34.78,34.5,28.26,8.78,32.47,21.01]], [["5"], [2.41,43.42,1.76,33.59,4.77,20.16]],#}
 {#			[["6"], [32.36,37.49,26.75,1.04,22.82,31.92]], [["7"], [23.35,12.91,10.71,33.71,27.57,24.01]], [["8"],#}
@@ -192,10 +193,11 @@
             scene.setRealData(new_realData);
             scene.printDataset(new_realData, "initial-dataset");
 
+
         Matrix({
             container : '#corr-matrix',
             data      : corr_matrix,
-            labels    : dimNames,
+            labels    : dimNames.slice(1, dimNames.length-1),
             start_color : '#ffffff',
             end_color : '#3498db'
         });
@@ -204,15 +206,17 @@
             var clusters = {{ clusters|safe }};
             var clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
             {% endif %}
-
+            var objects = [];
 			for ( i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters_color_scheme[clusters[i]].clone() );
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters_color_scheme[clusters[i]].clone() ));
                 {% else %}
-				scene.createSphere( new_dataArray[ i ], new_realData[ i ], new THREE.Color( 1,1,1 ) );
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], new THREE.Color( 1,1,1 ) ));
 				{% endif %}
 			}
 			scene.createControlElements();
+
+            //scene.setDragControls(objects);
 
 		}
 		function animate() {
