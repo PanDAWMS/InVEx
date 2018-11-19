@@ -184,8 +184,8 @@ class Scene {
 		this.realData = realData;
 	}
 
-	setStats(stats) {
-		this.stats = stats;
+	setRealStats(stats) {
+		this.realStats = stats;
 	}
 
 	createSphere(normData, realData, col){
@@ -271,11 +271,11 @@ class Scene {
 						if ( key != id ) {
 							var min = 0;
 							var max = 0;
-							for ( var k = 0; k < this.stats[ 0 ].length; k++ ) {
-								if ( this.stats[0][k] == 'Min' )
-									min = this.stats[1][k][counter];
-								if ( this.stats[0][k] == 'Max' )
-									max = this.stats[1][k][counter];
+							for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
+								if ( this.realStats[0][k] == 'Min' )
+									min = this.realStats[1][k][counter];
+								if ( this.realStats[0][k] == 'Max' )
+									max = this.realStats[1][k][counter];
 							}
 							this.dims_folder.add( gui_data, key, min, max ).listen();
 							counter++;
@@ -288,12 +288,14 @@ class Scene {
 						current_controller.selectedObject = this.selectedObject;
 						current_controller.dimNames = this.dimNames;
 						current_controller.subSpace = this.proectionSubSpace;
+						current_controller.realStats = this.realStats;
 
 						current_controller.onChange(function(value) {
 					   		//console.log(value);
 						});
 
 						current_controller.onFinishChange(function(value) {
+							console.log(this.realStats);
 							console.log(this.selectedObject.dataObject[1]);
 							var currDimName = this.property;
 							console.log("Current dimension is " + currDimName);
@@ -304,7 +306,9 @@ class Scene {
 							console.log("New value is " + value);
 							var normValue = this.selectedObject.dataObject[1][currDimNum];
 							console.log("Current norm value is " + normValue);
-							var newNormValue = ( value * normValue ) / initialValue;
+							var min = this.realStats[1][0][currDimNum];
+							var max = this.realStats[1][1][currDimNum];
+							var newNormValue = (( value - min ) / ( max - min )) * 100;
 							console.log("New norm value is " + newNormValue);
 							this.selectedObject.dataObject[1][currDimNum] = newNormValue;
 							console.log(this.selectedObject.dataObject[1]);

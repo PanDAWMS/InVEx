@@ -68,10 +68,10 @@ def prepare_basic(norm_dataset, real_dataset, op_history):
     dim_names = idx + columns
 
     metrics = calc.basicstatistics.BasicStatistics()
-    met_numb_or = metrics.process_data(real_dataset)
-    met_numb = []
-    for i in range(len(met_numb_or)):
-        met_numb.append(met_numb_or[i].tolist())
+    real_dataset_stats_or = metrics.process_data(real_dataset)
+    real_dataset_stats = []
+    for i in range(len(real_dataset_stats_or)):
+        real_dataset_stats.append(real_dataset_stats_or[i].tolist())
 
     corr_matrix = real_dataset.corr()
 
@@ -79,7 +79,7 @@ def prepare_basic(norm_dataset, real_dataset, op_history):
         'norm_dataset': pandas_to_js_list(norm_dataset),
         'real_dataset': pandas_to_js_list(real_dataset),
         'dim_names': dim_names,
-        'metrics': [calc.basicstatistics.DESCRIPTION, met_numb],
+        'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
         'operation_history': op_history,
         'idx': idx,
         'corr_matrix': corr_matrix.values.tolist()
