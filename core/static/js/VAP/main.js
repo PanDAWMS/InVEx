@@ -8,9 +8,70 @@ function drawPlainGrid() {
 	return grid;
 }
 
+function getColorScheme(maxNumber){
+	if (maxNumber==2)
+		return [new THREE.Color(1,0,0), new THREE.Color(0,0,1)]
+	results=[]
+	parts = Math.round(Math.log(maxNumber)/Math.log(3)+0.5)
+	base = parts - 1
+	if (base==0)
+		base = 1
+	for(i=0; i<maxNumber; ++i){
+		results[i]=new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
+	}
+	return results
+}
+
 function removeElement(id) {
     var elem = document.getElementById(id);
     return elem.parentNode.removeChild(elem);
+}
+
+function createClusterElements(element, parameters) {
+
+	select_element=document.createElement('select');
+	select_element.classList.add('form-control');
+	select_element.classList.add('form-control-sm');
+	select_element.id = 'select' + ("00000" + Math.random()*100000).slice(-5);
+	select_element.name = 'algorithm';
+    label_select = document.createElement('label');
+    label_select.innerText='Choose clustering algorithm';
+    label_select.setAttribute('for', select_element.id);
+    element.appendChild(label_select);
+    element.appendChild(select_element);
+    select_element.onchange=function(){
+        for(i=0; i<this.elements.length; ++i){
+            this.elements[i].style.visibility = 'hidden';
+        }
+        this.elements[this.selectedIndex].style.visibility = 'visible';
+    };
+    var elements=[];
+    for (k=0; k<parameters.length; ++k){
+		el=parameters[k]
+        option_element=document.createElement('option');
+        option_element.innerText=el[1];
+        option_element.value=el[0];
+        select_element.appendChild(option_element);
+        element_div=document.createElement('div');
+        elements.push(element_div);
+        for(i=2; i<el.length; ++i){
+            input = document.createElement("input");
+            input.classList.add("form-control-sm");
+            input.setAttribute("type", "text");
+            for (j=0; j<el[i].attributes.length; ++j){
+                input.setAttribute(el[i].attributes[j][0], el[i].attributes[j][1]);
+            }
+            input.id = 'inp'+("00000" + Math.random()*100000).slice(-5);
+            input.setAttribute("name", el[i]['name']);
+            label = document.createElement("label");
+            label.setAttribute("for", input.id);
+            label.textContent = el[i]['label'];
+            element_div.appendChild(label);
+            element_div.appendChild(input);
+        }
+        element.appendChild(element_div);
+    }
+    select_element.elements=elements;
 }
 
 class Scene {
@@ -71,7 +132,7 @@ class Scene {
 			this.outputTable = null;
 			this.sphereGeometry = new THREE.SphereGeometry( this.defaultSpRad, this.numberOfSegements, this.numberOfSegements);
             this.createGui();
-            this.getClusterAlgorithm();
+            //this.getClusterAlgorithm();
 
 	}
 
@@ -187,11 +248,11 @@ class Scene {
 						if (key != 'pandaid') {
 							var min = 0;
 							var max = 0;
-							for (var k = 0; k < this.stats.length; k++ ) {
-								if (this.stats[k][0] == 'min')
-									min = this.stats[k][1][counter];
-								if (this.stats[k][0] == 'max')
-									max = this.stats[k][1][counter];
+							for (var k = 0; k < this.stats[0].length; k++ ) {
+								if (this.stats[0][k] == 'Min')
+									min = this.stats[1][k][counter];
+								if (this.stats[0][k] == 'Max')
+									max = this.stats[1][k][counter];
 							}
 							this.dims_folder.add(gui_data, key, min, max).listen();
 							counter++;
@@ -398,6 +459,8 @@ class Scene {
         this.resetControls();
         this.printControls();
 	}
+
+
 
     // print fragment of the initial dataset
     // nrows = the number of rows

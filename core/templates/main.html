@@ -31,9 +31,10 @@
                 </ul>
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="download" role="tabpanel" aria-labelledby="download-tab">
-                      <form action="" method="POST">
+                      <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
                             <div class="custom-file">
+							  <input type="hidden" name="formt" value="newfile">
                               <input type="file" class="custom-file-input" id="customFile" name="customFile">
                               <label class="custom-file-label" for="customFile">Choose file</label>
                             </div>
@@ -85,16 +86,27 @@
                     <div class="card border-dark mb-3">
                         <div class="card-header">Clustering</div>
                         <div class="card-body">
-                            <form id="cluster_form">
-                                <div class="form-group">
-                                    <label for="cluster-selector">Choose clustering algorithm</label>
-                                    <select class="form-control form-control-sm" id="cluster-selector">
-                                      <option id="kmeans">K-Means</option>
-                                      <option id="dbscan">DBSCAN</option>
-                                    </select>
+                            <form action="" id="cluster_form" method="POST">
+                                {% csrf_token %}
+							    <input type="hidden" name="formt" value="cluster">
+                                {% if saveid %}
+                                <input type="hidden" name="fdid" value="{{ saveid }}">
+                                {% endif %}
+                                <div class="form-group" id="clustering">
                                 </div>
-                                <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="cluster_btn">Clustering</button>
+                                <!--<button type="button" class="btn btn-secondary btn-sm vap-controllers" id="cluster_btn">Clustering</button>-->
+                                <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Clusterize">
                             </form>
+{#                            <form id="cluster_form">#}
+{#                                <div class="form-group">#}
+{#                                    <label for="cluster-selector">Choose clustering algorithm</label>#}
+{#                                    <select class="form-control form-control-sm" id="cluster-selector">#}
+{#                                      <option id="kmeans">K-Means</option>#}
+{#                                      <option id="dbscan">DBSCAN</option>#}
+{#                                    </select>#}
+{#                                </div>#}
+{#                                <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="cluster_btn">Clustering</button>#}
+{#                            </form>#}
                         </div>
                     </div>
                     <div class="card border-dark mb-3">
@@ -147,11 +159,12 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
+            clustering_parameters=[['KMeans', 'K means', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],['DBScan', 'DB scan']]
+            createClusterElements(document.getElementById('clustering'), clustering_parameters);
             var dimNames = {{ dim_names|safe }};
             var dataArray = {{ norm_dataset|safe }};
             var realData = {{ real_dataset|safe }};
-            var stats = {{ stats|safe }};
-            console.log(stats);
+            var statistics = {{ metrics|safe }};
 {#			var dataArray=[[["1"], [32.56,7.84,34.52,36.72,16.28,37.32]], [["2"], [45.8,23.18,9.94,6.24,39.97,34.28]], [["3"],#}
 {#			[31.82,42.8,8.53,39.48,27.86,9.83]], [["4"], [34.78,34.5,28.26,8.78,32.47,21.01]], [["5"], [2.41,43.42,1.76,33.59,4.77,20.16]],#}
 {#			[["6"], [32.36,37.49,26.75,1.04,22.82,31.92]], [["7"], [23.35,12.91,10.71,33.71,27.57,24.01]], [["8"],#}
@@ -164,15 +177,23 @@
             scene.setDimNames(dimNames);
             var new_dataArray = fix_array(dataArray);
             var new_realData = fix_array(realData);
-            var new_stats = fix_array(stats);
+            printStats(statistics, dimNames);
+            scene.setStats(statistics);
             scene.setDataArray(new_dataArray);
             scene.setRealData(new_realData);
-            scene.setStats(new_stats);
             scene.printDataset(new_realData, "initial-dataset");
-            scene.printDataset(new_stats, "dataset-stats");
+
+            {% if cluster_ready %}
+            var clusters = {{ clusters|safe }};
+            var clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
+            {% endif %}
 
 			for ( i = 0; i < new_dataArray.length; i++ ){
-				scene.createSphere( new_dataArray[ i ], new_realData[ i ], new THREE.Color( i%2, i%3%2, i%5%2 ) );
+                {% if cluster_ready %}
+				scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters_color_scheme[clusters[i]].clone() );
+                {% else %}
+				scene.createSphere( new_dataArray[ i ], new_realData[ i ], new THREE.Color( 1,1,1 ) );
+				{% endif %}
 			}
 			scene.createControlElements();
 
@@ -196,6 +217,42 @@
             }
             return new_array;
         }
+
+        function printStats(stats, dimensions){
+            var initial_dataset = document.getElementById("dataset-stats");
+            var table = document.createElement("table");
+            table.setAttribute("id", "dataset");
+            table.classList.add("table", "table-sm", "table-hover");
+            var thead = document.createElement("thead");
+            table.appendChild(thead);
+            var row = document.createElement("tr");
+            thead.appendChild(row);
+            var th = document.createElement("th");
+            th.innerText = "  ";
+            row.appendChild(th);
+            for(var i = 1; i < dimensions.length; ++i ) {
+                th = document.createElement("th");
+                th.innerText = dimensions[i].toString();
+                row.appendChild(th);
+            }
+            var tbody = document.createElement("tbody");
+            table.appendChild(tbody);
+            for ( var j=0; j < stats[0].length; ++j ) {
+                var obj	= stats[1][j];
+                row = document.createElement("tr");
+                th = document.createElement("th");
+                th.innerText = stats[0][j];
+                row.appendChild(th);
+
+                for(var i = 0; i < obj.length; i++ ) {
+                    var td = document.createElement("td");
+                    td.innerText = obj[i].toLocaleString(undefined, { maximumSignificantDigits: 3 });;
+                    row.appendChild(td);
+                }
+                tbody.appendChild(row);
+            }
+            initial_dataset.appendChild(table);
+         }
 	</script>
 {% endblock %}
 
