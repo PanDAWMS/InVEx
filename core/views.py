@@ -67,6 +67,8 @@ def main(request):
             data = form_reactions.new_csv_file_upload(request)
         if request.POST['formt'] == 'cluster':
             data = form_reactions.clusterize(request)
+        if request.POST['formt'] == 'rebuild':
+            data = form_reactions.predict_cluster(request)
 
     else:
         data = {

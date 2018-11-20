@@ -282,6 +282,31 @@ class Scene {
 						}
 					}
 					this.dims_folder.open();
+					this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
+
+					var obj = {
+						coordinates: this.selectedObject.dataObject[1],
+						csrf: this.csrf,
+						Recalculate:function() {
+							console.log("button clicked");
+							var request_data = this.coordinates;
+							console.log(request_data);
+							$.ajax({
+								type:"POST",
+								url: "",
+								data : { formt: 'rebuild', coordinates: this.coordinates, csrfmiddlewaretoken: this.csrf},
+								success : function(json) {
+									console.log("Finished");
+								},
+								failure: function(data) {
+									alert('Got an error dude');
+								}
+							})
+						}
+					};
+
+					this.dims_gui.add(obj,'Recalculate');
+
 
 					for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
 						var current_controller = this.dims_folder.__controllers[ i ];

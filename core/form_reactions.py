@@ -144,12 +144,10 @@ def clusterize(request):
             operation = calc.KMeansClustering.KMeansClustering()
             operation.set_parameters(int(request.POST['numberofcl']))
             result = operation.process_data(dataset)
-            #accuracy = operation.accuracy(dataset)
             if result is not None:
                 op_history.append(dataset, operation)
                 data['clusters'] = result.tolist()
                 data['count_of_clusters'] = int(request.POST['numberofcl'])
-                #data['accuracy'] = accuracy
                 data['cluster_ready'] = True
             else:
                 print('couldn\'t clusterize')
@@ -158,4 +156,10 @@ def clusterize(request):
     else:
         print('No method')
     data['saveid'] = save_data(original, dataset, op_history)
+    return data
+
+# Here we have to implement prediction for point with updated coordinates
+def predict_cluster(request):
+    data = {}
+    data['request'] = request
     return data

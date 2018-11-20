@@ -41,12 +41,14 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def process_data(self, dataset):
-        model = KMeans(self.clust_numbers)
-        model.fit(dataset)
-        self.results = model.predict(dataset)
-        self.cent = model.cluster_centers_
+        self.model = KMeans(self.clust_numbers)
+        self.model.fit(dataset)
+        self.results = self.model.predict(dataset)
+        self.cent = self.model.cluster_centers_
         return self.results
 
+    def predict(self, dataset):
+        return self.model.predict(dataset)
 
 try:
     baseoperationclass.register(KMeansClustering)

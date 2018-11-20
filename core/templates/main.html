@@ -6,6 +6,7 @@
 {% block extra_css %}{% endblock %}
 
 {% block body %}
+    {% csrf_token %}
   <div class="card text-white bg-dark mb-3">
   <div class="card-body">
     <h4 class="card-title">Visual Analytics Platform for ATLAS</h4>
