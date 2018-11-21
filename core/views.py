@@ -7,6 +7,11 @@ from urllib.parse import urlencode, urlparse, parse_qs
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
+import os
+import pandas as pd
+from django.shortcuts import render
+from django.conf import settings
+from core import form_reactions
 
 
 def initRequest(request):
@@ -54,13 +59,26 @@ def initRequest(request):
 
 def main(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
 
-    data = {
-            'request': request,
-            'built': datetime.now().strftime("%H:%M:%S"),
-            }
+    if request.method == 'POST' and 'formt' in request.POST:
+        if request.POST['formt'] == 'newfile':
+            data = form_reactions.new_csv_file_upload(request)
+        if request.POST['formt'] == 'cluster':
+            data = form_reactions.clusterize(request)
+        if request.POST['formt'] == 'rebuild':
+            data = form_reactions.predict_cluster(request)
 
-    response = render_to_response('main.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
+    else:
+        data = {
+                'dataset': [],
+                'dim_names': [],
+                'new_file': False,
+                'norm_dataset': [],
+                'real_dataset': [],
+                'stats': [],
+                'corr_matrix': []
+                }
+    data['built'] = datetime.now().strftime("%H:%M:%S")
+    return render(request, 'main.html', data, content_type='text/html')
