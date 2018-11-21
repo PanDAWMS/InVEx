@@ -6,5 +6,7 @@ core/settings/base.py
 out
 /core/settings/base.py
 /core/settings/config.py
-/private/django-sensitive-data
 /core/settings/local.py
+/private/*
+core/datafiles/*
+!core/datafiles/.keep
