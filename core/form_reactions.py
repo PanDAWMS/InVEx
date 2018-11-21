@@ -9,6 +9,7 @@ import pandas as pd
 import json
 
 SAVED_FILES_PATH = 'core/datafiles/'
+BACKUP_FILE = '_backup'
 
 
 def pandas_to_js_list(dataset):
@@ -21,10 +22,19 @@ def pandas_to_js_list(dataset):
         return results
 
 
-def save_data(original_dataset, norm_dataset, op_history):
-    filename = str(datetime.now().timestamp())
-    while os.path.isfile(SAVED_FILES_PATH + filename):
-        filename = filename + 't'
+def save_data(original_dataset, norm_dataset, op_history, filename=None):
+    if (filename is None):
+        filename = str(datetime.now().timestamp())
+        while os.path.isfile(SAVED_FILES_PATH + filename):
+            filename = filename + 't'
+    else:
+        if os.path.isfile(SAVED_FILES_PATH + filename + BACKUP_FILE):
+            os.remove(SAVED_FILES_PATH + filename + BACKUP_FILE)
+        if os.path.isfile(SAVED_FILES_PATH + filename):
+            os.rename(SAVED_FILES_PATH + filename, SAVED_FILES_PATH + filename + BACKUP_FILE)
+        if os.path.isfile(SAVED_FILES_PATH + filename):
+            os.remove(SAVED_FILES_PATH + filename)
+
     file = open(SAVED_FILES_PATH + filename, "w")
     file.write(original_dataset.to_json(orient='table'))
     file.write('\n')
@@ -44,6 +54,7 @@ def table_to_df(data):
             df[t['name']] = pd.to_datetime(df[t['name']], infer_datetime_format=True)
     df.set_index(json_obj['schema']['primaryKey'], inplace=True)
     return df
+
 
 def load_data(filename):
     if not os.path.isfile(SAVED_FILES_PATH + filename):
@@ -155,7 +166,7 @@ def clusterize(request):
             print('unknown methond')
     else:
         print('No method')
-    data['saveid'] = save_data(original, dataset, op_history)
+    data['saveid'] = save_data(original, dataset, op_history, request.POST['fdid'])
     return data
 
 # Here we have to implement prediction for point with updated coordinates

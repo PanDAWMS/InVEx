@@ -8,3 +8,7 @@ out
 /core/settings/config.py
 /private/django-sensitive-data
 /core/settings/local.py
+/private/*
+core/datafiles/*
+!core/datafiles/.keep
+__pycache__/
