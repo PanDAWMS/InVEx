@@ -8,6 +8,11 @@ function drawPlainGrid() {
 	return grid;
 }
 
+function drawAxes() {
+	var axes = new THREE.AxesHelper( 100 );
+	return axes;
+}
+
 function getColorScheme(maxNumber){
 	if (maxNumber==2)
 		return [new THREE.Color(1,0,0), new THREE.Color(0,0,1)]
@@ -111,8 +116,9 @@ class Scene {
 			this.controls.saveState();
 
             this.groupOfGrid.add(drawPlainGrid());
+            this.groupOfGrid.add(drawAxes());
 
-			this.drawAxes();
+			//this.drawAxes();
 
             // init lights
             this.initLight();
@@ -165,12 +171,6 @@ class Scene {
         this.dims_gui.domElement.id = 'gui';
         document.getElementById("gui_container").appendChild(this.dims_gui.domElement);
     }
-
-	drawAxes() {
-		var axes = new THREE.AxesHelper( 100 );
-        axes.material.linewidth = 3;
-		this.scene.add( axes );
-	}
 
 	setDimNames(dims){
 		this.dimNames = dims;
@@ -242,7 +242,7 @@ class Scene {
 					}
 					this.selectedObject = res.object;
 					this.selectObject(this.selectedObject);
-
+					
 					// Set DAT.GUI Controllers
 					var gui_data = {};
 					var id = this.dimNames[0]; // Dataset Index Name
@@ -352,8 +352,6 @@ class Scene {
 			}
 
 		}
-		console.log(this.selectedObject);
-
 	}
 
 	getDimNumber(dimName) {
@@ -362,14 +360,15 @@ class Scene {
 
 	selectObject(obj){
 		var geometry = new THREE.BoxBufferGeometry( 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius );
-		var edges = new THREE.EdgesGeometry( geometry );
-		var line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
-		obj.selectedCircut = line;
-		line.position.x = obj.position.x;
-		line.position.y = obj.position.y;
-		line.position.z = obj.position.z;
+		var edgesCube = new THREE.EdgesGeometry( geometry );
+		var edgesCube = new THREE.EdgesGeometry( geometry );
+		var lineCube = new THREE.LineSegments( edgesCube, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
+		obj.selectedCircut = lineCube;
+		lineCube.position.x = obj.position.x;
+		lineCube.position.y = obj.position.y;
+		lineCube.position.z = obj.position.z;
 		this.selectedObject.material.color.set( invertColor(this.selectedObject.material.color) );
-		this.scene.add(line);
+		this.scene.add(lineCube);
 	}
 
 	unSelectObject(obj){
