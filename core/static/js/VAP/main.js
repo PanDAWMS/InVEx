@@ -307,7 +307,7 @@ class Scene {
 						}
 					};
 
-					this.dims_gui.add(obj,'Recalculate');
+					this.dims_folder.add(obj,'Recalculate');
 
 
 					for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
