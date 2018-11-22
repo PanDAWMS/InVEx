@@ -242,9 +242,7 @@ class Scene {
 					}
 					this.selectedObject = res.object;
 					this.selectObject(this.selectedObject);
-					return true;
-					console.log(1);
-
+					
 					// Set DAT.GUI Controllers
 					var gui_data = {};
 					var id = this.dimNames[0]; // Dataset Index Name
