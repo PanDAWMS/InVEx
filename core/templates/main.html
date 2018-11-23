@@ -53,7 +53,9 @@
                         <div class="pre-scrollable" id="dataset-stats"></div>
                   </div>
                   <div class="tab-pane fade" id="corr" role="tabpanel" aria-labelledby="corr-tab">
-                        <div id="corr-matrix"></div>
+                        <div id="corr-matrix">
+                            <div id="legend"></div>
+                        </div>
                   </div>
                   <div class="tab-pane fade" id="clusters" role="tabpanel" aria-labelledby="clusters-tab">
                         <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printBtn">Print Results</button>
@@ -79,11 +81,11 @@
                                     </select>
                                 </div>
                                 <div class="form-group form-inline vap-controllers">
-                                    <select class="form-control form-control-sm text-primary" id="y_dim">
+                                    <select class="form-control form-control-sm text-success" id="y_dim">
                                     </select>
                                 </div>
                                 <div class="form-group form-inline vap-controllers">
-                                    <select class="form-control form-control-sm text-success" id="z_dim">
+                                    <select class="form-control form-control-sm text-primary" id="z_dim">
                                     </select>
                                 </div>
                                 <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="change_dim_btn">Change Dimensions</button>
@@ -160,12 +162,14 @@
             clustering_parameters=[['KMeans', 'K means', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],['DBScan', 'DB scan']]
             createClusterElements(document.getElementById('clustering'), clustering_parameters);
             var dimNames = {{ dim_names|safe }};
+            var index = {{ index|safe }};
             var dataArray = {{ norm_dataset|safe }};
             var realData = {{ real_dataset|safe }};
             var statistics_real = {{ real_metrics|safe }};
             var corr_matrix = {{ corr_matrix|safe }};
 
             scene.setDimNames(dimNames);
+            scene.setIndex(index);
             var new_dataArray = fix_array(dataArray);
             var new_realData = fix_array(realData);
             printStats(statistics_real, dimNames);
@@ -178,7 +182,7 @@
         Matrix({
             container : '#corr-matrix',
             data      : corr_matrix,
-            labels    : dimNames.slice(1, dimNames.length-1),
+            labels    : dimNames,
             start_color : '#ffffff',
             end_color : '#3498db'
         });
@@ -232,23 +236,23 @@
             var th = document.createElement("th");
             th.innerText = "  ";
             row.appendChild(th);
-            for(var i = 1; i < dimensions.length; ++i ) {
+            for(var i = 0; i < dimensions.length; i++ ) {
                 th = document.createElement("th");
-                th.innerText = dimensions[i].toString();
+                th.innerText = dimensions[ i ].toString();
                 row.appendChild(th);
             }
             var tbody = document.createElement("tbody");
             table.appendChild(tbody);
-            for ( var j=0; j < stats[0].length; ++j ) {
-                var obj	= stats[1][j];
+            for ( var j = 0; j < stats[ 0 ].length; j++ ) {
+                var obj	= stats[ 1 ][ j ];
                 row = document.createElement("tr");
                 th = document.createElement("th");
-                th.innerText = stats[0][j];
+                th.innerText = stats[ 0 ][ j ];
                 row.appendChild(th);
 
                 for(var i = 0; i < obj.length; i++ ) {
                     var td = document.createElement("td");
-                    td.innerText = obj[i].toLocaleString(undefined, { maximumSignificantDigits: 3 });
+                    td.innerText = obj[ i ].toLocaleString(undefined, { maximumSignificantDigits: 3 });
                     row.appendChild(td);
                 }
                 tbody.appendChild(row);
@@ -259,8 +263,8 @@
 
         function Matrix(options) {
         var margin = {top: 50, right: 50, bottom: 100, left: 100},
-            width = 1000,
-            height = 1000,
+            width = 40 * options.labels.length,
+            height = 40 * options.labels.length,
             data = options.data,
             container = options.container,
             labelsData = options.labels,
@@ -281,7 +285,7 @@
         var minValue = d3.min(data, function(layer) { return d3.min(layer, function(d) { return d; }); });
 
         var numrows = data.length;
-        var numcols = data[0].length;
+        var numcols = data.length;
 
         var svg = d3.select(container).append("svg")
             .attr("width", width + margin.left + margin.right)

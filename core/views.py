@@ -74,6 +74,7 @@ def main(request):
         data = {
                 'dataset': [],
                 'dim_names': [],
+                'index': '',
                 'new_file': False,
                 'norm_dataset': [],
                 'real_dataset': [],

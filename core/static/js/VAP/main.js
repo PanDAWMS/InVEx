@@ -131,6 +131,7 @@ class Scene {
 			this.width = 10;
 			this.proectionSubSpace = [0,1,2];
 			this.dimNames=[];
+			this.index = '';
             this.normData = [];
 			this.realData = [];
 			this.controlsDiv = controlsDiv;
@@ -174,6 +175,10 @@ class Scene {
 
 	setDimNames(dims){
 		this.dimNames = dims;
+	}
+
+	setIndex(idx) {
+		this.index = idx;
 	}
 
     setDataArray(normData) {
@@ -245,13 +250,11 @@ class Scene {
 					
 					// Set DAT.GUI Controllers
 					var gui_data = {};
-					var id = this.dimNames[0]; // Dataset Index Name
-					var id_value = this.selectedObject.dataObject[ 0 ]; // Dataset Index Value
-					gui_data[id] = id_value; // Set the 1st GUI field
+					gui_data[this.index] = this.selectedObject.dataObject[ 0 ];
 
 					// Set GUI fields for all coordinates (real data values)
 					for( var i = 0; i < this.selectedObject.realData[ 1 ].length; i++ ) {
-						gui_data[this.dimNames[ i + 1 ]] = this.selectedObject.realData[ 1 ][ i ];
+						gui_data[this.dimNames[ i ]] = this.selectedObject.realData[ 1 ][ i ];
 					}
 
 					// Create DAT.GUI object
@@ -263,12 +266,12 @@ class Scene {
 					}
 
 					// Add dataset index field to dat.gui.Controller
-					this.dims_folder.add( gui_data, id );
+					this.dims_folder.add( gui_data, this.index );
 
 					// Add sliders with real data values
 					var counter = 0;
 					for ( var key in gui_data ) {
-						if ( key != id ) {
+						if ( key != this.index ) {
 							var min = 0;
 							var max = 0;
 							for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
@@ -324,7 +327,7 @@ class Scene {
 							console.log(this.selectedObject.dataObject[1]);
 							var currDimName = this.property;
 							console.log("Current dimension is " + currDimName);
-							var currDimNum = this.dimNames.indexOf(currDimName) - 1;
+							var currDimNum = this.dimNames.indexOf(currDimName);
 							console.log("Current dimension number is " + currDimNum);
 							var initialValue = this.initialValue;
 							console.log("Initial value is " + initialValue);
@@ -406,10 +409,9 @@ class Scene {
 	}
 
 	moveSpheres() {
-		var i = 0;
 		if (this.selectedObject!=null)
 			this.unSelectObject(this.selectedObject);
-		for (i=0; i<this.groupOfSpheres.children.length; ++i){
+		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
 			var sphere = this.groupOfSpheres.children[i];
 			sphere.position.x = sphere.dataObject[1][this.proectionSubSpace[0]];
 			sphere.position.y = sphere.dataObject[1][this.proectionSubSpace[1]];
@@ -434,11 +436,11 @@ class Scene {
         var chooseDimArray = [];
 		var dimensionsForm = document.getElementById("dimensions_form");
 		var XYZSelector = dimensionsForm.getElementsByTagName("select");
-        for (var i = 0; i < XYZSelector.length; i++ ) {
+        for ( var i = 0; i < XYZSelector.length; i++ ) {
             var currSelector = XYZSelector[ i ];
-            for (var j = 1; j < this.dimNames.length; j++ ) {
-                var option = document.createElement("option");
-                if (this.proectionSubSpace[ i ] == j - 1)
+            for ( var j = 0; j < this.dimNames.length; j++ ) {
+				var option = document.createElement("option");
+                if ( this.proectionSubSpace[ i ] == j )
 					option.selected = true;
                 option.value = j.toString();
                 option.text = this.dimNames[ j ];
@@ -451,7 +453,8 @@ class Scene {
 		changeDimBtn.dimsSelectArray = chooseDimArray;
 		changeDimBtn.onclick=function(){
 			this.sceneObject.setNewSubSpace(parseInt(this.dimsSelectArray[0].value),
-				parseInt(this.dimsSelectArray[1].value), parseInt(this.dimsSelectArray[2].value));
+											parseInt(this.dimsSelectArray[1].value),
+											parseInt(this.dimsSelectArray[2].value));
         };
 	}
 
@@ -560,17 +563,21 @@ class Scene {
 		var row = document.createElement("tr");
 		thead.appendChild(row);
         var th = null;
-        for(var i = 0; i < this.dimNames.length; ++i ) {
+		th = document.createElement("th");
+		th.innerText = this.index.toString();
+		row.appendChild(th);
+
+		for(var i = 0; i < this.dimNames.length; ++i ) {
 			th = document.createElement("th");
 			th.innerText = this.dimNames[i].toString();
 			row.appendChild(th);
 		}
+
         var tbody = document.createElement("tbody");
         table.appendChild(tbody);
-        for ( var j=0; j < dataset.length; ++j ) {
-			var obj	= dataset[j];
+        for ( var j = 0; j < dataset.length; j++ ) {
+			var obj	= dataset[ j ];
 			row = document.createElement("tr");
-
 			th = document.createElement("th");
 			th.innerText = obj[0];
 			row.appendChild(th);
@@ -598,27 +605,27 @@ class Scene {
 		thead.appendChild(row);
 
 		var cell = null;
+		cell = document.createElement("th");
+		cell.innerText = this.index.toString();
+		row.appendChild(cell);
 
-		for(var i = 0; i < this.dimNames.length; ++i ) {
+		for(var i = 0; i < this.dimNames.length; i++ ) {
 			cell = document.createElement("th");
-			cell.innerText = this.dimNames[i].toString();
+			cell.innerText = this.dimNames[ i ].toString();
 			row.appendChild(cell);
 		}
-		cell = document.createElement("th");
-		cell.innerText = "Cluster";
-		row.appendChild(cell);
 
         var tbody = document.createElement("tbody");
         table.appendChild(tbody);
 
-		for ( var j=0; j < this.groupOfSpheres.children.length; ++j ){
-			var obj	= this.groupOfSpheres.children[j];
+		for ( var j = 0; j < this.groupOfSpheres.children.length; j++ ){
+			var obj	= this.groupOfSpheres.children[ j ];
 			row = document.createElement("tr");
 			tbody.appendChild(row);
 
 			cell = document.createElement("th");
-			cell.innerText = obj.realData[0].toString();
-			if (this.selectObject==obj)
+			cell.innerText = obj.realData[ 0 ].toString();
+			if (this.selectObject == obj)
 				cell.bgColor = invertColor(obj.material.color).getHexString();
 			else
 				cell.bgColor = obj.material.color.getHexString();
