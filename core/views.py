@@ -2,6 +2,8 @@
 Core Django views for VAR project
 """
 import json
+import logging
+
 from datetime import datetime
 from urllib.parse import urlencode, urlparse, parse_qs
 from django.http import HttpResponse
@@ -12,6 +14,11 @@ import pandas as pd
 from django.shortcuts import render
 from django.conf import settings
 from core import form_reactions
+
+
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
 
 
 def initRequest(request):
