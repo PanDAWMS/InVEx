@@ -76,7 +76,6 @@ def load_data(filename):
 def prepare_basic(norm_dataset, real_dataset, op_history):
     idx = [norm_dataset.index.name]
     columns = norm_dataset.columns.tolist()
-    dim_names = idx + columns
 
     metrics = calc.basicstatistics.BasicStatistics()
     real_dataset_stats_or = metrics.process_data(real_dataset)
@@ -89,10 +88,10 @@ def prepare_basic(norm_dataset, real_dataset, op_history):
     data = {
         'norm_dataset': pandas_to_js_list(norm_dataset),
         'real_dataset': pandas_to_js_list(real_dataset),
-        'dim_names': dim_names,
+        'dim_names': columns,
+        'index': idx,
         'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
         'operation_history': op_history,
-        'idx': idx,
         'corr_matrix': corr_matrix.values.tolist()
     }
     return data
