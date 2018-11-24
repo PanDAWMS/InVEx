@@ -142,17 +142,30 @@ class Scene {
             this.createGui();
 
 	}
-
-	// setDragControls(objects) {
-	// 	this.dragControls = new THREE.DragControls(objects, this.camera, this.renderer.domElement);
-	// 	this.dragControls.addEventListener( 'dragstart', function () {
-	// 		controls.enabled = false;
-	// 	} );
-	// 	this.dragControls.addEventListener( 'dragend', function () {
-	// 		controls.enabled = true;
-	// 	} );
-	// }
-
+	
+	saveParameters(){
+		return {'camerapos': this.camera.position, 'camerarot': this.camera.rotation, 'subspace': this.proectionSubSpace, 'sphrad': this.defaultSpRad};
+	}
+	
+	loadParameters(parametersDict){
+		if ('camerapos' in parametersDict)
+			this.camera.position.x = parametersDict['camerapos'].x;
+			this.camera.position.y = parametersDict['camerapos'].y;
+			this.camera.position.z = parametersDict['camerapos'].z;
+		
+		if ('camerarot' in parametersDict)
+			this.camera.rotation.order = parametersDict['camerarot']._order;
+			this.camera.rotation.x = parametersDict['camerarot']._x;
+			this.camera.rotation.y = parametersDict['camerarot']._y;
+			this.camera.rotation.z = parametersDict['camerarot']._z;
+		
+		if ('subspace' in parametersDict)
+			this.proectionSubSpace = parametersDict['subspace'];
+		
+		if ('sphrad' in parametersDict)
+			this.changeRad(parametersDict['sphrad']);
+		
+	}
 
     initLight() {
         //Create a new ambient light

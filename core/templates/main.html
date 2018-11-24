@@ -95,7 +95,7 @@
                     <div class="card border-dark mb-3">
                         <div class="card-header">Clustering</div>
                         <div class="card-body">
-                            <form action="" id="cluster_form" method="POST">
+                            <form onsubmit="add_parameters(this);" action="" id="cluster_form" method="POST">
                                 {% csrf_token %}
 							    <input type="hidden" name="formt" value="cluster">
                                 {% if saveid %}
@@ -161,22 +161,43 @@
 		function init() {
             clustering_parameters=[['KMeans', 'K means', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],['DBScan', 'DB scan']]
             createClusterElements(document.getElementById('clustering'), clustering_parameters);
-            var dimNames = {{ dim_names|safe }};
-            var index = {{ index|safe }};
-            var dataArray = {{ norm_dataset|safe }};
-            var realData = {{ real_dataset|safe }};
-            var statistics_real = {{ real_metrics|safe }};
-            var corr_matrix = {{ corr_matrix|safe }};
 
+            {% if dim_names %}
+            var dimNames = {{ dim_names|safe }};
             scene.setDimNames(dimNames);
+            {% endif %}
+
+            {% if index %}
+            var index = {{ index|safe }};
             scene.setIndex(index);
+            {% endif %}
+
+            {% if norm_dataset %}
+            var dataArray = {{ norm_dataset|safe }};
             var new_dataArray = fix_array(dataArray);
-            var new_realData = fix_array(realData);
-            printStats(statistics_real, dimNames);
-            scene.setRealStats(statistics_real);
             scene.setDataArray(new_dataArray);
+            {% endif %}
+
+            {% if real_dataset %}
+            var realData = {{ real_dataset|safe }};
+            var new_realData = fix_array(realData);
             scene.setRealData(new_realData);
             scene.printDataset(new_realData, "initial-dataset");
+            {% endif %}
+
+            {% if real_metrics %}
+            var statistics_real = {{ real_metrics|safe }};
+            printStats(statistics_real, dimNames);
+            scene.setRealStats(statistics_real);
+            {% endif %}
+
+            {% if corr_matrix %}
+            var corr_matrix = {{ corr_matrix|safe }};
+            {% endif %}
+
+            {% if visualparameters %}
+            scene.loadParameters({{ visualparameters|safe }});
+            {% endif %}
 
 
         Matrix({
@@ -429,6 +450,14 @@
         .attr("class", "y axis")
         .attr("transform", "translate(41," + margin.top + ")")
         .call(yAxis)
+    }
+
+    function add_parameters(submited_form){
+        new_input = document.createElement('input');
+        new_input.name = 'visualparameters';
+        new_input.type = 'hidden';
+        new_input.value = JSON.stringify(scene.saveParameters());
+        submited_form.appendChild(new_input);
     }
 
 	</script>

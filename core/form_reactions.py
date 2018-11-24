@@ -166,6 +166,8 @@ def clusterize(request):
     else:
         print('No method')
     data['saveid'] = save_data(original, dataset, op_history, request.POST['fdid'])
+    if 'visualparameters' in request.POST:
+        data['visualparameters'] = request.POST['visualparameters']
     return data
 
 # Here we have to implement prediction for point with updated coordinates
