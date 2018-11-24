@@ -12,3 +12,4 @@ out
 core/datafiles/*
 !core/datafiles/.keep
 __pycache__/
+/core/logs/*
