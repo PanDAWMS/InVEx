@@ -171,5 +171,5 @@ def clusterize(request):
 # Here we have to implement prediction for point with updated coordinates
 def predict_cluster(request):
     data = {}
-    data['request'] = request
+    data = {'test': '1234'}
     return data

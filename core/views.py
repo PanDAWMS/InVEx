@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from urllib.parse import urlencode, urlparse, parse_qs
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 import os
@@ -76,6 +77,7 @@ def main(request):
             data = form_reactions.clusterize(request)
         if request.POST['formt'] == 'rebuild':
             data = form_reactions.predict_cluster(request)
+            return JsonResponse(data)
 
     else:
         data = {

@@ -79,6 +79,10 @@ function createClusterElements(element, parameters) {
     select_element.elements=elements;
 }
 
+function sendAjaxPredicRequest(sfrcToken, dataObject){
+	
+}
+
 class Scene {
 
 	constructor(mainDiv, controlsDiv, outputDiv, defaultRadius, numberOfSegements) {
@@ -214,8 +218,6 @@ class Scene {
 		sphere.position.z = normData[1][this.proectionSubSpace[2]];
 		sphere.dataObject = normData;
 		sphere.realData = realData;
-        //sphere.clone();
-		//data[3] = sphere;
 		this.groupOfSpheres.add(sphere);
 		return sphere;
 	}
@@ -245,121 +247,126 @@ class Scene {
 			} )[ 0 ];
 
 			if ( res && res.object ) {
+			    // If True, unselect selected object
 				if (res.object == this.selectedObject) {
 					this.unSelectObject(this.selectedObject);
 					this.selectedObject = null;
 					if (this.dims_gui.__folders['Multidimensional Coordinates']) {
 						this.dims_gui.removeFolder(this.dims_folder);
 					}
-				} else {
-					if (this.selectedObject != null) {
-						this.unSelectObject(this.selectedObject);
-							if (this.dims_gui.__folders['Multidimensional Coordinates']) {
-								this.dims_gui.removeFolder(this.dims_folder);
-							}
-					}
-					this.selectedObject = res.object;
-					this.selectObject(this.selectedObject);
-					
-					// Set DAT.GUI Controllers
-					var gui_data = {};
-					gui_data[this.index] = this.selectedObject.dataObject[ 0 ];
-
-					// Set GUI fields for all coordinates (real data values)
-					for( var i = 0; i < this.selectedObject.realData[ 1 ].length; i++ ) {
-						gui_data[this.dimNames[ i ]] = this.selectedObject.realData[ 1 ][ i ];
-					}
-
-					// Create DAT.GUI object
-					this.createGui();
-
-					// Create new Folder
-					if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
-						this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
-					}
-
-					// Add dataset index field to dat.gui.Controller
-					this.dims_folder.add( gui_data, this.index );
-
-					// Add sliders with real data values
-					var counter = 0;
-					for ( var key in gui_data ) {
-						if ( key != this.index ) {
-							var min = 0;
-							var max = 0;
-							for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
-								if ( this.realStats[0][k] == 'Min' )
-									min = this.realStats[1][k][counter];
-								if ( this.realStats[0][k] == 'Max' )
-									max = this.realStats[1][k][counter];
-							}
-							this.dims_folder.add( gui_data, key, min, max ).listen();
-							counter++;
-						}
-					}
-					this.dims_folder.open();
-					this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
-
-					var obj = {
-						coordinates: this.selectedObject.dataObject[1],
-						csrf: this.csrf,
-						Recalculate:function() {
-							console.log("button clicked");
-							var request_data = this.coordinates;
-							console.log(request_data);
-							$.ajax({
-								type:"POST",
-								url: "",
-								data : { formt: 'rebuild', coordinates: this.coordinates, csrfmiddlewaretoken: this.csrf},
-								success : function(json) {
-									console.log("Finished");
-								},
-								failure: function(data) {
-									alert('Got an error dude');
-								}
-							})
-						}
-					};
-
-					this.dims_folder.add(obj,'Recalculate');
-
-
-					for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
-						var current_controller = this.dims_folder.__controllers[ i ];
-						current_controller.selectedObject = this.selectedObject;
-						current_controller.dimNames = this.dimNames;
-						current_controller.subSpace = this.proectionSubSpace;
-						current_controller.realStats = this.realStats;
-
-						current_controller.onChange(function(value) {
-					   		//console.log(value);
-						});
-
-						current_controller.onFinishChange(function(value) {
-							console.log(this.realStats);
-							console.log(this.selectedObject.dataObject[1]);
-							var currDimName = this.property;
-							console.log("Current dimension is " + currDimName);
-							var currDimNum = this.dimNames.indexOf(currDimName);
-							console.log("Current dimension number is " + currDimNum);
-							var initialValue = this.initialValue;
-							console.log("Initial value is " + initialValue);
-							console.log("New value is " + value);
-							var normValue = this.selectedObject.dataObject[1][currDimNum];
-							console.log("Current norm value is " + normValue);
-							var min = this.realStats[1][0][currDimNum];
-							var max = this.realStats[1][1][currDimNum];
-							var newNormValue = (( value - min ) / ( max - min )) * 100;
-							console.log("New norm value is " + newNormValue);
-							this.selectedObject.dataObject[1][currDimNum] = newNormValue;
-							console.log(this.selectedObject.dataObject[1]);
-							var sphere = this.selectedObject;
-							sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
-												sphere.dataObject[1][this.subSpace[1]],
-												sphere.dataObject[1][this.subSpace[2]]);
-						});
-					}
+					return true;
 				}
+				
+				// If true, unselect old object, select the new one
+                if (this.selectedObject != null) {
+                    this.unSelectObject(this.selectedObject);
+                        if (this.dims_gui.__folders['Multidimensional Coordinates']) {
+                            this.dims_gui.removeFolder(this.dims_folder);
+                        }
+                }
+				
+                this.selectedObject = res.object;
+                this.selectObject(this.selectedObject);
+
+                // Set DAT.GUI Controllers
+                var gui_data = {};
+                gui_data[this.index] = this.selectedObject.dataObject[ 0 ];
+
+                // Set GUI fields for all coordinates (real data values)
+                for( var i = 0; i < this.selectedObject.realData[ 1 ].length; i++ ) {
+                    gui_data[this.dimNames[ i ]] = this.selectedObject.realData[ 1 ][ i ];
+                }
+
+                // Create DAT.GUI object
+                this.createGui();
+
+                // Create new Folder
+                if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
+                    this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
+                }
+
+                // Add dataset index field to dat.gui.Controller
+                this.dims_folder.add( gui_data, this.index );
+
+                // Add sliders with real data values
+                var counter = 0;
+                for ( var key in gui_data ) {
+                    if ( key != this.index ) {
+                        var min = 0;
+                        var max = 0;
+                        for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
+                            if ( this.realStats[0][k] == 'Min' )
+                                min = this.realStats[1][k][counter];
+                            if ( this.realStats[0][k] == 'Max' )
+                                max = this.realStats[1][k][counter];
+                        }
+                        this.dims_folder.add( gui_data, key, min, max ).listen();
+                        counter++;
+                    }
+                }
+				
+                this.dims_folder.open();
+                this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
+
+                var obj = {
+                    coordinates: this.selectedObject.dataObject[1],
+                    csrf: this.csrf,
+                    Recalculate:function() {
+                        console.log("button clicked");
+                        var request_data = this.coordinates;
+                        console.log(request_data);
+                        $.ajax({
+                            type:"POST",
+                            url: "",
+                            data : { formt: 'rebuild', coordinates: this.coordinates, csrfmiddlewaretoken: this.csrf},
+                            success : function(json) {
+                                console.log(json);
+                            },
+                            failure: function(data) {
+                                alert('Got an error dude');
+                            }
+                        })
+                    }
+                };
+
+                this.dims_folder.add(obj,'Recalculate');
+
+
+                for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
+                    var current_controller = this.dims_folder.__controllers[ i ];
+                    current_controller.selectedObject = this.selectedObject;
+                    current_controller.dimNames = this.dimNames;
+                    current_controller.subSpace = this.proectionSubSpace;
+                    current_controller.realStats = this.realStats;
+
+                    current_controller.onChange(function(value) {
+                        //console.log(value);
+                    });
+
+                    current_controller.onFinishChange(function(value) {
+                        console.log(this.realStats);
+                        console.log(this.selectedObject.dataObject[1]);
+                        var currDimName = this.property;
+                        console.log("Current dimension is " + currDimName);
+                        var currDimNum = this.dimNames.indexOf(currDimName);
+                        console.log("Current dimension number is " + currDimNum);
+                        var initialValue = this.initialValue;
+                        console.log("Initial value is " + initialValue);
+                        console.log("New value is " + value);
+                        var normValue = this.selectedObject.dataObject[1][currDimNum];
+                        console.log("Current norm value is " + normValue);
+                        var min = this.realStats[1][0][currDimNum];
+                        var max = this.realStats[1][1][currDimNum];
+                        var newNormValue = (( value - min ) / ( max - min )) * 100;
+                        console.log("New norm value is " + newNormValue);
+                        this.selectedObject.dataObject[1][currDimNum] = newNormValue;
+                        console.log(this.selectedObject.dataObject[1]);
+                        var sphere = this.selectedObject;
+                        sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
+                                            sphere.dataObject[1][this.subSpace[1]],
+                                            sphere.dataObject[1][this.subSpace[2]]);
+                    });
+                }
 
 			} else {
 				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
@@ -567,7 +574,6 @@ class Scene {
     // nrows = the number of rows
     printDataset(dataset, elementID) {
         var initial_dataset = document.getElementById(elementID);
-		console.log(initial_dataset);
         var table = document.createElement("table");
         table.setAttribute("id", "dataset");
 		table.classList.add("table", "table-sm", "table-hover");
