@@ -103,9 +103,6 @@ class Scene {
 			mainDiv.sceneObject = this;
 
 			this.selectedObject = null;
-			this.raycaster = new THREE.Raycaster();
-			this.mouseVector = new THREE.Vector3();
-			this.dragControls = null;
 
 			// init renderer
 			this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -131,6 +128,11 @@ class Scene {
 			this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
 			this.controls.enableRotate = true;
 			this.controls.saveState();
+			
+			this.raycaster = new THREE.Raycaster();
+			this.mouseVector = new THREE.Vector3();
+			this.dragControls = null;
+			this.dragEnabled = false;
 
             this.groupOfGrid.add(drawPlainGrid());
             this.groupOfGrid.add(drawAxes());
@@ -247,6 +249,36 @@ class Scene {
 		scene.selectObject(sphere);
 	}
 	
+	activateDragControl(){
+		this.dragControls = new THREE.DragControls(this.groupOfSpheres.children, this.camera, this.renderer.domElement );
+		this.dragControls.scene = this;
+		this.dragControls.addEventListener( 'dragstart', function ( event ) { 
+			event.target.scene.controls.enabled = false; 
+		} );
+		this.dragControls.addEventListener( 'dragend', function ( event ) { 
+			event.target.scene.controls.enabled = true; 
+		} );
+		this.dragControls.addEventListener( 'drag', this.onSphereMove);
+		this.dragControls.activate();
+		this.dragEnabled = true;
+	}
+	
+	deactivateDragControl(){
+		this.dragControls.deactivate();
+		this.dragEnabled = false;
+	}
+
+	onSphereMove(event) {
+		var obj = event.object;
+		if (event.target.scene.selectedObject == obj)
+			obj.selectedCircut.position.x = obj.position.x;
+			obj.selectedCircut.position.y = obj.position.y;
+			obj.selectedCircut.position.z = obj.position.z;
+		obj.dataObject[1][event.target.scene.proectionSubSpace[0]] = obj.position.x;
+		obj.dataObject[1][event.target.scene.proectionSubSpace[1]] = obj.position.y;
+		obj.dataObject[1][event.target.scene.proectionSubSpace[2]] = obj.position.z;
+	}
+	
 	animate() {
 		this.renderer.render( this.scene, this.camera );
 	}
@@ -273,7 +305,7 @@ class Scene {
 
 			if ( res && res.object ) {
 			    // If True, unselect selected object
-				if (res.object == this.selectedObject) {
+				if ((res.object == this.selectedObject) && !this.dragEnabled) {
 					this.unSelectObject(this.selectedObject);
 					this.selectedObject = null;
 					if (this.dims_gui.__folders['Multidimensional Coordinates']) {
