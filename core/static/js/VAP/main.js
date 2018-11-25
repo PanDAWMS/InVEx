@@ -79,8 +79,21 @@ function createClusterElements(element, parameters) {
     select_element.elements=elements;
 }
 
-function sendAjaxPredicRequest(sfrcToken, dataObject){
-	
+function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
+	data = { formt: 'rebuild', data: JSON.stringify(selectedObject.dataObject[1])};
+	allData = Object.assign.apply({}, [data, otherData]);
+	$.ajax({
+				type:"POST",
+				url: "",
+				data : allData,
+				success : function(results_dict) {
+					scene.changeCluster(selectedObject, results_dict['results'][0]);
+					console.log(results_dict['clustertype']);
+				},
+				failure: function(data) {
+					alert('There was an error. Sorry');
+				}
+			})
 }
 
 class Scene {
@@ -198,6 +211,10 @@ class Scene {
 		this.index = idx;
 	}
 
+	setSource(fdid){
+		this.fdid = fdid;
+	}
+	
     setDataArray(normData) {
         this.normData = normData;
     }
@@ -210,18 +227,26 @@ class Scene {
 		this.realStats = stats;
 	}
 
-	createSphere(normData, realData, col){
-		var material = new THREE.MeshPhongMaterial( {color: col} );
+	createSphere(normData, realData, cluster){
+		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
 		sphere.position.z = normData[1][this.proectionSubSpace[2]];
+		normData[2] = cluster;
 		sphere.dataObject = normData;
 		sphere.realData = realData;
 		this.groupOfSpheres.add(sphere);
 		return sphere;
 	}
 
+	changeCluster(sphere, newCluster){
+		scene.unSelectObject(sphere);
+		sphere.dataObject[2] = newCluster;
+		sphere.material.color = this.clusters_color_scheme[newCluster];
+		scene.selectObject(sphere);
+	}
+	
 	animate() {
 		this.renderer.render( this.scene, this.camera );
 	}
@@ -310,22 +335,10 @@ class Scene {
 
                 var obj = {
                     coordinates: this.selectedObject.dataObject[1],
-                    csrf: this.csrf,
+					selectedObject: this.selectedObject,
+					scene: this,
                     Recalculate:function() {
-                        console.log("button clicked");
-                        var request_data = this.coordinates;
-                        console.log(request_data);
-                        $.ajax({
-                            type:"POST",
-                            url: "",
-                            data : { formt: 'rebuild', coordinates: this.coordinates, csrfmiddlewaretoken: this.csrf},
-                            success : function(json) {
-                                console.log(json);
-                            },
-                            failure: function(data) {
-                                alert('Got an error dude');
-                            }
-                        })
+						sendAjaxPredicRequest(this.selectedObject, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
                     }
                 };
 
@@ -344,23 +357,23 @@ class Scene {
                     });
 
                     current_controller.onFinishChange(function(value) {
-                        console.log(this.realStats);
-                        console.log(this.selectedObject.dataObject[1]);
+                        //console.log(this.realStats);
+                        //console.log(this.selectedObject.dataObject[1]);
                         var currDimName = this.property;
-                        console.log("Current dimension is " + currDimName);
+                        //console.log("Current dimension is " + currDimName);
                         var currDimNum = this.dimNames.indexOf(currDimName);
-                        console.log("Current dimension number is " + currDimNum);
+                        //console.log("Current dimension number is " + currDimNum);
                         var initialValue = this.initialValue;
-                        console.log("Initial value is " + initialValue);
-                        console.log("New value is " + value);
+                        //console.log("Initial value is " + initialValue);
+                        //console.log("New value is " + value);
                         var normValue = this.selectedObject.dataObject[1][currDimNum];
-                        console.log("Current norm value is " + normValue);
+                        //console.log("Current norm value is " + normValue);
                         var min = this.realStats[1][0][currDimNum];
                         var max = this.realStats[1][1][currDimNum];
                         var newNormValue = (( value - min ) / ( max - min )) * 100;
-                        console.log("New norm value is " + newNormValue);
+                        //console.log("New norm value is " + newNormValue);
                         this.selectedObject.dataObject[1][currDimNum] = newNormValue;
-                        console.log(this.selectedObject.dataObject[1]);
+                        //console.log(this.selectedObject.dataObject[1]);
                         var sphere = this.selectedObject;
                         sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
                                             sphere.dataObject[1][this.subSpace[1]],
@@ -525,7 +538,6 @@ class Scene {
         });
     }
 
-
     // read algorithm parameters from json file
     setAlgorithmParams() {
         
@@ -567,8 +579,6 @@ class Scene {
         this.resetControls();
         this.printControls();
 	}
-
-
 
     // print fragment of the initial dataset
     // nrows = the number of rows

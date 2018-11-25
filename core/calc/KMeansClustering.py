@@ -1,6 +1,7 @@
 from . import baseoperationclass
 from sklearn.cluster import KMeans
 import numpy as np
+import pickle
 
 CLUST_NUM = 3
 
@@ -8,6 +9,7 @@ CLUST_NUM = 3
 class KMeansClustering(baseoperationclass.BaseOperationClass):
 
     _operation_name = 'K-Means Clustering'
+    _type_of_operation = 'cluster'
 
     def __init__(self):
         self.clust_numbers = CLUST_NUM
@@ -31,13 +33,15 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def save_results(self):
-        return {'results': self.results.tolist(), 'cent': self.cent.tolist()}
+        return {'results': self.results.tolist(), 'cent': self.cent.tolist(), 'dump': pickle.dumps(self.model).hex()}
 
     def load_results(self, results_dict):
         if 'results' in results_dict and results_dict['results'] is not None:
             self.results = np.array(results_dict['results'])
         if 'cent' in results_dict and results_dict['cent'] is not None:
             self.cent = np.array(results_dict['cent'])
+        if 'dump' in results_dict and results_dict['dump'] is not None:
+            self.model = pickle.loads(bytes.fromhex(results_dict['dump']))
         return True
 
     def process_data(self, dataset):

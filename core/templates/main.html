@@ -210,17 +210,23 @@
 
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
-            var clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
+            scene.clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
+            {% else %}
+            scene.clusters_color_scheme = [new THREE.Color(1,1,1)];
             {% endif %}
             var objects = [];
 			for ( i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters_color_scheme[clusters[i]].clone() ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[i] ));
                 {% else %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], new THREE.Color( 1,1,1 ) ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0 ));
 				{% endif %}
 			}
 			scene.createControlElements();
+
+            {% if saveid %}
+                scene.setSource('{{ saveid|safe }}');
+            {% endif %}
 
             //scene.setDragControls(objects);
 
