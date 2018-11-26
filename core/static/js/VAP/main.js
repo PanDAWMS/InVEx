@@ -431,8 +431,8 @@ class Scene {
                         //console.log("New value is " + value);
                         var normValue = this.selectedObject.dataObject[1][currDimNum];
                         //console.log("Current norm value is " + normValue);
-                        var min = this.realStats[1][0][currDimNum];
-                        var max = this.realStats[1][1][currDimNum];
+                        var min = this.realStats[1][1][currDimNum];
+                        var max = this.realStats[1][2][currDimNum];
                         var newNormValue = (( value - min ) / ( max - min )) * 100;
                         //console.log("New norm value is " + newNormValue);
                         this.selectedObject.dataObject[1][currDimNum] = newNormValue;
