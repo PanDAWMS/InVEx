@@ -270,13 +270,38 @@ class Scene {
 
 	onSphereMove(event) {
 		var obj = event.object;
-		if (event.target.scene.selectedObject == obj)
+		if (obj.position.x<0)
+			obj.position.x = 0;
+		else
+			if (obj.position.x>100)
+				obj.position.x=100;
+		if (obj.position.y<0)
+			obj.position.y = 0;
+		else
+			if (obj.position.y>100)
+				obj.position.y=100;
+		if (obj.position.z<0)
+			obj.position.z = 0;
+		else
+			if (obj.position.z>100)
+				obj.position.z=100;
+		if (event.target.scene.selectedObject == obj){
 			obj.selectedCircut.position.x = obj.position.x;
 			obj.selectedCircut.position.y = obj.position.y;
 			obj.selectedCircut.position.z = obj.position.z;
-		obj.dataObject[1][event.target.scene.proectionSubSpace[0]] = obj.position.x;
-		obj.dataObject[1][event.target.scene.proectionSubSpace[1]] = obj.position.y;
-		obj.dataObject[1][event.target.scene.proectionSubSpace[2]] = obj.position.z;
+		}
+		var x = event.target.scene.proectionSubSpace[0];
+		var y = event.target.scene.proectionSubSpace[1];
+		var z = event.target.scene.proectionSubSpace[2];
+		var min = event.target.scene.realStats[1][0];
+		var max = event.target.scene.realStats[1][1];
+		obj.dataObject[1][x] = obj.position.x;
+		obj.dataObject[1][y] = obj.position.y;
+		obj.dataObject[1][z] = obj.position.z;
+		obj.realData[1][x] = obj.position.x * (max[x] - min[x]) / 100 + min[x];
+		obj.realData[1][y] = obj.position.y * (max[y] - min[y]) / 100 + min[y];
+		obj.realData[1][z] = obj.position.z * (max[z] - min[z]) / 100 + min[z];
+		event.target.scene.printDataDialog(obj);
 	}
 	
 	animate() {
@@ -289,6 +314,100 @@ class Scene {
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize( this.mainDiv.clientWidth, this.mainDiv.clientHeight );
 
+	}
+	
+	printDataDialog(sphereToPrint){
+				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
+					this.dims_gui.removeFolder(this.dims_folder);
+				}
+				// Set DAT.GUI Controllers
+                var gui_data = {};
+                this.gui_data = gui_data;
+                gui_data[this.index] = sphereToPrint.dataObject[ 0 ];
+
+                // Set GUI fields for all coordinates (real data values)
+                for( var i = 0; i < sphereToPrint.realData[ 1 ].length; i++ ) {
+                    gui_data[this.dimNames[ i ]] = sphereToPrint.realData[ 1 ][ i ];
+                }
+
+                // Create DAT.GUI object
+                this.createGui();
+
+                // Create new Folder
+                if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
+                    this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
+                }
+
+                // Add dataset index field to dat.gui.Controller
+                this.dims_folder.add( gui_data, this.index );
+
+                // Add sliders with real data values
+                var counter = 0;
+                for ( var key in gui_data ) {
+                    if ( key != this.index ) {
+                        var min = 0;
+                        var max = 0;
+                        for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
+                            if ( this.realStats[0][k] == 'Min' )
+                                min = this.realStats[1][k][counter];
+                            if ( this.realStats[0][k] == 'Max' )
+                                max = this.realStats[1][k][counter];
+                        }
+                        this.dims_folder.add( gui_data, key, min, max ).listen();
+                        counter++;
+                    }
+                }
+				
+                this.dims_folder.open();
+                this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
+
+                var obj = {
+                    coordinates: sphereToPrint.dataObject[1],
+					selectedObject: sphereToPrint,
+					scene: this,
+                    Recalculate:function() {
+						sendAjaxPredicRequest(sphereToPrint, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
+                    }
+                };
+
+                this.dims_folder.add(obj,'Recalculate');
+
+
+                for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
+                    var current_controller = this.dims_folder.__controllers[ i ];
+                    current_controller.selectedObject = sphereToPrint;
+                    current_controller.dimNames = this.dimNames;
+                    current_controller.subSpace = this.proectionSubSpace;
+                    current_controller.realStats = this.realStats;
+
+                    current_controller.onChange(function(value) {
+                        //console.log(value);
+                    });
+
+                    current_controller.onFinishChange(function(value) {
+                        //console.log(this.realStats);
+                        //console.log(this.selectedObject);
+                        var currDimName = this.property;
+                        //console.log("Current dimension is " + currDimName);
+                        var currDimNum = this.dimNames.indexOf(currDimName);
+                        //console.log("Current dimension number is " + currDimNum);
+                        var initialValue = this.initialValue;
+                        //console.log("Initial value is " + initialValue);
+                        //console.log("New value is " + value);
+                        var normValue = this.selectedObject.dataObject[1][currDimNum];
+                        //console.log("Current norm value is " + normValue);
+                        var min = this.realStats[1][0][currDimNum];
+                        var max = this.realStats[1][1][currDimNum];
+                        var newNormValue = (( value - min ) / ( max - min )) * 100;
+                        //console.log("New norm value is " + newNormValue);
+                        this.selectedObject.dataObject[1][currDimNum] = newNormValue;
+                        //console.log(this.selectedObject.dataObject[1]);
+                        var sphere = this.selectedObject;
+                        sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
+                                            sphere.dataObject[1][this.subSpace[1]],
+                                            sphere.dataObject[1][this.subSpace[2]]);
+                    });
+                }
 	}
 
 	onMouseClick(event) {
@@ -324,94 +443,8 @@ class Scene {
 				
                 this.selectedObject = res.object;
                 this.selectObject(this.selectedObject);
-
-                // Set DAT.GUI Controllers
-                var gui_data = {};
-                gui_data[this.index] = this.selectedObject.dataObject[ 0 ];
-
-                // Set GUI fields for all coordinates (real data values)
-                for( var i = 0; i < this.selectedObject.realData[ 1 ].length; i++ ) {
-                    gui_data[this.dimNames[ i ]] = this.selectedObject.realData[ 1 ][ i ];
-                }
-
-                // Create DAT.GUI object
-                this.createGui();
-
-                // Create new Folder
-                if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
-                    this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
-                }
-
-                // Add dataset index field to dat.gui.Controller
-                this.dims_folder.add( gui_data, this.index );
-
-                // Add sliders with real data values
-                var counter = 0;
-                for ( var key in gui_data ) {
-                    if ( key != this.index ) {
-                        var min = 0;
-                        var max = 0;
-                        for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
-                            if ( this.realStats[0][k] == 'Min' )
-                                min = this.realStats[1][k][counter];
-                            if ( this.realStats[0][k] == 'Max' )
-                                max = this.realStats[1][k][counter];
-                        }
-                        this.dims_folder.add( gui_data, key, min, max ).listen();
-                        counter++;
-                    }
-                }
 				
-                this.dims_folder.open();
-                this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
-
-                var obj = {
-                    coordinates: this.selectedObject.dataObject[1],
-					selectedObject: this.selectedObject,
-					scene: this,
-                    Recalculate:function() {
-						sendAjaxPredicRequest(this.selectedObject, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
-                    }
-                };
-
-                this.dims_folder.add(obj,'Recalculate');
-
-
-                for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
-                    var current_controller = this.dims_folder.__controllers[ i ];
-                    current_controller.selectedObject = this.selectedObject;
-                    current_controller.dimNames = this.dimNames;
-                    current_controller.subSpace = this.proectionSubSpace;
-                    current_controller.realStats = this.realStats;
-
-                    current_controller.onChange(function(value) {
-                        //console.log(value);
-                    });
-
-                    current_controller.onFinishChange(function(value) {
-                        //console.log(this.realStats);
-                        //console.log(this.selectedObject.dataObject[1]);
-                        var currDimName = this.property;
-                        //console.log("Current dimension is " + currDimName);
-                        var currDimNum = this.dimNames.indexOf(currDimName);
-                        //console.log("Current dimension number is " + currDimNum);
-                        var initialValue = this.initialValue;
-                        //console.log("Initial value is " + initialValue);
-                        //console.log("New value is " + value);
-                        var normValue = this.selectedObject.dataObject[1][currDimNum];
-                        //console.log("Current norm value is " + normValue);
-                        var min = this.realStats[1][0][currDimNum];
-                        var max = this.realStats[1][1][currDimNum];
-                        var newNormValue = (( value - min ) / ( max - min )) * 100;
-                        //console.log("New norm value is " + newNormValue);
-                        this.selectedObject.dataObject[1][currDimNum] = newNormValue;
-                        //console.log(this.selectedObject.dataObject[1]);
-                        var sphere = this.selectedObject;
-                        sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
-                                            sphere.dataObject[1][this.subSpace[1]],
-                                            sphere.dataObject[1][this.subSpace[2]]);
-                    });
-                }
+				this.printDataDialog(res.object);
 
 			} else {
 				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
@@ -464,10 +497,13 @@ class Scene {
 		this.defaultSpRad = newRad;
 		var i = 0;
 		for (i=0; i < oldGroup.children.length; ++i) {
-			if (this.selectedObject === oldGroup.children[i])
-				this.selectedObject = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].material.color);
+			if (this.selectedObject === oldGroup.children[i]){
+				this.unSelectObject(this.selectedObject);
+				this.selectedObject = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2]);
+				this.selectObject(this.selectedObject);
+			}
 			else {
-                var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].material.color);
+                var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2]);
             }
 		}
         this.scene.add(this.groupOfSpheres);
@@ -582,7 +618,7 @@ class Scene {
         radiusRange.value = this.defaultSpRad.toString();
 		changeRadiusBtn.onclick = function() {
             var radiusRange = document.getElementById("radiusRange");
-			this.sceneObject.changeRad(parseInt(radiusRange.value));
+			this.sceneObject.changeRad(parseFloat(radiusRange.value));
         };
     }
 
