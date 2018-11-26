@@ -18,7 +18,7 @@
             <div class="col">
                 <ul class="nav nav-tabs" id="tabs" role="tablist">
                   <li class="nav-item">
-                    <a class="nav-link active" id="download-tab" data-toggle="tab" href="#download" role="tab" aria-controls="download" aria-selected="true">Download File</a>
+                    <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload" role="tab" aria-controls="upload" aria-selected="true">Upload File</a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link" id="print-tab" data-toggle="tab" href="#print" role="tab" aria-controls="print" aria-selected="false">Print Data</a>
@@ -34,7 +34,7 @@
                   </li>
                 </ul>
                 <div class="tab-content">
-                  <div class="tab-pane fade show active" id="download" role="tabpanel" aria-labelledby="download-tab">
+                  <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
                       <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
                             <div class="custom-file">

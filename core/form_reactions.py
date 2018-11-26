@@ -104,39 +104,21 @@ def new_csv_file_upload(request):
                                                  True)
     else:
         return {}
-
-    # get slice of data from the initial DataFrame
-    slice = dataset
-
-    # create the copy of current data slice
-    slice_copy = slice.copy()
-
-    # clean data slice
-    calc.importcsv.clean_dataset(slice)
-    calc.importcsv.dropNA(slice)
-
-    # get all columns, that left after cleaning
-    columns = slice.columns.tolist()
-
-    # normalization of the data slice
-    norm_slice = calc.importcsv.normalization(slice, columns)
-
-    # cleaning data after normalization
-    calc.importcsv.dropNA(norm_slice)
-
-    # get all columns, left after the second cleaning
-    columns = norm_slice.columns.tolist()
-
-    # reduce the initial data slice with columns, which were left after cleaning and normalization
-    slice_copy = slice_copy.loc[:, columns]
-
+    dataset_copy = dataset.copy()
+    calc.importcsv.clean_dataset(dataset)
+    calc.importcsv.dropNA(dataset)
+    columns = dataset.columns.tolist()
+    norm_dataset = calc.importcsv.normalization(dataset, columns)
+    calc.importcsv.dropNA(norm_dataset)
+    columns = norm_dataset.columns.tolist()
+    dataset_copy = dataset_copy.loc[:, columns]
     op_history = calc.operationshistory.OperationHistory()
     metrics = calc.basicstatistics.BasicStatistics()
-    metrics.process_data(norm_slice)
-    op_history.append(norm_slice, metrics)
-    data = prepare_basic(norm_slice, slice_copy, op_history)
+    metrics.process_data(norm_dataset)
+    op_history.append(norm_dataset, metrics)
+    data = prepare_basic(norm_dataset, dataset_copy, op_history)
     data['request'] = request
-    data['saveid'] = save_data(slice_copy, norm_slice, op_history)
+    data['saveid'] = save_data(dataset_copy, norm_dataset, op_history)
     return data
 
 
