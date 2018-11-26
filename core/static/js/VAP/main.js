@@ -704,6 +704,10 @@ class Scene {
 
 		var cell = null;
 		cell = document.createElement("th");
+		cell.innerText = "Cluster";
+		row.appendChild(cell);
+
+		cell = document.createElement("th");
 		cell.innerText = this.index.toString();
 		row.appendChild(cell);
 
@@ -720,13 +724,16 @@ class Scene {
 			var obj	= this.groupOfSpheres.children[ j ];
 			row = document.createElement("tr");
 			tbody.appendChild(row);
-
 			cell = document.createElement("th");
-			cell.innerText = obj.realData[ 0 ].toString();
+			cell.innerText = obj.dataObject[ 2 ];
 			if (this.selectObject == obj)
 				cell.bgColor = invertColor(obj.material.color).getHexString();
 			else
 				cell.bgColor = obj.material.color.getHexString();
+			row.appendChild(cell);
+
+			cell = document.createElement("th");
+			cell.innerText = obj.realData[ 0 ].toString();
 			row.appendChild(cell);
 
 			for(var i = 0; i < obj.realData[1].length; i++ ){
