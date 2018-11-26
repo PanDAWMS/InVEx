@@ -118,6 +118,10 @@
                                 </div>
                             </form>
                             <form>
+                                <div class="form-group form-check">
+                                    <input type="checkbox" class="form-check-input" id="dragControls" onchange="changeDragMode()">
+                                    <label class="form-check-label" for="dragControls">Activate Drag Controls</label>
+                                </div>
                               <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="resetBtn">Reset Camera</button>
                           </form>
                         </div>
@@ -152,6 +156,18 @@
 		function onSceneResize() {
 			scene.onResize();
 		}
+
+		function changeDragMode() {
+		    var dragControls = document.getElementById("dragControls");
+            if (dragControls.checked) {
+                scene.activateDragControl();
+            } else {
+                if (scene.dragEnabled) {
+                    scene.deactivateDragControl();
+                }
+            }
+        }
+
 		var scene=new Scene(document.getElementById("picture"), document.getElementById("controls"), document.getElementById("output"), 0.75, countOfEdges);
 		animate();
 		init();
