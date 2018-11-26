@@ -13,3 +13,4 @@ core/datafiles/*
 !core/datafiles/.keep
 __pycache__/
 /core/logs/*
+!/core/logs/.keep

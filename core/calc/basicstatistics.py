@@ -7,6 +7,7 @@ DESCRIPTION = ['Min', 'Max', 'Mean', 'Std', '25%', '50%', '75%', 'Sum', 'Skew', 
 
 class BasicStatistics(baseoperationclass.BaseOperationClass):
     _operation_name = "BasicStats"
+    _type_of_operation = 'calculation'
 
     def __init__(self):
         self.results = None

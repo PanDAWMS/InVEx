@@ -62,7 +62,7 @@ def load_data(filename):
     file = open(SAVED_FILES_PATH + filename, "r")
     data = file.readline()
     original_dataset = table_to_df(data)
-    #original_dataset = pd.read_json(data, orient='table')
+    # original_dataset = pd.read_json(data, orient='table')
     data = file.readline()
     norm_dataset = table_to_df(data)
     # norm_dataset = pd.read_json(data, orient='table')
@@ -166,10 +166,22 @@ def clusterize(request):
     else:
         print('No method')
     data['saveid'] = save_data(original, dataset, op_history, request.POST['fdid'])
+    data['visualparameters'] = request.POST['visualparameters']
     return data
+
 
 # Here we have to implement prediction for point with updated coordinates
 def predict_cluster(request):
+    if ('fdid' not in request.POST) or ('data' not in request.POST):
+        return {}
+    original, dataset, op_history = load_data(request.POST['fdid'])
+    if op_history is None:
+        return {}
     data = {}
-    data['request'] = request
+    operation = op_history.get_previous_step()[0]
+    if (operation._type_of_operation != 'cluster'):
+        return {}
+    result = operation.predict([json.loads(request.POST['data'])]).tolist()
+    data['results'] = result
+    data['clustertype'] = operation._operation_name
     return data
