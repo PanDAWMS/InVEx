@@ -166,6 +166,7 @@ def clusterize(request):
     else:
         print('No method')
     data['saveid'] = save_data(original, dataset, op_history, request.POST['fdid'])
+    data['visualparameters'] = request.POST['visualparameters']
     return data
 
 
