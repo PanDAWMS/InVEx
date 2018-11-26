@@ -634,10 +634,11 @@ class Scene {
         var printAllBtn = document.getElementById("printBtn");
         printAllBtn.sceneObject = this;
         printAllBtn.onclick=function() {
-            if ( document.getElementById('table-results') ) {
+            if ( document.getElementById("cluster-table") ) {
 			    this.outputDiv.removeChild(this.outputTable);
 		    }
-			this.sceneObject.printClusters("clusters-print");
+			this.sceneObject.printClusters("clusters");
+            $('#cluster-table').DataTable();
         };
     }
 
@@ -653,7 +654,7 @@ class Scene {
     printDataset(dataset, elementID) {
         var initial_dataset = document.getElementById(elementID);
         var table = document.createElement("table");
-        table.setAttribute("id", "dataset");
+        table.setAttribute("id", elementID+"-table");
 		table.classList.add("table", "table-sm", "table-hover");
         var thead = document.createElement("thead");
         table.appendChild(thead);
@@ -694,7 +695,7 @@ class Scene {
 	printClusters(elementID) {
 		var root = document.getElementById(elementID);
 		var table = document.createElement("table");
-        table.setAttribute("id", "table-results");
+        table.setAttribute("id", "cluster-table");
 		table.classList.add("table", "table-sm", "table-hover");
         var thead = document.createElement("thead");
         table.appendChild(thead);
@@ -702,6 +703,10 @@ class Scene {
 		thead.appendChild(row);
 
 		var cell = null;
+		cell = document.createElement("th");
+		cell.innerText = "Cluster";
+		row.appendChild(cell);
+
 		cell = document.createElement("th");
 		cell.innerText = this.index.toString();
 		row.appendChild(cell);
@@ -719,13 +724,16 @@ class Scene {
 			var obj	= this.groupOfSpheres.children[ j ];
 			row = document.createElement("tr");
 			tbody.appendChild(row);
-
 			cell = document.createElement("th");
-			cell.innerText = obj.realData[ 0 ].toString();
+			cell.innerText = obj.dataObject[ 2 ];
 			if (this.selectObject == obj)
 				cell.bgColor = invertColor(obj.material.color).getHexString();
 			else
 				cell.bgColor = obj.material.color.getHexString();
+			row.appendChild(cell);
+
+			cell = document.createElement("th");
+			cell.innerText = obj.realData[ 0 ].toString();
 			row.appendChild(cell);
 
 			for(var i = 0; i < obj.realData[1].length; i++ ){

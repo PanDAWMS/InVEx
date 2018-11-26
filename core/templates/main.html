@@ -18,7 +18,7 @@
             <div class="col">
                 <ul class="nav nav-tabs" id="tabs" role="tablist">
                   <li class="nav-item">
-                    <a class="nav-link active" id="download-tab" data-toggle="tab" href="#download" role="tab" aria-controls="download" aria-selected="true">Download File</a>
+                    <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload" role="tab" aria-controls="upload" aria-selected="true">Upload File</a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link" id="print-tab" data-toggle="tab" href="#print" role="tab" aria-controls="print" aria-selected="false">Print Data</a>
@@ -34,7 +34,7 @@
                   </li>
                 </ul>
                 <div class="tab-content">
-                  <div class="tab-pane fade show active" id="download" role="tabpanel" aria-labelledby="download-tab">
+                  <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
                       <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
                             <div class="custom-file">
@@ -47,10 +47,8 @@
                       </form>
                   </div>
                   <div class="tab-pane fade" id="print" role="tabpanel" aria-labelledby="print-tab">
-                      <div class="pre-scrollable" id="initial-dataset"></div>
                   </div>
                   <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
-                        <div class="pre-scrollable" id="dataset-stats"></div>
                   </div>
                   <div class="tab-pane fade" id="corr" role="tabpanel" aria-labelledby="corr-tab">
                         <div id="corr-matrix">
@@ -59,7 +57,7 @@
                   </div>
                   <div class="tab-pane fade" id="clusters" role="tabpanel" aria-labelledby="clusters-tab">
                         <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printBtn">Print Results</button>
-                        <div class="pre-scrollable" id="clusters-print"></div>
+{#                        <div class="pre-scrollable" id="clusters-print"></div>#}
                   </div>
                 </div>
             </div>
@@ -143,6 +141,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="{% static "js/bootstrap.min.js" %}"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 {% endblock %}
 	<script>
     // SETTING:
@@ -167,6 +166,12 @@
                 }
             }
         }
+
+        $(document).ready(function() {
+            $('#print-table').DataTable();
+            $('#stats-table').DataTable();
+
+        } );
 
 		var scene=new Scene(document.getElementById("picture"), document.getElementById("controls"), document.getElementById("output"), 0.75, countOfEdges);
 		animate();
@@ -198,7 +203,7 @@
             var realData = {{ real_dataset|safe }};
             var new_realData = fix_array(realData);
             scene.setRealData(new_realData);
-            scene.printDataset(new_realData, "initial-dataset");
+            scene.printDataset(new_realData, "print");
             {% endif %}
 
             {% if real_metrics %}
@@ -268,9 +273,9 @@
         }
 
         function printStats(stats, dimensions){
-            var initial_dataset = document.getElementById("dataset-stats");
+            var initial_dataset = document.getElementById("stats");
             var table = document.createElement("table");
-            table.setAttribute("id", "dataset");
+            table.setAttribute("id", "stats-table");
             table.classList.add("table", "table-sm", "table-hover");
             var thead = document.createElement("thead");
             table.appendChild(thead);
