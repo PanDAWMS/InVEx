@@ -634,10 +634,11 @@ class Scene {
         var printAllBtn = document.getElementById("printBtn");
         printAllBtn.sceneObject = this;
         printAllBtn.onclick=function() {
-            if ( document.getElementById('table-results') ) {
+            if ( document.getElementById("cluster-table") ) {
 			    this.outputDiv.removeChild(this.outputTable);
 		    }
-			this.sceneObject.printClusters("clusters-print");
+			this.sceneObject.printClusters("clusters");
+            $('#cluster-table').DataTable();
         };
     }
 
@@ -653,7 +654,7 @@ class Scene {
     printDataset(dataset, elementID) {
         var initial_dataset = document.getElementById(elementID);
         var table = document.createElement("table");
-        table.setAttribute("id", "dataset");
+        table.setAttribute("id", elementID+"-table");
 		table.classList.add("table", "table-sm", "table-hover");
         var thead = document.createElement("thead");
         table.appendChild(thead);
@@ -694,7 +695,7 @@ class Scene {
 	printClusters(elementID) {
 		var root = document.getElementById(elementID);
 		var table = document.createElement("table");
-        table.setAttribute("id", "table-results");
+        table.setAttribute("id", "cluster-table");
 		table.classList.add("table", "table-sm", "table-hover");
         var thead = document.createElement("thead");
         table.appendChild(thead);
