@@ -20,15 +20,13 @@ def normalization(df, cols_to_norm):
     return (df[cols_to_norm] - df[cols_to_norm].min()) / (df[cols_to_norm].max() - df[cols_to_norm].min()) * 100
 
 
-def clean_dataset(df):
-    to_drop = []
-    for item in df:
-        if df[item].dtypes == 'object':
-            to_drop.append(item)
-    df.drop(to_drop, 1, inplace=True)
-    #df.drop('Unnamed: 0', 1, inplace=True)
-
-
 def dropNA(df):
     df.dropna(axis=1, how='any', inplace=True)
     df.dropna(axis=0, how='any', inplace=True)
+
+def numeric_columns(df):
+    aux = []
+    for item in df:
+        if df[item].dtypes in ['int64','float'] :
+            aux.append(item)
+    return aux
