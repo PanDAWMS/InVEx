@@ -165,7 +165,7 @@ def clusterize(request):
 def predict_cluster(request):
     if ('fdid' not in request.POST) or ('data' not in request.POST):
         return {}
-    original, dataset, op_history = load_data(request.POST['fdid'])
+    original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
     if op_history is None:
         return {}
     data = {}

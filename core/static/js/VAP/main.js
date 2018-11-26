@@ -408,7 +408,7 @@ class Scene {
                 this.dims_folder.add(obj,'Recalculate');
 
 
-                for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
+                for (var i = 0; i < this.dims_folder.__controllers.length - 1; i++) {
                     var current_controller = this.dims_folder.__controllers[ i ];
                     current_controller.selectedObject = sphereToPrint;
                     current_controller.dimNames = this.dimNames;
