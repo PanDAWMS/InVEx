@@ -13,18 +13,25 @@ function drawAxes() {
 	return axes;
 }
 
-function getColorScheme(maxNumber){
-	if (maxNumber==2)
-		return [new THREE.Color(1,0,0), new THREE.Color(0,0,1)]
-	results=[]
-	parts = Math.round(Math.log(maxNumber)/Math.log(3)+0.5)
-	base = parts - 1
-	if (base==0)
-		base = 1
-	for(i=0; i<maxNumber; ++i){
-		results[i]=new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
+
+function getColorScheme( clusters ) {
+	var clusters_unique = Array.from(new Set(clusters));
+	var len = clusters_unique.length;
+	var results = {};
+	if ( len == 2 ) {
+		results[clusters_unique[0]] = new THREE.Color(1,0,0);
+		results[clusters_unique[1]] = new THREE.Color(0,0,1);
+	} else {
+		var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
+		var base = parts - 1;
+		if (base == 0)
+			base = 1;
+		for( var i = 0; i < len; i++ ) {
+			results[clusters_unique[i]] = new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
+			console.log(results);
+		}
 	}
-	return results
+	return results;
 }
 
 function removeElement(id) {
@@ -32,51 +39,57 @@ function removeElement(id) {
     return elem.parentNode.removeChild(elem);
 }
 
-function createClusterElements(element, parameters) {
+function createClusterElements(element, cluster_params) {
 
-	select_element=document.createElement('select');
+	var select_element = document.createElement('select');
 	select_element.classList.add('form-control');
 	select_element.classList.add('form-control-sm');
 	select_element.id = 'select' + ("00000" + Math.random()*100000).slice(-5);
 	select_element.name = 'algorithm';
-    label_select = document.createElement('label');
+    var label_select = document.createElement('label');
     label_select.innerText='Choose clustering algorithm';
     label_select.setAttribute('for', select_element.id);
     element.appendChild(label_select);
     element.appendChild(select_element);
-    select_element.onchange=function(){
-        for(i=0; i<this.elements.length; ++i){
-            this.elements[i].style.visibility = 'hidden';
-        }
-        this.elements[this.selectedIndex].style.visibility = 'visible';
-    };
-    var elements=[];
-    for (k=0; k<parameters.length; ++k){
-		el=parameters[k]
-        option_element=document.createElement('option');
-        option_element.innerText=el[1];
-        option_element.value=el[0];
+
+    var elements = [];
+    for ( var k = 0; k < cluster_params.length; k++ ) {
+		var el = cluster_params[ k ];
+        var option_element = document.createElement('option');
+        option_element.innerText = el[ 1 ];
+        option_element.value = el[ 0 ];
         select_element.appendChild(option_element);
-        element_div=document.createElement('div');
+        var element_div = document.createElement('div');
+        if ( k == 0)
+        	element_div.style.display = 'block';
+        else
+        	element_div.style.display = 'none';
         elements.push(element_div);
-        for(i=2; i<el.length; ++i){
-            input = document.createElement("input");
+        for( var i = 2; i < el.length; i++ ) {
+            var input = document.createElement("input");
             input.classList.add("form-control-sm");
             input.setAttribute("type", "text");
-            for (j=0; j<el[i].attributes.length; ++j){
-                input.setAttribute(el[i].attributes[j][0], el[i].attributes[j][1]);
+            for (var j = 0; j < el[i].attributes.length; j++ ) {
+                input.setAttribute(el[ i ].attributes[ j ][ 0 ], el[ i ].attributes[ j ][ 1 ]);
             }
             input.id = 'inp'+("00000" + Math.random()*100000).slice(-5);
-            input.setAttribute("name", el[i]['name']);
-            label = document.createElement("label");
+            input.setAttribute("name", el[ i ][ 'name' ]);
+            var label = document.createElement("label");
             label.setAttribute("for", input.id);
-            label.textContent = el[i]['label'];
+            label.textContent = el[ i ][ 'label' ];
             element_div.appendChild(label);
             element_div.appendChild(input);
         }
         element.appendChild(element_div);
     }
-    select_element.elements=elements;
+    select_element.elements = elements;
+
+	select_element.onchange = function() {
+        for( var i = 0; i < this.elements.length; i++ ){
+            this.elements[i].style.display = 'none';
+        }
+        this.elements[this.selectedIndex].style.display = 'block';
+    };
 }
 
 function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
@@ -239,7 +252,7 @@ class Scene {
 		this.auxData = auxData;
 	}
 
-	createSphere(normData, realData, cluster, auxData){
+	createSphere(normData, realData, cluster, auxData) {
 		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];

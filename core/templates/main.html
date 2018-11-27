@@ -180,7 +180,10 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-            clustering_parameters=[['KMeans', 'K means', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],['DBScan', 'DB scan']]
+            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],
+                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'number', 'attributes':[['placeholder', '5']]},
+                                                         {'name':'eps', 'label':'eps','type':'number', 'attributes':[['placeholder','0.5']]}
+                                                         ]]
             createClusterElements(document.getElementById('clustering'), clustering_parameters);
 
             {% if dim_names %}
@@ -239,14 +242,15 @@
 
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
-            scene.clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
+            scene.clusters_color_scheme = getColorScheme(clusters);
+            //scene.clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
             {% else %}
             scene.clusters_color_scheme = [new THREE.Color(1,1,1)];
             {% endif %}
             var objects = [];
-			for ( i = 0; i < new_dataArray.length; i++ ){
+			for ( var i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[i], new_auxData[ i ]));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ]));
                 {% else %}
 				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
 				{% endif %}
@@ -487,8 +491,8 @@
         .call(yAxis)
     }
 
-    function add_parameters(submited_form){
-        new_input = document.createElement('input');
+    function add_parameters(submited_form) {
+        var new_input = document.createElement('input');
         new_input.name = 'visualparameters';
         new_input.type = 'hidden';
         new_input.value = JSON.stringify(scene.saveParameters());

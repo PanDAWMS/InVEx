@@ -152,6 +152,19 @@ def clusterize(request):
                 data['cluster_ready'] = True
             else:
                 print('couldn\'t clusterize')
+        elif request.POST['algorithm'] == 'DBSCAN' and 'min_samples' in request.POST and 'eps' in request.POST:
+            operation = calc.DBScanClustering.DBScanClustering()
+            operation.set_parameters(int(request.POST['min_samples']), float(request.POST['eps']))
+            result = operation.process_data(dataset)
+            if result is not None:
+                op_history.append(dataset, operation)
+                data['clusters'] = result.tolist()
+                data['count_of_clusters'] = len(set(result.tolist()))
+                data['min_samples'] = int(request.POST['min_samples'])
+                data['eps'] = float(request.POST['eps'])
+                data['cluster_ready'] = True
+            else:
+                print('couldn\'t clusterize')
         else:
             print('unknown methond')
     else:
