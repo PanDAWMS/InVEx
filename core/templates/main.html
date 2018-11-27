@@ -220,6 +220,14 @@
             scene.loadParameters({{ visualparameters|safe }});
             {% endif %}
 
+            {% if aux_dataset %}
+            var auxData = {{ aux_dataset|safe }};
+            var new_auxData = fix_array(auxData);
+            scene.setAuxiliaryData(new_auxData);
+            var auxNames = {{ aux_names|safe }};
+            scene.setAuxiliaryColumns(auxNames);
+            {% endif %}
+
 
         Matrix({
             container : '#corr-matrix',
@@ -238,9 +246,9 @@
             var objects = [];
 			for ( i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[i] ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[i], new_auxData[ i ]));
                 {% else %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0 ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
 				{% endif %}
 			}
 			scene.createControlElements();

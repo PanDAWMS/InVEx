@@ -153,6 +153,8 @@ class Scene {
 			this.index = '';
             this.normData = [];
 			this.realData = [];
+			this.auxData = [];
+			this.auxNames = [];
 			this.controlsDiv = controlsDiv;
 			this.outputDiv = outputDiv;
 			this.numberOfSegements = numberOfSegements;
@@ -229,7 +231,15 @@ class Scene {
 		this.realStats = stats;
 	}
 
-	createSphere(normData, realData, cluster){
+	setAuxiliaryColumns(auxNames) {
+		this.auxNames = auxNames;
+	}
+
+	setAuxiliaryData(auxData) {
+		this.auxData = auxData;
+	}
+
+	createSphere(normData, realData, cluster, auxData){
 		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
@@ -238,6 +248,7 @@ class Scene {
 		normData[2] = cluster;
 		sphere.dataObject = normData;
 		sphere.realData = realData;
+		sphere.auxData = auxData;
 		this.groupOfSpheres.add(sphere);
 		return sphere;
 	}
@@ -317,18 +328,28 @@ class Scene {
 	}
 	
 	printDataDialog(sphereToPrint){
+
 				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
 					this.dims_gui.removeFolder(this.dims_folder);
+				}
+				if (this.dims_gui.__folders['Auxiliary Data']) {
+					this.dims_gui.removeFolder(this.dims_aux_folder);
 				}
 				// Set DAT.GUI Controllers
                 var gui_data = {};
                 this.gui_data = gui_data;
+                var aux_gui_data = {};
+
                 gui_data[this.index] = sphereToPrint.dataObject[ 0 ];
 
                 // Set GUI fields for all coordinates (real data values)
                 for( var i = 0; i < sphereToPrint.realData[ 1 ].length; i++ ) {
                     gui_data[this.dimNames[ i ]] = sphereToPrint.realData[ 1 ][ i ];
                 }
+
+                for ( var j = 0; j < sphereToPrint.auxData[ 1 ].length; j++ ) {
+                	aux_gui_data[this.auxNames[ j ]] = sphereToPrint.auxData[ 1 ][ j ];
+				}
 
                 // Create DAT.GUI object
                 this.createGui();
@@ -359,6 +380,20 @@ class Scene {
                 }
 				
                 this.dims_folder.open();
+
+                // Create Auxiliary Data Folder
+				if (!this.dims_gui.__folders['Auxiliary Data']) {
+                    this.dims_aux_folder = this.dims_gui.addFolder('Auxiliary Data');
+                }
+
+                for ( var key in aux_gui_data ) {
+					this.dims_aux_folder.add( aux_gui_data, key );
+                }
+
+                this.dims_folder.open();
+				this.dims_aux_folder.open();
+
+
                 this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
 
                 var obj = {
@@ -373,7 +408,7 @@ class Scene {
                 this.dims_folder.add(obj,'Recalculate');
 
 
-                for (var i = 0; i < this.dims_folder.__controllers.length; i++) {
+                for (var i = 0; i < this.dims_folder.__controllers.length - 1; i++) {
                     var current_controller = this.dims_folder.__controllers[ i ];
                     current_controller.selectedObject = sphereToPrint;
                     current_controller.dimNames = this.dimNames;
@@ -396,8 +431,8 @@ class Scene {
                         //console.log("New value is " + value);
                         var normValue = this.selectedObject.dataObject[1][currDimNum];
                         //console.log("Current norm value is " + normValue);
-                        var min = this.realStats[1][0][currDimNum];
-                        var max = this.realStats[1][1][currDimNum];
+                        var min = this.realStats[1][1][currDimNum];
+                        var max = this.realStats[1][2][currDimNum];
                         var newNormValue = (( value - min ) / ( max - min )) * 100;
                         //console.log("New norm value is " + newNormValue);
                         this.selectedObject.dataObject[1][currDimNum] = newNormValue;
@@ -430,6 +465,9 @@ class Scene {
 					if (this.dims_gui.__folders['Multidimensional Coordinates']) {
 						this.dims_gui.removeFolder(this.dims_folder);
 					}
+					if (this.dims_gui.__folders['Auxiliary Data']) {
+						this.dims_gui.removeFolder(this.dims_aux_folder);
+					}
 					return true;
 				}
 				
@@ -439,6 +477,9 @@ class Scene {
                         if (this.dims_gui.__folders['Multidimensional Coordinates']) {
                             this.dims_gui.removeFolder(this.dims_folder);
                         }
+						if (this.dims_gui.__folders['Auxiliary Data']) {
+							this.dims_gui.removeFolder(this.dims_aux_folder);
+						}
                 }
 				
                 this.selectedObject = res.object;
@@ -449,6 +490,9 @@ class Scene {
 			} else {
 				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
 					this.dims_gui.removeFolder(this.dims_folder);
+				}
+				if (this.dims_gui.__folders['Auxiliary Data']) {
+					this.dims_gui.removeFolder(this.dims_aux_folder);
 				}
 			}
 
@@ -499,11 +543,11 @@ class Scene {
 		for (i=0; i < oldGroup.children.length; ++i) {
 			if (this.selectedObject === oldGroup.children[i]){
 				this.unSelectObject(this.selectedObject);
-				this.selectedObject = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2]);
+				this.selectedObject = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2], oldGroup.children[i].auxData);
 				this.selectObject(this.selectedObject);
 			}
 			else {
-                var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2]);
+                var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2], oldGroup.children[i].auxData);
             }
 		}
         this.scene.add(this.groupOfSpheres);
