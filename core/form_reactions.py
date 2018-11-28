@@ -7,8 +7,9 @@ import os.path
 from datetime import datetime
 import pandas as pd
 import json
+from core.settings.base import BASE_DIR
 
-SAVED_FILES_PATH = 'core/datafiles/'
+SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
 BACKUP_FILE = '_backup'
 
 
