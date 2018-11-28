@@ -1,6 +1,5 @@
 import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from core.settings.base import BASE_DIR
 
 LOG_ROOT = BASE_DIR +'/logs'
 LOG_SIZE = 1000000000
