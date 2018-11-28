@@ -2,17 +2,18 @@ from . import baseoperationclass
 import pandas as pd
 
 
-DESCRIPTION = ['Min', 'Max', 'Mean', 'Std', '25%', '50%', '75%', 'Sum', 'Skew', 'Median']
+DESCRIPTION = ['Count','Min', 'Max', 'Mean', 'Std', '25%', '50%', '75%', 'Sum', 'Skew', 'Median']
 
 
 class BasicStatistics(baseoperationclass.BaseOperationClass):
     _operation_name = "BasicStats"
+    _type_of_operation = 'calculation'
 
     def __init__(self):
         self.results = None
 
     def process_data(self, dataset):
-        self.results = [dataset.min(), dataset.max(), dataset.mean(), dataset.std(), dataset.quantile(0.25),
+        self.results = [dataset.count(), dataset.min(), dataset.max(), dataset.mean(), dataset.std(), dataset.quantile(0.25),
                         dataset.quantile(0.5), dataset.quantile(0.75), dataset.sum(), dataset.skew(),
                         dataset.median()]
         return self.results

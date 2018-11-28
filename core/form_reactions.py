@@ -22,7 +22,7 @@ def pandas_to_js_list(dataset):
         return results
 
 
-def save_data(original_dataset, norm_dataset, op_history, filename=None):
+def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, filename=None):
     if (filename is None):
         filename = str(datetime.now().timestamp())
         while os.path.isfile(SAVED_FILES_PATH + filename):
@@ -41,6 +41,8 @@ def save_data(original_dataset, norm_dataset, op_history, filename=None):
     file.write(norm_dataset.to_json(orient='table'))
     file.write('\n')
     file.write(op_history.save_to_json())
+    file.write('\n')
+    file.write(auxiliary_dataset.to_json(orient='table'))
     file.close()
     return filename
 
@@ -62,18 +64,20 @@ def load_data(filename):
     file = open(SAVED_FILES_PATH + filename, "r")
     data = file.readline()
     original_dataset = table_to_df(data)
-    #original_dataset = pd.read_json(data, orient='table')
+    # original_dataset = pd.read_json(data, orient='table')
     data = file.readline()
     norm_dataset = table_to_df(data)
     # norm_dataset = pd.read_json(data, orient='table')
     data = file.readline()
     op_history = calc.operationshistory.OperationHistory()
     op_history.load_from_json(data)
+    data = file.readline()
+    aux_dataset = table_to_df(data)
     file.close()
-    return [original_dataset, norm_dataset, op_history]
+    return [original_dataset, norm_dataset, op_history, aux_dataset]
 
 
-def prepare_basic(norm_dataset, real_dataset, op_history):
+def prepare_basic(norm_dataset, real_dataset, auxiliary_dataset, op_history):
     idx = [norm_dataset.index.name]
     columns = norm_dataset.columns.tolist()
 
@@ -85,10 +89,14 @@ def prepare_basic(norm_dataset, real_dataset, op_history):
 
     corr_matrix = real_dataset.corr()
 
+    aux_columns = auxiliary_dataset.columns.tolist()
+
     data = {
         'norm_dataset': pandas_to_js_list(norm_dataset),
         'real_dataset': pandas_to_js_list(real_dataset),
+        'aux_dataset': pandas_to_js_list(auxiliary_dataset),
         'dim_names': columns,
+        'aux_names': aux_columns,
         'index': idx,
         'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
         'operation_history': op_history,
@@ -104,50 +112,33 @@ def new_csv_file_upload(request):
                                                  True)
     else:
         return {}
-
-    # get slice of data from the initial DataFrame
-    slice = dataset
-
-    # create the copy of current data slice
-    slice_copy = slice.copy()
-
-    # clean data slice
-    calc.importcsv.clean_dataset(slice)
-    calc.importcsv.dropNA(slice)
-
-    # get all columns, that left after cleaning
-    columns = slice.columns.tolist()
-
-    # normalization of the data slice
-    norm_slice = calc.importcsv.normalization(slice, columns)
-
-    # cleaning data after normalization
-    calc.importcsv.dropNA(norm_slice)
-
-    # get all columns, left after the second cleaning
-    columns = norm_slice.columns.tolist()
-
-    # reduce the initial data slice with columns, which were left after cleaning and normalization
-    slice_copy = slice_copy.loc[:, columns]
-
+    # drop all columns and rows with NaN values
+    calc.importcsv.dropNA(dataset)
+    numeric_columns = calc.importcsv.numeric_columns(dataset)
+    numeric_dataset = dataset[numeric_columns]
+    norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
+    calc.importcsv.dropNA(norm_dataset)
+    columns = norm_dataset.columns.tolist()
+    numeric_dataset = numeric_dataset[columns]
+    auxiliary_dataset = dataset.drop(numeric_columns, 1)
     op_history = calc.operationshistory.OperationHistory()
     metrics = calc.basicstatistics.BasicStatistics()
-    metrics.process_data(norm_slice)
-    op_history.append(norm_slice, metrics)
-    data = prepare_basic(norm_slice, slice_copy, op_history)
+    metrics.process_data(norm_dataset)
+    op_history.append(norm_dataset, metrics)
+    data = prepare_basic(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
     data['request'] = request
-    data['saveid'] = save_data(slice_copy, norm_slice, op_history)
+    data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
     return data
 
 
 def clusterize(request):
     if 'fdid' not in request.POST:
         return {}
-    original, dataset, op_history = load_data(request.POST['fdid'])
+    original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
     if dataset is None:
         return {}
 
-    data = prepare_basic(dataset, original, op_history)
+    data = prepare_basic(dataset, original, aux_dataset, op_history)
     data['request'] = request
     if 'algorithm' in request.POST:
         if request.POST['algorithm'] == 'KMeans' and 'numberofcl' in request.POST:
@@ -165,11 +156,23 @@ def clusterize(request):
             print('unknown methond')
     else:
         print('No method')
-    data['saveid'] = save_data(original, dataset, op_history, request.POST['fdid'])
+    data['saveid'] = save_data(original, dataset, aux_dataset, op_history, request.POST['fdid'])
+    data['visualparameters'] = request.POST['visualparameters']
     return data
+
 
 # Here we have to implement prediction for point with updated coordinates
 def predict_cluster(request):
+    if ('fdid' not in request.POST) or ('data' not in request.POST):
+        return {}
+    original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
+    if op_history is None:
+        return {}
     data = {}
-    data['request'] = request
+    operation = op_history.get_previous_step()[0]
+    if (operation._type_of_operation != 'cluster'):
+        return {}
+    result = operation.predict([json.loads(request.POST['data'])]).tolist()
+    data['results'] = result
+    data['clustertype'] = operation._operation_name
     return data

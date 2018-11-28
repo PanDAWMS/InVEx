@@ -18,7 +18,7 @@
             <div class="col">
                 <ul class="nav nav-tabs" id="tabs" role="tablist">
                   <li class="nav-item">
-                    <a class="nav-link active" id="download-tab" data-toggle="tab" href="#download" role="tab" aria-controls="download" aria-selected="true">Download File</a>
+                    <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload" role="tab" aria-controls="upload" aria-selected="true">Upload File</a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link" id="print-tab" data-toggle="tab" href="#print" role="tab" aria-controls="print" aria-selected="false">Print Data</a>
@@ -34,7 +34,7 @@
                   </li>
                 </ul>
                 <div class="tab-content">
-                  <div class="tab-pane fade show active" id="download" role="tabpanel" aria-labelledby="download-tab">
+                  <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
                       <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
                             <div class="custom-file">
@@ -47,10 +47,8 @@
                       </form>
                   </div>
                   <div class="tab-pane fade" id="print" role="tabpanel" aria-labelledby="print-tab">
-                      <div class="pre-scrollable" id="initial-dataset"></div>
                   </div>
                   <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
-                        <div class="pre-scrollable" id="dataset-stats"></div>
                   </div>
                   <div class="tab-pane fade" id="corr" role="tabpanel" aria-labelledby="corr-tab">
                         <div id="corr-matrix">
@@ -59,7 +57,7 @@
                   </div>
                   <div class="tab-pane fade" id="clusters" role="tabpanel" aria-labelledby="clusters-tab">
                         <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printBtn">Print Results</button>
-                        <div class="pre-scrollable" id="clusters-print"></div>
+{#                        <div class="pre-scrollable" id="clusters-print"></div>#}
                   </div>
                 </div>
             </div>
@@ -95,7 +93,7 @@
                     <div class="card border-dark mb-3">
                         <div class="card-header">Clustering</div>
                         <div class="card-body">
-                            <form action="" id="cluster_form" method="POST">
+                            <form onsubmit="add_parameters(this);" action="" id="cluster_form" method="POST">
                                 {% csrf_token %}
 							    <input type="hidden" name="formt" value="cluster">
                                 {% if saveid %}
@@ -118,6 +116,10 @@
                                 </div>
                             </form>
                             <form>
+                                <div class="form-group form-check">
+                                    <input type="checkbox" class="form-check-input" id="dragControls" onchange="changeDragMode()">
+                                    <label class="form-check-label" for="dragControls">Activate Drag Controls</label>
+                                </div>
                               <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="resetBtn">Reset Camera</button>
                           </form>
                         </div>
@@ -139,6 +141,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="{% static "js/bootstrap.min.js" %}"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 {% endblock %}
 	<script>
     // SETTING:
@@ -152,6 +155,24 @@
 		function onSceneResize() {
 			scene.onResize();
 		}
+
+		function changeDragMode() {
+		    var dragControls = document.getElementById("dragControls");
+            if (dragControls.checked) {
+                scene.activateDragControl();
+            } else {
+                if (scene.dragEnabled) {
+                    scene.deactivateDragControl();
+                }
+            }
+        }
+
+        $(document).ready(function() {
+            $('#print-table').DataTable();
+            $('#stats-table').DataTable();
+
+        } );
+
 		var scene=new Scene(document.getElementById("picture"), document.getElementById("controls"), document.getElementById("output"), 0.75, countOfEdges);
 		animate();
 		init();
@@ -161,22 +182,51 @@
 		function init() {
             clustering_parameters=[['KMeans', 'K means', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],['DBScan', 'DB scan']]
             createClusterElements(document.getElementById('clustering'), clustering_parameters);
-            var dimNames = {{ dim_names|safe }};
-            var index = {{ index|safe }};
-            var dataArray = {{ norm_dataset|safe }};
-            var realData = {{ real_dataset|safe }};
-            var statistics_real = {{ real_metrics|safe }};
-            var corr_matrix = {{ corr_matrix|safe }};
 
+            {% if dim_names %}
+            var dimNames = {{ dim_names|safe }};
             scene.setDimNames(dimNames);
+            {% endif %}
+
+            {% if index %}
+            var index = {{ index|safe }};
             scene.setIndex(index);
+            {% endif %}
+
+            {% if norm_dataset %}
+            var dataArray = {{ norm_dataset|safe }};
             var new_dataArray = fix_array(dataArray);
+            scene.setDataArray(new_dataArray);
+            {% endif %}
+
+            {% if real_dataset %}
+            var realData = {{ real_dataset|safe }};
             var new_realData = fix_array(realData);
+            scene.setRealData(new_realData);
+            scene.printDataset(new_realData, "print");
+            {% endif %}
+
+            {% if real_metrics %}
+            var statistics_real = {{ real_metrics|safe }};
             printStats(statistics_real, dimNames);
             scene.setRealStats(statistics_real);
-            scene.setDataArray(new_dataArray);
-            scene.setRealData(new_realData);
-            scene.printDataset(new_realData, "initial-dataset");
+            {% endif %}
+
+            {% if corr_matrix %}
+            var corr_matrix = {{ corr_matrix|safe }};
+            {% endif %}
+
+            {% if visualparameters %}
+            scene.loadParameters({{ visualparameters|safe }});
+            {% endif %}
+
+            {% if aux_dataset %}
+            var auxData = {{ aux_dataset|safe }};
+            var new_auxData = fix_array(auxData);
+            scene.setAuxiliaryData(new_auxData);
+            var auxNames = {{ aux_names|safe }};
+            scene.setAuxiliaryColumns(auxNames);
+            {% endif %}
 
 
         Matrix({
@@ -189,17 +239,23 @@
 
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
-            var clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
+            scene.clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
+            {% else %}
+            scene.clusters_color_scheme = [new THREE.Color(1,1,1)];
             {% endif %}
             var objects = [];
 			for ( i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters_color_scheme[clusters[i]].clone() ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[i], new_auxData[ i ]));
                 {% else %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], new THREE.Color( 1,1,1 ) ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
 				{% endif %}
 			}
 			scene.createControlElements();
+
+            {% if saveid %}
+                scene.setSource('{{ saveid|safe }}');
+            {% endif %}
 
             //scene.setDragControls(objects);
 
@@ -225,9 +281,9 @@
         }
 
         function printStats(stats, dimensions){
-            var initial_dataset = document.getElementById("dataset-stats");
+            var initial_dataset = document.getElementById("stats");
             var table = document.createElement("table");
-            table.setAttribute("id", "dataset");
+            table.setAttribute("id", "stats-table");
             table.classList.add("table", "table-sm", "table-hover");
             var thead = document.createElement("thead");
             table.appendChild(thead);
@@ -429,6 +485,14 @@
         .attr("class", "y axis")
         .attr("transform", "translate(41," + margin.top + ")")
         .call(yAxis)
+    }
+
+    function add_parameters(submited_form){
+        new_input = document.createElement('input');
+        new_input.name = 'visualparameters';
+        new_input.type = 'hidden';
+        new_input.value = JSON.stringify(scene.saveParameters());
+        submited_form.appendChild(new_input);
     }
 
 	</script>

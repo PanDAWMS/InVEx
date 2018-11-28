@@ -2,9 +2,12 @@
 Core Django views for VAR project
 """
 import json
+import logging
+
 from datetime import datetime
 from urllib.parse import urlencode, urlparse, parse_qs
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 import os
@@ -12,6 +15,11 @@ import pandas as pd
 from django.shortcuts import render
 from django.conf import settings
 from core import form_reactions
+
+
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
 
 
 def initRequest(request):
@@ -69,6 +77,7 @@ def main(request):
             data = form_reactions.clusterize(request)
         if request.POST['formt'] == 'rebuild':
             data = form_reactions.predict_cluster(request)
+            return JsonResponse(data)
 
     else:
         data = {
@@ -79,7 +88,9 @@ def main(request):
                 'norm_dataset': [],
                 'real_dataset': [],
                 'stats': [],
-                'corr_matrix': []
+                'corr_matrix': [],
+                'aux_dataset': [],
+                'aux_names': []
                 }
     data['built'] = datetime.now().strftime("%H:%M:%S")
     return render(request, 'main.html', data, content_type='text/html')
