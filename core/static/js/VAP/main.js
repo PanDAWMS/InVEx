@@ -111,7 +111,7 @@ function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
 
 class Scene {
 
-	constructor(mainDiv, controlsDiv, outputDiv, defaultRadius, numberOfSegements) {
+	constructor(mainDiv, defaultRadius, numberOfSegements) {
 			this.mainDiv = mainDiv;
 			mainDiv.sceneObject = this;
 
@@ -168,8 +168,6 @@ class Scene {
 			this.realData = [];
 			this.auxData = [];
 			this.auxNames = [];
-			this.controlsDiv = controlsDiv;
-			this.outputDiv = outputDiv;
 			this.numberOfSegements = numberOfSegements;
 			this.outputTable = null;
 			this.sphereGeometry = new THREE.SphereGeometry( this.defaultSpRad, this.numberOfSegements, this.numberOfSegements);
@@ -688,14 +686,26 @@ class Scene {
     }
 
     printControls() {
-        var printAllBtn = document.getElementById("printBtn");
-        printAllBtn.sceneObject = this;
-        printAllBtn.onclick=function() {
-            if ( document.getElementById("cluster-table") ) {
-			    this.outputDiv.removeChild(this.outputTable);
-		    }
+        var display_clusters = document.getElementById("printBtn");
+        display_clusters.sceneObject = this;
+        display_clusters.onclick = function() {
+        	var element = document.getElementById("cluster-table_wrapper");
+        	if (element) {
+        		element.parentNode.removeChild(element);
+			}
 			this.sceneObject.printClusters("clusters");
             $('#cluster-table').DataTable();
+        };
+
+		var display_all_dataset = document.getElementById("printAllBtn");
+		display_all_dataset.sceneObject = this;
+        display_all_dataset.onclick = function() {
+            var element = document.getElementById("print-table_wrapper");
+        	if (element) {
+        		element.parentNode.removeChild(element);
+			}
+			this.sceneObject.printDataset(this.sceneObject.realData, "print", this.sceneObject.realData.length);
+            $('#print-table').DataTable();
         };
     }
 
@@ -708,7 +718,7 @@ class Scene {
 
     // print fragment of the initial dataset
     // nrows = the number of rows
-    printDataset(dataset, elementID) {
+    printDataset(dataset, elementID, num_columns) {
         var initial_dataset = document.getElementById(elementID);
         var table = document.createElement("table");
         table.setAttribute("id", elementID+"-table");
@@ -730,7 +740,7 @@ class Scene {
 
         var tbody = document.createElement("tbody");
         table.appendChild(tbody);
-        for ( var j = 0; j < dataset.length; j++ ) {
+        for ( var j = 0; j < num_columns; j++ ) {
 			var obj	= dataset[ j ];
 			row = document.createElement("tr");
 			th = document.createElement("th");

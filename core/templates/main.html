@@ -47,6 +47,7 @@
                       </form>
                   </div>
                   <div class="tab-pane fade" id="print" role="tabpanel" aria-labelledby="print-tab">
+                      <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printAllBtn">Display All</button>
                   </div>
                   <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
                   </div>
@@ -173,7 +174,7 @@
 
         } );
 
-		var scene=new Scene(document.getElementById("picture"), document.getElementById("controls"), document.getElementById("output"), 0.75, countOfEdges);
+		var scene=new Scene(document.getElementById("picture"), 0.75, countOfEdges);
 		animate();
 		init();
 
@@ -206,7 +207,7 @@
             var realData = {{ real_dataset|safe }};
             var new_realData = fix_array(realData);
             scene.setRealData(new_realData);
-            scene.printDataset(new_realData, "print");
+            scene.printDataset(new_realData, "print", 10);
             {% endif %}
 
             {% if real_metrics %}
