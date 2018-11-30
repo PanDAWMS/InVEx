@@ -73,6 +73,8 @@ def main(request):
     if request.method == 'POST' and 'formt' in request.POST:
         if request.POST['formt'] == 'newfile':
             data = form_reactions.new_csv_file_upload(request)
+        if request.POST['formt'] == 'filefromserver':
+            data = form_reactions.csv_file_from_server(request)
         if request.POST['formt'] == 'cluster':
             data = form_reactions.clusterize(request)
         if request.POST['formt'] == 'rebuild':
@@ -93,4 +95,8 @@ def main(request):
                 'aux_names': []
                 }
     data['built'] = datetime.now().strftime("%H:%M:%S")
+    try:
+        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.DATASET_FILES_PATH)
+    except:
+        logger.error('Could not read the list of datasets file')
     return render(request, 'main.html', data, content_type='text/html')
