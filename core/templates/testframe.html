@@ -202,7 +202,7 @@
 
         } );
 
-		var scene=new Scene(document.getElementById("picture"), document.getElementById("controls"), document.getElementById("output"), 0.75, countOfEdges);
+		var scene=new Scene(document.getElementById("picture"), 0.75, countOfEdges);
 		animate();
 		init();
 
@@ -235,7 +235,7 @@
             var realData = {{ real_dataset|safe }};
             var new_realData = fix_array(realData);
             scene.setRealData(new_realData);
-            scene.printDataset(new_realData, "print");
+            scene.printDataset(new_realData, "print", 10);
             {% endif %}
 
             {% if real_metrics %}
@@ -527,7 +527,6 @@
         new_input.value = JSON.stringify(scene.saveParameters());
         submited_form.appendChild(new_input);
     }
-
 	</script>
 {% endblock %}
 
