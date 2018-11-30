@@ -100,3 +100,42 @@ def main(request):
     except:
         logger.error('Could not read the list of datasets file')
     return render(request, 'main.html', data, content_type='text/html')
+
+
+def performance_test(request):
+    data = {}
+    return render(request, 'test.html', data, content_type='text/html')
+
+
+def performance_test_frame(request):
+    start_time = datetime.now()
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    if request.method == 'POST' and 'formt' in request.POST:
+        if request.POST['formt'] == 'newfile':
+            data = form_reactions.new_csv_file_upload(request)
+        if request.POST['formt'] == 'cluster':
+            data = form_reactions.clusterize(request)
+        if request.POST['formt'] == 'rebuild':
+            data = form_reactions.predict_cluster(request)
+            return JsonResponse(data)
+
+    else:
+        data = {
+                'dataset': [],
+                'dim_names': [],
+                'index': '',
+                'new_file': False,
+                'norm_dataset': [],
+                'real_dataset': [],
+                'stats': [],
+                'corr_matrix': [],
+                'aux_dataset': [],
+                'aux_names': []
+                }
+    data['built'] = datetime.now().strftime("%H:%M:%S")
+    end_time = datetime.now()
+    data['servertime'] = round((end_time-start_time).total_seconds()*1000)
+    return render(request, 'testframe.html', data, content_type='text/html')

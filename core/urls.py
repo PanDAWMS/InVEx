@@ -22,5 +22,7 @@ from core import views as core_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', core_views.main, name='main'),
+    path('test', core_views.performance_test, name='performance_test'),
+    path('testframe', core_views.performance_test_frame, name='performance_test_frame'),
     path('testmodule/', include('core.testmodule.urls'))
 ]
