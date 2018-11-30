@@ -24,8 +24,13 @@
           <div class="row">
             <div class="col">
                 <ul class="nav nav-tabs" id="tabs" role="tablist">
+                  {% if dataset_files %}
                   <li class="nav-item">
-                    <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload" role="tab" aria-controls="upload" aria-selected="true">Upload File</a>
+                    <a class="nav-link active" id="serverfile-tab" data-toggle="tab" href="#serverfile" role="tab" aria-controls="serverfile" aria-selected="true">Choose File from Server</a>
+                  </li>
+                  {% endif %}
+                   <li class="nav-item">
+                    <a class="nav-link {% if not dataset_files %}active{% endif %} " id="upload-tab" data-toggle="tab" href="#upload" role="tab" aria-controls="upload" aria-selected="true">Upload File</a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link" id="print-tab" data-toggle="tab" href="#print" role="tab" aria-controls="print" aria-selected="false">Print Data</a>
@@ -41,7 +46,24 @@
                   </li>
                 </ul>
                 <div class="tab-content">
-                  <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                  {% if dataset_files %}
+                  <div class="tab-pane fade show active" id="serverfile" role="tabpanel" aria-labelledby="serverfile-tab">
+                      <form action="" method="POST" enctype='multipart/form-data'>
+                            {% csrf_token %}
+                            <div class="custom-file">
+							  <input type="hidden" name="formt" value="filefromserver">
+                              <select name="filename" class="form-control form-control-sm">
+                                  {% for fileonserver in dataset_files %}
+                                    <option value="{{ fileonserver.value|safe }}">{{ fileonserver.name|safe }}</option>
+                                  {% endfor %}
+                              </select>
+                            </div>
+                            <br/><br/>
+                            <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Submit">
+                      </form>
+                  </div>
+                   {% endif %}
+                  <div class="tab-pane fade show{% if not dataset_files %} active{% endif %}" id="upload" role="tabpanel" aria-labelledby="upload-tab">
                       <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
                             <div class="custom-file">

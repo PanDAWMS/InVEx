@@ -104,6 +104,10 @@ def main(request):
 
 def performance_test(request):
     data = {}
+    try:
+        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.TEST_DATASET_FILES_PATH)
+    except:
+        logger.error('Could not read the list of datasets file')
     return render(request, 'test.html', data, content_type='text/html')
 
 
@@ -116,6 +120,8 @@ def performance_test_frame(request):
     if request.method == 'POST' and 'formt' in request.POST:
         if request.POST['formt'] == 'newfile':
             data = form_reactions.new_csv_file_upload(request)
+        if request.POST['formt'] == 'filefromserver':
+            data = form_reactions.csv_test_file_from_server(request)
         if request.POST['formt'] == 'cluster':
             data = form_reactions.clusterize(request)
         if request.POST['formt'] == 'rebuild':
@@ -136,6 +142,10 @@ def performance_test_frame(request):
                 'aux_names': []
                 }
     data['built'] = datetime.now().strftime("%H:%M:%S")
+    try:
+        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.TEST_DATASET_FILES_PATH)
+    except:
+        logger.error('Could not read the list of datasets file')
     end_time = datetime.now()
     data['servertime'] = round((end_time-start_time).total_seconds()*1000)
     return render(request, 'testframe.html', data, content_type='text/html')
