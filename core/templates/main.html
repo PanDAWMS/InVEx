@@ -203,9 +203,9 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],
-                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'number', 'attributes':[['placeholder', '5']]},
-                                                         {'name':'eps', 'label':'eps','type':'number', 'attributes':[['placeholder','0.5']]}
+            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']], 'defvalue':'5'}],
+                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'number', 'attributes':[['placeholder', '5']], 'defvalue':'5'},
+                                                         {'name':'eps', 'label':'epsilon','type':'number', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5'}
                                                          ]]
             createClusterElements(document.getElementById('clustering'), clustering_parameters);
 
@@ -240,6 +240,13 @@
 
             {% if corr_matrix %}
             var corr_matrix = {{ corr_matrix|safe }};
+			Matrix({
+				container : '#corr-matrix',
+				data      : corr_matrix,
+				labels    : dimNames,
+				start_color : '#ffffff',
+				end_color : '#3498db'
+			});
             {% endif %}
 
             {% if visualparameters %}
@@ -254,15 +261,6 @@
             scene.setAuxiliaryColumns(auxNames);
             {% endif %}
 
-
-        Matrix({
-            container : '#corr-matrix',
-            data      : corr_matrix,
-            labels    : dimNames,
-            start_color : '#ffffff',
-            end_color : '#3498db'
-        });
-
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.clusters_color_scheme = getColorScheme(clusters);
@@ -270,6 +268,7 @@
             {% else %}
             scene.clusters_color_scheme = [new THREE.Color(1,1,1)];
             {% endif %}
+			{% if norm_dataset %}
             var objects = [];
 			for ( var i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
@@ -278,6 +277,7 @@
 				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
 				{% endif %}
 			}
+			{% endif %}
 			scene.createControlElements();
 
             {% if saveid %}

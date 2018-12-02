@@ -28,7 +28,6 @@ function getColorScheme( clusters ) {
 			base = 1;
 		for( var i = 0; i < len; i++ ) {
 			results[clusters_unique[i]] = new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
-			console.log(results);
 		}
 	}
 	return results;
@@ -74,9 +73,15 @@ function createClusterElements(element, cluster_params) {
             }
             input.id = 'inp'+("00000" + Math.random()*100000).slice(-5);
             input.setAttribute("name", el[ i ][ 'name' ]);
+			if ('defvalue' in el[ i ]){
+				input.value = el[ i ][ 'defvalue' ];
+			}				
             var label = document.createElement("label");
             label.setAttribute("for", input.id);
             label.textContent = el[ i ][ 'label' ];
+			/*if (i > 0){
+				element_div.appendChild(document.createElement("br"));
+			}*/
             element_div.appendChild(label);
             element_div.appendChild(input);
         }
@@ -459,8 +464,7 @@ class Scene {
 	onMouseClick(event) {
 		event.preventDefault();
 
-		this.intersects = this.getIntersects( event.layerX, event.layerY );
-		//this.intersects = this.getIntersects( event.clientX, event.clientY );
+		this.intersects = this.getIntersects( event.offsetX, event.offsetY );
 		if ( this.intersects.length > 0 ) {
 			var res = this.intersects.filter( function ( res ) {
 
@@ -537,8 +541,7 @@ class Scene {
 
 		x = ( x / this.mainDiv.clientWidth ) * 2 - 1;
 		y = - ( y / this.mainDiv.clientHeight ) * 2 + 1;
-
-		this.mouseVector.set( x, y, 0.5 );
+		this.mouseVector.set( x, y );
 		this.raycaster.setFromCamera( this.mouseVector, this.camera );
 		return this.raycaster.intersectObject( this.groupOfSpheres, true );
 
