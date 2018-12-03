@@ -13,70 +13,24 @@ function drawAxes() {
 	return axes;
 }
 
-function getColorScheme(maxNumber){
-	if (maxNumber==2)
-		return [new THREE.Color(1,0,0), new THREE.Color(0,0,1)]
-	results=[]
-	parts = Math.round(Math.log(maxNumber)/Math.log(3)+0.5)
-	base = parts - 1
-	if (base==0)
-		base = 1
-	for(i=0; i<maxNumber; ++i){
-		results[i]=new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
+
+function getColorScheme( clusters ) {
+	var clusters_unique = Array.from(new Set(clusters));
+	var len = clusters_unique.length;
+	var results = {};
+	if ( len == 2 ) {
+		results[clusters_unique[0]] = new THREE.Color(1,0,0);
+		results[clusters_unique[1]] = new THREE.Color(0,0,1);
+	} else {
+		var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
+		var base = parts - 1;
+		if (base == 0)
+			base = 1;
+		for( var i = 0; i < len; i++ ) {
+			results[clusters_unique[i]] = new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
+		}
 	}
-	return results
-}
-
-function removeElement(id) {
-    var elem = document.getElementById(id);
-    return elem.parentNode.removeChild(elem);
-}
-
-function createClusterElements(element, parameters) {
-
-	select_element=document.createElement('select');
-	select_element.classList.add('form-control');
-	select_element.classList.add('form-control-sm');
-	select_element.id = 'select' + ("00000" + Math.random()*100000).slice(-5);
-	select_element.name = 'algorithm';
-    label_select = document.createElement('label');
-    label_select.innerText='Choose clustering algorithm';
-    label_select.setAttribute('for', select_element.id);
-    element.appendChild(label_select);
-    element.appendChild(select_element);
-    select_element.onchange=function(){
-        for(i=0; i<this.elements.length; ++i){
-            this.elements[i].style.visibility = 'hidden';
-        }
-        this.elements[this.selectedIndex].style.visibility = 'visible';
-    };
-    var elements=[];
-    for (k=0; k<parameters.length; ++k){
-		el=parameters[k]
-        option_element=document.createElement('option');
-        option_element.innerText=el[1];
-        option_element.value=el[0];
-        select_element.appendChild(option_element);
-        element_div=document.createElement('div');
-        elements.push(element_div);
-        for(i=2; i<el.length; ++i){
-            input = document.createElement("input");
-            input.classList.add("form-control-sm");
-            input.setAttribute("type", "text");
-            for (j=0; j<el[i].attributes.length; ++j){
-                input.setAttribute(el[i].attributes[j][0], el[i].attributes[j][1]);
-            }
-            input.id = 'inp'+("00000" + Math.random()*100000).slice(-5);
-            input.setAttribute("name", el[i]['name']);
-            label = document.createElement("label");
-            label.setAttribute("for", input.id);
-            label.textContent = el[i]['label'];
-            element_div.appendChild(label);
-            element_div.appendChild(input);
-        }
-        element.appendChild(element_div);
-    }
-    select_element.elements=elements;
+	return results;
 }
 
 function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
@@ -98,7 +52,7 @@ function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
 
 class Scene {
 
-	constructor(mainDiv, controlsDiv, outputDiv, defaultRadius, numberOfSegements) {
+	constructor(mainDiv, defaultRadius, numberOfSegements) {
 			this.mainDiv = mainDiv;
 			mainDiv.sceneObject = this;
 
@@ -155,8 +109,6 @@ class Scene {
 			this.realData = [];
 			this.auxData = [];
 			this.auxNames = [];
-			this.controlsDiv = controlsDiv;
-			this.outputDiv = outputDiv;
 			this.numberOfSegements = numberOfSegements;
 			this.outputTable = null;
 			this.sphereGeometry = new THREE.SphereGeometry( this.defaultSpRad, this.numberOfSegements, this.numberOfSegements);
@@ -239,7 +191,7 @@ class Scene {
 		this.auxData = auxData;
 	}
 
-	createSphere(normData, realData, cluster, auxData){
+	createSphere(normData, realData, cluster, auxData) {
 		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
@@ -448,8 +400,7 @@ class Scene {
 	onMouseClick(event) {
 		event.preventDefault();
 
-		this.intersects = this.getIntersects( event.layerX, event.layerY );
-		//this.intersects = this.getIntersects( event.clientX, event.clientY );
+		this.intersects = this.getIntersects( event.offsetX, event.offsetY );
 		if ( this.intersects.length > 0 ) {
 			var res = this.intersects.filter( function ( res ) {
 
@@ -526,8 +477,7 @@ class Scene {
 
 		x = ( x / this.mainDiv.clientWidth ) * 2 - 1;
 		y = - ( y / this.mainDiv.clientHeight ) * 2 + 1;
-
-		this.mouseVector.set( x, y, 0.5 );
+		this.mouseVector.set( x, y );
 		this.raycaster.setFromCamera( this.mouseVector, this.camera );
 		return this.raycaster.intersectObject( this.groupOfSpheres, true );
 
@@ -675,14 +625,26 @@ class Scene {
     }
 
     printControls() {
-        var printAllBtn = document.getElementById("printBtn");
-        printAllBtn.sceneObject = this;
-        printAllBtn.onclick=function() {
-            if ( document.getElementById("cluster-table") ) {
-			    this.outputDiv.removeChild(this.outputTable);
-		    }
+        var display_clusters = document.getElementById("printBtn");
+        display_clusters.sceneObject = this;
+        display_clusters.onclick = function() {
+        	var element = document.getElementById("cluster-table_wrapper");
+        	if (element) {
+        		element.parentNode.removeChild(element);
+			}
 			this.sceneObject.printClusters("clusters");
             $('#cluster-table').DataTable();
+        };
+
+		var display_all_dataset = document.getElementById("printAllBtn");
+		display_all_dataset.sceneObject = this;
+        display_all_dataset.onclick = function() {
+            var element = document.getElementById("print-table_wrapper");
+        	if (element) {
+        		element.parentNode.removeChild(element);
+			}
+			this.sceneObject.printDataset(this.sceneObject.realData, "print", this.sceneObject.realData.length);
+            $('#print-table').DataTable();
         };
     }
 
@@ -695,7 +657,7 @@ class Scene {
 
     // print fragment of the initial dataset
     // nrows = the number of rows
-    printDataset(dataset, elementID) {
+    printDataset(dataset, elementID, num_columns) {
         var initial_dataset = document.getElementById(elementID);
         var table = document.createElement("table");
         table.setAttribute("id", elementID+"-table");
@@ -717,7 +679,7 @@ class Scene {
 
         var tbody = document.createElement("tbody");
         table.appendChild(tbody);
-        for ( var j = 0; j < dataset.length; j++ ) {
+        for ( var j = 0; j < num_columns; j++ ) {
 			var obj	= dataset[ j ];
 			row = document.createElement("tr");
 			th = document.createElement("th");
