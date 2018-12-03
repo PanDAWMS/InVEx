@@ -116,7 +116,7 @@
                     <div class="card border-dark mb-3">
                         <div class="card-header">Clustering</div>
                         <div class="card-body">
-                            <form onsubmit="add_parameters(this);" action="" id="cluster_form" method="POST">
+                            <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
                                 {% csrf_token %}
 							    <input type="hidden" name="formt" value="cluster">
                                 {% if saveid %}
