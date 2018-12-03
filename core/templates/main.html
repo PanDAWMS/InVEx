@@ -159,6 +159,7 @@
 <script src="{% static "js/three.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/controls/DragControls.js" %}"></script>
+<script src="{% static "js/VAP/sup_func.js" %}"></script>
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -203,11 +204,11 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']], 'defvalue':'5'}],
-                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'number', 'attributes':[['placeholder', '5']], 'defvalue':'5'},
-                                                         {'name':'eps', 'label':'epsilon','type':'number', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5'}
+            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
+                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
+                                                         {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 20}
                                                          ]]
-            createClusterElements(document.getElementById('clustering'), clustering_parameters);
+            createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters);
 
             {% if dim_names %}
             var dimNames = {{ dim_names|safe }};
@@ -264,7 +265,6 @@
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.clusters_color_scheme = getColorScheme(clusters);
-            //scene.clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
             {% else %}
             scene.clusters_color_scheme = [new THREE.Color(1,1,1)];
             {% endif %}
@@ -283,8 +283,6 @@
             {% if saveid %}
                 scene.setSource('{{ saveid|safe }}');
             {% endif %}
-
-            //scene.setDragControls(objects);
 
 		}
 		function animate() {
@@ -515,6 +513,7 @@
     }
 
     function add_parameters(submited_form) {
+        console.log('test');
         var new_input = document.createElement('input');
         new_input.name = 'visualparameters';
         new_input.type = 'hidden';
