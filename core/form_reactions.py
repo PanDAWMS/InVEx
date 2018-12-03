@@ -181,6 +181,7 @@ def csv_file_from_server(request):
     data = prepare_basic(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
     data['request'] = request
     data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+    data['filename'] = request.POST['filename']
     return data
 
 

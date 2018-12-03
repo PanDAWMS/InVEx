@@ -44,12 +44,16 @@
                       <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
                             <div class="custom-file">
-							  <input type="hidden" name="formt" value="filefromserver">
-                              <select name="filename" class="form-control form-control-sm">
-                                  {% for fileonserver in dataset_files %}
-                                    <option value="{{ fileonserver.value|safe }}">{{ fileonserver.name|safe }}</option>
-                                  {% endfor %}
-                              </select>
+                                  <input type="hidden" name="formt" value="filefromserver">
+                                  <select name="filename" class="form-control form-control-sm">
+                                      {% for fileonserver in dataset_files %}
+                                            {% if filename|safe == fileonserver.value|safe %}
+                                                <option value="{{ fileonserver.value|safe }}" selected>{{ fileonserver.name|safe }}</option>
+                                            {% else %}
+                                                 <option value="{{ fileonserver.value|safe }}">{{ fileonserver.name|safe }}</option>
+                                            {% endif %}
+                                      {% endfor %}
+                                  </select>
                             </div>
                             <br/><br/>
                             <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Submit">
