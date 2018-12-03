@@ -7,13 +7,20 @@
 
 {% block body %}
     {% csrf_token %}
+	<script> 
+		var beginTime = (new Date()).getTime();
+	
+		{% if servertime %}
+		var serverTime = {{ servertime }};
+		{% endif %}
+	</script>
   <div class="card text-white bg-dark mb-3">
   <div class="card-body">
     <h4 class="card-title">Visual Analytics Platform for ATLAS</h4>
   </div>
     </div>
     <div class="vap_container">
-        <div class="container-fluid">
+        <div class="container-fluid" id='topcontroller'>
           <div class="row">
             <div class="col">
                 <ul class="nav nav-tabs" id="tabs" role="tablist">
@@ -65,11 +72,10 @@
                               <label class="custom-file-label" for="customFile">Choose file</label>
                             </div>
                             <br/><br/>
-                            <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Submit">
+                            <input type="submit" value="Submit">
                       </form>
                   </div>
                   <div class="tab-pane fade" id="print" role="tabpanel" aria-labelledby="print-tab">
-                      <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printAllBtn">Display All</button>
                   </div>
                   <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
                   </div>
@@ -116,7 +122,7 @@
                     <div class="card border-dark mb-3">
                         <div class="card-header">Clustering</div>
                         <div class="card-body">
-                            <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
+                            <form onsubmit="add_parameters(this);" action="" id="cluster_form" method="POST">
                                 {% csrf_token %}
 							    <input type="hidden" name="formt" value="cluster">
                                 {% if saveid %}
@@ -159,7 +165,6 @@
 <script src="{% static "js/three.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/controls/DragControls.js" %}"></script>
-<script src="{% static "js/VAP/sup_func.js" %}"></script>
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -204,11 +209,11 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
-                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
-                                                         {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 20}
+            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],
+                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'number', 'attributes':[['placeholder', '5']]},
+                                                         {'name':'eps', 'label':'eps','type':'number', 'attributes':[['placeholder','0.5']]}
                                                          ]]
-            createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters);
+            createClusterElements(document.getElementById('clustering'), clustering_parameters);
 
             {% if dim_names %}
             var dimNames = {{ dim_names|safe }};
@@ -241,13 +246,6 @@
 
             {% if corr_matrix %}
             var corr_matrix = {{ corr_matrix|safe }};
-			Matrix({
-				container : '#corr-matrix',
-				data      : corr_matrix,
-				labels    : dimNames,
-				start_color : '#ffffff',
-				end_color : '#3498db'
-			});
             {% endif %}
 
             {% if visualparameters %}
@@ -262,13 +260,22 @@
             scene.setAuxiliaryColumns(auxNames);
             {% endif %}
 
+
+        Matrix({
+            container : '#corr-matrix',
+            data      : corr_matrix,
+            labels    : dimNames,
+            start_color : '#ffffff',
+            end_color : '#3498db'
+        });
+
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.clusters_color_scheme = getColorScheme(clusters);
+            //scene.clusters_color_scheme = getColorScheme({{ count_of_clusters|safe }});
             {% else %}
             scene.clusters_color_scheme = [new THREE.Color(1,1,1)];
             {% endif %}
-			{% if norm_dataset %}
             var objects = [];
 			for ( var i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
@@ -277,12 +284,13 @@
 				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
 				{% endif %}
 			}
-			{% endif %}
 			scene.createControlElements();
 
             {% if saveid %}
                 scene.setSource('{{ saveid|safe }}');
             {% endif %}
+
+            //scene.setDragControls(objects);
 
 		}
 		function animate() {
@@ -513,14 +521,12 @@
     }
 
     function add_parameters(submited_form) {
-        console.log('test');
         var new_input = document.createElement('input');
         new_input.name = 'visualparameters';
         new_input.type = 'hidden';
         new_input.value = JSON.stringify(scene.saveParameters());
         submited_form.appendChild(new_input);
     }
-
 	</script>
 {% endblock %}
 

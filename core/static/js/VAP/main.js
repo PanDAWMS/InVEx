@@ -28,68 +28,9 @@ function getColorScheme( clusters ) {
 			base = 1;
 		for( var i = 0; i < len; i++ ) {
 			results[clusters_unique[i]] = new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
-			console.log(results);
 		}
 	}
 	return results;
-}
-
-function removeElement(id) {
-    var elem = document.getElementById(id);
-    return elem.parentNode.removeChild(elem);
-}
-
-function createClusterElements(element, cluster_params) {
-
-	var select_element = document.createElement('select');
-	select_element.classList.add('form-control');
-	select_element.classList.add('form-control-sm');
-	select_element.id = 'select' + ("00000" + Math.random()*100000).slice(-5);
-	select_element.name = 'algorithm';
-    var label_select = document.createElement('label');
-    label_select.innerText='Choose clustering algorithm';
-    label_select.setAttribute('for', select_element.id);
-    element.appendChild(label_select);
-    element.appendChild(select_element);
-
-    var elements = [];
-    for ( var k = 0; k < cluster_params.length; k++ ) {
-		var el = cluster_params[ k ];
-        var option_element = document.createElement('option');
-        option_element.innerText = el[ 1 ];
-        option_element.value = el[ 0 ];
-        select_element.appendChild(option_element);
-        var element_div = document.createElement('div');
-        if ( k == 0)
-        	element_div.style.display = 'block';
-        else
-        	element_div.style.display = 'none';
-        elements.push(element_div);
-        for( var i = 2; i < el.length; i++ ) {
-            var input = document.createElement("input");
-            input.classList.add("form-control-sm");
-            input.setAttribute("type", "text");
-            for (var j = 0; j < el[i].attributes.length; j++ ) {
-                input.setAttribute(el[ i ].attributes[ j ][ 0 ], el[ i ].attributes[ j ][ 1 ]);
-            }
-            input.id = 'inp'+("00000" + Math.random()*100000).slice(-5);
-            input.setAttribute("name", el[ i ][ 'name' ]);
-            var label = document.createElement("label");
-            label.setAttribute("for", input.id);
-            label.textContent = el[ i ][ 'label' ];
-            element_div.appendChild(label);
-            element_div.appendChild(input);
-        }
-        element.appendChild(element_div);
-    }
-    select_element.elements = elements;
-
-	select_element.onchange = function() {
-        for( var i = 0; i < this.elements.length; i++ ){
-            this.elements[i].style.display = 'none';
-        }
-        this.elements[this.selectedIndex].style.display = 'block';
-    };
 }
 
 function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
@@ -459,8 +400,7 @@ class Scene {
 	onMouseClick(event) {
 		event.preventDefault();
 
-		this.intersects = this.getIntersects( event.layerX, event.layerY );
-		//this.intersects = this.getIntersects( event.clientX, event.clientY );
+		this.intersects = this.getIntersects( event.offsetX, event.offsetY );
 		if ( this.intersects.length > 0 ) {
 			var res = this.intersects.filter( function ( res ) {
 
@@ -537,8 +477,7 @@ class Scene {
 
 		x = ( x / this.mainDiv.clientWidth ) * 2 - 1;
 		y = - ( y / this.mainDiv.clientHeight ) * 2 + 1;
-
-		this.mouseVector.set( x, y, 0.5 );
+		this.mouseVector.set( x, y );
 		this.raycaster.setFromCamera( this.mouseVector, this.camera );
 		return this.raycaster.intersectObject( this.groupOfSpheres, true );
 

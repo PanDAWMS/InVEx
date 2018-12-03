@@ -8,9 +8,25 @@ from datetime import datetime
 import pandas as pd
 import json
 from core.settings.base import BASE_DIR
+import logging
 
 SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
+DATASET_FILES_PATH = BASE_DIR + '/datasets/'
+TEST_DATASET_FILES_PATH = BASE_DIR + '/test_datasets/'
+FILES_LIST_NAME = 'files_list.json'
 BACKUP_FILE = '_backup'
+
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
+
+
+def list_csv_data_files(directory):
+    if not os.path.isfile(directory + FILES_LIST_NAME):
+        return None
+    file = open(directory + FILES_LIST_NAME, 'r')
+    csv_data_files = json.loads(file.read())
+    return csv_data_files
 
 
 def pandas_to_js_list(dataset):
@@ -112,6 +128,78 @@ def new_csv_file_upload(request):
                                                  True,
                                                  True)
     else:
+        return {}
+    # drop all columns and rows with NaN values
+    calc.importcsv.dropNA(dataset)
+    numeric_columns = calc.importcsv.numeric_columns(dataset)
+    numeric_dataset = dataset[numeric_columns]
+    norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
+    calc.importcsv.dropNA(norm_dataset)
+    columns = norm_dataset.columns.tolist()
+    numeric_dataset = numeric_dataset[columns]
+    auxiliary_dataset = dataset.drop(numeric_columns, 1)
+    op_history = calc.operationshistory.OperationHistory()
+    metrics = calc.basicstatistics.BasicStatistics()
+    metrics.process_data(norm_dataset)
+    op_history.append(norm_dataset, metrics)
+    data = prepare_basic(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
+    data['request'] = request
+    data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+    return data
+
+
+def csv_file_from_server(request):
+    list_of_files = list_csv_data_files(DATASET_FILES_PATH)
+    dataset = None
+    if ('filename' in request.POST) and (list_of_files is not None):
+        for file in list_of_files:
+            if request.POST['filename'] == file['value']:
+                if os.path.isfile(DATASET_FILES_PATH+file['filename']):
+                    dataset = calc.importcsv.import_csv_file(DATASET_FILES_PATH+file['filename'], True, True)
+                else:
+                    logger.error('!form_reactions.csv_file_from_server!: Could not read file', DATASET_FILES_PATH+file['filename'])
+                    return {}
+    else:
+        logger.error('!form_reactions.csv_file_from_server!: Wrong request')
+        return {}
+    if dataset is None:
+        logger.error('!form_reactions.csv_file_from_server!: Could not find file', request.POST['filename'])
+        return {}
+    # drop all columns and rows with NaN values
+    calc.importcsv.dropNA(dataset)
+    numeric_columns = calc.importcsv.numeric_columns(dataset)
+    numeric_dataset = dataset[numeric_columns]
+    norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
+    calc.importcsv.dropNA(norm_dataset)
+    columns = norm_dataset.columns.tolist()
+    numeric_dataset = numeric_dataset[columns]
+    auxiliary_dataset = dataset.drop(numeric_columns, 1)
+    op_history = calc.operationshistory.OperationHistory()
+    metrics = calc.basicstatistics.BasicStatistics()
+    metrics.process_data(norm_dataset)
+    op_history.append(norm_dataset, metrics)
+    data = prepare_basic(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
+    data['request'] = request
+    data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+    return data
+
+
+def csv_test_file_from_server(request):
+    list_of_files = list_csv_data_files(TEST_DATASET_FILES_PATH)
+    dataset = None
+    if ('filename' in request.POST) and (list_of_files is not None):
+        for file in list_of_files:
+            if request.POST['filename'] == file['value']:
+                if os.path.isfile(TEST_DATASET_FILES_PATH+file['filename']):
+                    dataset = calc.importcsv.import_csv_file(TEST_DATASET_FILES_PATH+file['filename'], True, True)
+                else:
+                    logger.error('!form_reactions.csv_file_from_server!: Could not read file', TEST_DATASET_FILES_PATH+file['filename'])
+                    return {}
+    else:
+        logger.error('!form_reactions.csv_file_from_server!: Wrong request')
+        return {}
+    if dataset is None:
+        logger.error('!form_reactions.csv_file_from_server!: Could not find file', request.POST['filename'])
         return {}
     # drop all columns and rows with NaN values
     calc.importcsv.dropNA(dataset)
