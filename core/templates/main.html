@@ -212,7 +212,15 @@
                                     ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
                                                          {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 20}
                                                          ]]
-            createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters);
+            var curr_algorithm;
+            var curr_parameters;
+
+            {%  if algorithm %}
+            curr_algorithm = "{{ algorithm }}";
+            curr_parameters = {{ parameters|safe }};
+            {% endif %}
+
+            createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
 
             {% if dim_names %}
             var dimNames = {{ dim_names|safe }};
@@ -520,7 +528,6 @@
     }
 
     function add_parameters(submited_form) {
-        console.log('test');
         var new_input = document.createElement('input');
         new_input.name = 'visualparameters';
         new_input.type = 'hidden';

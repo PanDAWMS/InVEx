@@ -44,6 +44,11 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
             self.model = pickle.loads(bytes.fromhex(results_dict['dump']))
         return True
 
+    def print_parameters(self):
+        result = {}
+        result['numberofcl'] = self.clust_numbers
+        return result
+
     def process_data(self, dataset):
         self.model = KMeans(self.clust_numbers)
         self.model.fit(dataset)

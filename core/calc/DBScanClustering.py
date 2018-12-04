@@ -42,6 +42,13 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
             self.eps = EPS
         return True
 
+    def print_parameters(self):
+        result = {}
+        result['eps'] = self.eps
+        result['min_samples'] = self.min_samples
+        return result
+
+
     def save_results(self):
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(self.results)) - (1 if -1 in self.results else 0)
