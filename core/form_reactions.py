@@ -230,6 +230,7 @@ def clusterize(request):
 
     data = prepare_basic(dataset, original, aux_dataset, op_history)
     data['request'] = request
+    operation = None
     if 'algorithm' in request.POST:
         if request.POST['algorithm'] == 'KMeans' and 'numberofcl' in request.POST:
             operation = calc.KMeansClustering.KMeansClustering()
@@ -261,6 +262,8 @@ def clusterize(request):
         print('No method')
     data['saveid'] = save_data(original, dataset, aux_dataset, op_history, request.POST['fdid'])
     data['visualparameters'] = request.POST['visualparameters']
+    data['algorithm'] = request.POST['algorithm']
+    data['parameters'] = operation.print_parameters()
     return data
 
 

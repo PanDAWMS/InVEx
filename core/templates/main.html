@@ -9,7 +9,8 @@
     {% csrf_token %}
   <div class="card text-white bg-dark mb-3">
   <div class="card-body">
-    <h4 class="card-title">Visual Analytics Platform for ATLAS</h4>
+    <h2 class="card-title">InVEx for ATLAS</h2>
+      <h5>Interactive Visual Explorer</h5>
   </div>
     </div>
     <div class="vap_container">
@@ -209,10 +210,18 @@
 
 		function init() {
             clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
-                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
-                                                         {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 20}
+                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
+                                                         {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
                                                          ]]
-            createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters);
+            var curr_algorithm;
+            var curr_parameters;
+
+            {%  if algorithm %}
+            curr_algorithm = "{{ algorithm }}";
+            curr_parameters = {{ parameters|safe }};
+            {% endif %}
+
+            createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
 
             {% if dim_names %}
             var dimNames = {{ dim_names|safe }};
@@ -315,33 +324,36 @@
             table.setAttribute("id", "stats-table");
             table.classList.add("table", "table-sm", "table-hover");
             var thead = document.createElement("thead");
-            table.appendChild(thead);
-            var row = document.createElement("tr");
-            thead.appendChild(row);
-            var th = document.createElement("th");
+            var row, th, td;
+
+            // first row with statistics column names
+            row = document.createElement("tr");
+            th = document.createElement("th");
             th.innerText = "  ";
             row.appendChild(th);
+            for ( var j = 0; j < stats[ 0 ].length; j++ ) {
+                th = document.createElement("th");
+                th.innerText = stats[0][j];
+                row.appendChild(th);
+            }
+            thead.appendChild(row);
+            table.appendChild(thead);
+
+            var tbody = document.createElement("tbody");
             for(var i = 0; i < dimensions.length; i++ ) {
+                row = document.createElement("tr");
                 th = document.createElement("th");
                 th.innerText = dimensions[ i ].toString();
                 row.appendChild(th);
-            }
-            var tbody = document.createElement("tbody");
-            table.appendChild(tbody);
-            for ( var j = 0; j < stats[ 0 ].length; j++ ) {
-                var obj	= stats[ 1 ][ j ];
-                row = document.createElement("tr");
-                th = document.createElement("th");
-                th.innerText = stats[ 0 ][ j ];
-                row.appendChild(th);
-
-                for(var i = 0; i < obj.length; i++ ) {
-                    var td = document.createElement("td");
-                    td.innerText = obj[ i ].toLocaleString(undefined, { maximumSignificantDigits: 3 });
+                for ( var j = 0; j < stats[ 0 ].length; j++ ) {
+                    var stat_value = stats[ 1 ][ j ][ i ];
+                    td = document.createElement("td");
+                    td.innerText = stat_value.toLocaleString(undefined, { maximumSignificantDigits: 3 });
                     row.appendChild(td);
                 }
                 tbody.appendChild(row);
             }
+            table.appendChild(tbody);
             initial_dataset.appendChild(table);
          }
 
@@ -517,7 +529,6 @@
     }
 
     function add_parameters(submited_form) {
-        console.log('test');
         var new_input = document.createElement('input');
         new_input.name = 'visualparameters';
         new_input.type = 'hidden';
