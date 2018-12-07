@@ -46,7 +46,7 @@ function removeElement(id) {
     return elem.parentNode.removeChild(elem);
 }
 
-function createClusterElements(divElement, formElement, cluster_params) {
+function createClusterElements(divElement, formElement, cluster_params, curr_algorithm, curr_values) {
 
 	var select_element = document.createElement('select');
 	select_element.classList.add('form-control');
@@ -59,7 +59,7 @@ function createClusterElements(divElement, formElement, cluster_params) {
     divElement.appendChild(label_select);
     divElement.appendChild(select_element);
     divElement.appendChild(document.createElement('br'));
-
+    console.log(curr_values);
     var elements = [];
     for ( var k = 0; k < cluster_params.length; k++ ) {
 		var el = cluster_params[ k ];
@@ -83,8 +83,12 @@ function createClusterElements(divElement, formElement, cluster_params) {
             }
             input.id = 'inp'+("00000" + Math.random()*100000).slice(-5);
             input.setAttribute("name", el[ i ][ 'name' ]);
-			if ('defvalue' in el[ i ]){
-				input.value = el[ i ][ 'defvalue' ];
+            if ( curr_values != undefined && el[ 0 ] == curr_algorithm ) {
+                input.value = el[ i ][ 'defvalue' ] = curr_values[el[ i ][ 'name' ]];
+            } else {
+                if ('defvalue' in el[ i ]){
+				    input.value = el[ i ][ 'defvalue' ];
+                }
             }
             if ('type' in el[ i ]){
                 input.typeOfField = el[ i ][ 'type' ];
@@ -117,12 +121,18 @@ function createClusterElements(divElement, formElement, cluster_params) {
             element_div.appendChild(form_group);
         }
         divElement.appendChild(element_div);
-        if ( k == 0){
+
+        if ( curr_algorithm === undefined && k == 0 ) {
             element_div.style.display = 'block';
             select_element.element_div = element_div;
             select_element.validateFields = function(){return this.element_div.validateFields()};
         }
-        else
+        else if (curr_algorithm != undefined && option_element.value === curr_algorithm) {
+            option_element.selected = true;
+            element_div.style.display = 'block';
+            select_element.element_div = element_div;
+            select_element.validateFields = function(){return this.element_div.validateFields()};
+        } else
         	element_div.style.display = 'none';
     }
     select_element.elements = elements;
