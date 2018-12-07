@@ -1,2 +1,2 @@
-# Visual Analytics Platform (VAP)
-Visual Analytics Platform for ATLAS Computing
+# InVEx for ATLAS
+Interactive Visual Explorer for ATLAS Computing metadata
