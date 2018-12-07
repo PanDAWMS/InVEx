@@ -210,8 +210,8 @@
 
 		function init() {
             clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
-                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
-                                                         {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 20}
+                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
+                                                         {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
                                                          ]]
             var curr_algorithm;
             var curr_parameters;
