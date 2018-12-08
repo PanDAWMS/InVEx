@@ -127,6 +127,9 @@
                                 {% if saveid %}
                                 <input type="hidden" name="fdid" value="{{ saveid }}">
                                 {% endif %}
+                                {% if filename %}
+                                <input type="hidden" name="fname" value="{{ filename|safe }}">
+                                {% endif %}
                                 <div class="form-group" id="clustering">
                                 </div>
                                 <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Clusterize">

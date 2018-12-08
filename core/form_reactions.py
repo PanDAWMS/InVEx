@@ -227,7 +227,6 @@ def clusterize(request):
     original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
     if dataset is None:
         return {}
-
     data = prepare_basic(dataset, original, aux_dataset, op_history)
     data['request'] = request
     operation = None
@@ -264,6 +263,7 @@ def clusterize(request):
     data['visualparameters'] = request.POST['visualparameters']
     data['algorithm'] = request.POST['algorithm']
     data['parameters'] = operation.print_parameters()
+    data['filename'] = request.POST['fname']
     return data
 
 
