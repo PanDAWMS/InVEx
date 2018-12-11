@@ -2,9 +2,12 @@ function invertColor(color) {
 	return new THREE.Color(1.0-color.r, 1.0-color.g, 1.0-color.b);
 }
 
-function drawPlainGrid() {
-	var grid = new THREE.GridHelper(200, 20, '#5BB', '#FFF');
-    grid.position.y-=0.2;
+function drawPlainGrid( white_theme=false ) {
+	if (white_theme)
+		var grid = new THREE.GridHelper(200, 20, '#000', '#000');
+	else
+		var grid = new THREE.GridHelper(200, 20, '#5BB', '#FFF');
+	grid.position.y-=0.2;
 	return grid;
 }
 
@@ -14,22 +17,32 @@ function drawAxes() {
 }
 
 
-function getColorScheme( clusters ) {
+function getColorScheme( clusters, white_theme=false ) {
 	var clusters_unique = Array.from(new Set(clusters));
 	var len = clusters_unique.length;
 	var results = {};
-	if ( len == 2 ) {
-		results[clusters_unique[0]] = new THREE.Color(1,0,0);
-		results[clusters_unique[1]] = new THREE.Color(0,0,1);
-	} else {
-		var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
-		var base = parts - 1;
-		if (base == 0)
-			base = 1;
-		for( var i = 0; i < len; i++ ) {
-			results[clusters_unique[i]] = new THREE.Color(1-(~~(i/(parts*parts)))%parts/base,1-(~~(i/parts))%parts/base,1-i%parts/base);
-		}
+	if (len==1){
+		if (white_theme)
+			results[clusters_unique[0]] = new THREE.Color(0.8,0.8,0.8);
+		else
+			results[clusters_unique[0]] = new THREE.Color(1,1,1);
 	}
+	else
+		if ( len == 2 ) {
+			results[clusters_unique[0]] = new THREE.Color(1,0,0);
+			results[clusters_unique[1]] = new THREE.Color(0,0,1);
+		} else {
+			var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
+			var base = parts - 1;
+			if (base == 0)
+				base = 1;
+			for( var i = 0; i < len; i++ ) {
+				if (white_theme)
+					results[clusters_unique[i]] = new THREE.Color( (~~(i/(parts*parts)))%parts/base*0.8 , (~~(i/parts))%parts/base*0.8 , i%parts/base*0.8 );
+				else
+					results[clusters_unique[i]] = new THREE.Color( 1-(~~(i/(parts*parts)))%parts/base , 1-(~~(i/parts))%parts/base , 1-i%parts/base );
+			}
+		}
 	return results;
 }
 
@@ -52,7 +65,7 @@ function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
 
 class Scene {
 
-	constructor(mainDiv, defaultRadius, numberOfSegements) {
+	constructor(mainDiv, defaultRadius, numberOfSegements, theme='black') {
 			this.mainDiv = mainDiv;
 			mainDiv.sceneObject = this;
 
@@ -66,7 +79,6 @@ class Scene {
 
 			// init scene
 			this.scene = new THREE.Scene();
-			this.scene.background = new THREE.Color( 0x333333 );
 
 			this.groupOfGrid = new THREE.Group();
 			this.scene.add(this.groupOfGrid);
@@ -82,13 +94,14 @@ class Scene {
 			this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
 			this.controls.enableRotate = true;
 			this.controls.saveState();
+
+			this.clusters = undefined;
 			
 			this.raycaster = new THREE.Raycaster();
 			this.mouseVector = new THREE.Vector3();
 			this.dragControls = null;
 			this.dragEnabled = false;
-
-            this.groupOfGrid.add(drawPlainGrid());
+			this.grid = undefined;
             this.groupOfGrid.add(drawAxes());
 
 			//this.drawAxes();
@@ -98,6 +111,7 @@ class Scene {
 
             //mainDiv.addEventListener( 'resize', this.onResize, false );
 			mainDiv.addEventListener( "click", function(event){this.sceneObject.onMouseClick(event);}, false );
+			this.changeTheme(theme);
 
 			this.height = 10;
 			this.defaultSpRad = defaultRadius;
@@ -108,6 +122,7 @@ class Scene {
             this.normData = [];
 			this.realData = [];
 			this.auxData = [];
+			this.clusters = [0];
 			this.auxNames = [];
 			this.numberOfSegements = numberOfSegements;
 			this.outputTable = null;
@@ -163,6 +178,10 @@ class Scene {
 		this.dimNames = dims;
 	}
 
+	setClusters(clusters){
+		this.clusters = clusters;
+	}
+
 	setIndex(idx) {
 		this.index = idx;
 	}
@@ -210,6 +229,29 @@ class Scene {
 		sphere.dataObject[2] = newCluster;
 		sphere.material.color = this.clusters_color_scheme[newCluster];
 		scene.selectObject(sphere);
+	}
+
+	changeTheme(newTheme){
+		if (newTheme=='white'){
+			this.white_theme = true;
+			this.select_linecube_color = new THREE.Color(0,0,0);
+			this.scene.background = new THREE.Color( 0xffffff );
+		}
+		else{
+			this.white_theme = false;
+			this.select_linecube_color = new THREE.Color(1,1,1);
+			this.scene.background = new THREE.Color( 0x333333 );
+		}
+		if (this.grid !== undefined)
+		{
+			this.groupOfGrid.remove(this.grid);
+		}
+		this.grid = drawPlainGrid(this.white_theme);
+		this.groupOfGrid.add(this.grid);
+		this.clusters_color_scheme = getColorScheme(this.clusters, this.white_theme);
+		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2]].clone();
+		}		
 	}
 	
 	activateDragControl(){
@@ -458,7 +500,7 @@ class Scene {
 		var geometry = new THREE.BoxBufferGeometry( 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius );
 		var edgesCube = new THREE.EdgesGeometry( geometry );
 		var edgesCube = new THREE.EdgesGeometry( geometry );
-		var lineCube = new THREE.LineSegments( edgesCube, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
+		var lineCube = new THREE.LineSegments( edgesCube, new THREE.LineBasicMaterial( { color: this.select_linecube_color } ) );
 		obj.selectedCircut = lineCube;
 		lineCube.position.x = obj.position.x;
 		lineCube.position.y = obj.position.y;
