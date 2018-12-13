@@ -12,41 +12,28 @@
     <h2 class="card-title">InVEx for ATLAS</h2>
       <h5>Interactive Visual Explorer</h5>
   </div>
-    </div>
+  </div>
     <div class="vap_container">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col">
-                <ul class="nav nav-tabs" id="tabs" role="tablist">
-                  {% if dataset_files %}
-                  <li class="nav-item">
-                    <a class="nav-link active" id="serverfile-tab" data-toggle="tab" href="#serverfile" role="tab" aria-controls="serverfile" aria-selected="true">Choose File from Server</a>
-                  </li>
-                  {% endif %}
-                   <li class="nav-item">
-                    <a class="nav-link {% if not dataset_files %}active{% endif %} " id="upload-tab" data-toggle="tab" href="#upload" role="tab" aria-controls="upload" aria-selected="true">Upload File</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" id="print-tab" data-toggle="tab" href="#print" role="tab" aria-controls="print" aria-selected="false">Print Data</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" id="stats-tab" data-toggle="tab" href="#stats" role="tab" aria-controls="stats" aria-selected="false">Statistics</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" id="corr-tab" data-toggle="tab" href="#corr" role="tab" aria-controls="corr" aria-selected="false">Correlations</a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" id="clusters-tab" data-toggle="tab" href="#clusters" role="tab" aria-controls="clusters" aria-selected="false">Clusters</a>
-                  </li>
+        <div class="grid-container fluid">
+          <div class="grid-x grid-margin-x">
+            <div class="cell">
+                <ul class="tabs" data-deep-link="true" data-update-history="true" data-deep-link-smudge="true" data-deep-link-smudge-delay="500" data-tabs id="deeplinked-tabs">
+                  <li class="tabs-title is-active"><a href="#serverfile" aria-selected="true">Choose File from Server</a></li>
+                  <li class="tabs-title"><a href="#upload">Upload File</a></li>
+                  <li class="tabs-title"><a href="#print">Print Dataset</a></li>
+                  <li class="tabs-title"><a href="#stats">Statistics</a></li>
+                  <li class="tabs-title"><a href="#corr">Correlations</a></li>
+                  <li class="tabs-title"><a href="#clusters">Clusters</a></li>
                 </ul>
-                <div class="tab-content">
+
+                <div class="tabs-content" data-tabs-content="deeplinked-tabs">
                   {% if dataset_files %}
-                  <div class="tab-pane fade show active" id="serverfile" role="tabpanel" aria-labelledby="serverfile-tab">
-                      <form action="" method="POST" enctype='multipart/form-data'>
+                  <div class="tabs-panel is-active" id="serverfile">
+                    <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
                             <div class="custom-file">
                                   <input type="hidden" name="formt" value="filefromserver">
-                                  <select name="filename" class="form-control form-control-sm">
+                                  <select name="filename">
                                       {% for fileonserver in dataset_files %}
                                             {% if filename|safe == fileonserver.value|safe %}
                                                 <option value="{{ fileonserver.value|safe }}" selected>{{ fileonserver.name|safe }}</option>
@@ -56,116 +43,117 @@
                                       {% endfor %}
                                   </select>
                             </div>
-                            <br/><br/>
-                            <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Submit">
+                            <input type="submit" class="button small vap-controllers" value="Submit">
                       </form>
                   </div>
-                   {% endif %}
-                  <div class="tab-pane fade show{% if not dataset_files %} active{% endif %}" id="upload" role="tabpanel" aria-labelledby="upload-tab">
-                      <form action="" method="POST" enctype='multipart/form-data'>
+                  {% endif %}
+                  <div class="tabs-panel" id="upload">
+                    <form action="" method="POST" enctype='multipart/form-data'>
                             {% csrf_token %}
-                            <div class="custom-file">
-							  <input type="hidden" name="formt" value="newfile">
-                              <input type="file" class="custom-file-input" id="customFile" name="customFile">
-                              <label class="custom-file-label" for="customFile">Choose file</label>
-                            </div>
-                            <br/><br/>
-                            <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Submit">
-                      </form>
+                          <input type="hidden" name="formt" value="newfile">
+                          <label for="customFile" class="button small">Upload File</label>
+                          <input type="file" id="customFile" class="show-for-sr" name="customFile">
+                          <input type="submit" class="button small" value="Submit">
+                     </form>
                   </div>
-                  <div class="tab-pane fade" id="print" role="tabpanel" aria-labelledby="print-tab">
-                      <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printAllBtn">Display All</button>
+                  <div class="tabs-panel" id="print">
+                    <button type="button" class="button small" id="printAllBtn">Display All</button>
                   </div>
-                  <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                  <div class="tabs-panel" id="stats">
                   </div>
-                  <div class="tab-pane fade" id="corr" role="tabpanel" aria-labelledby="corr-tab">
-                        <div id="corr-matrix">
-                            <div id="legend"></div>
-                        </div>
+                  <div class="tabs-panel" id="corr">
+                    <div id="corr-matrix">
+                        <div id="legend"></div>
+                    </div>
                   </div>
-                  <div class="tab-pane fade" id="clusters" role="tabpanel" aria-labelledby="clusters-tab">
-                        <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="printBtn">Print Results</button>
-{#                        <div class="pre-scrollable" id="clusters-print"></div>#}
+                  <div class="tabs-panel" id="clusters">
+                    <button type="button" class="button small" id="printBtn">Print Results</button>
                   </div>
                 </div>
             </div>
           </div>
+        </div>
           <div class="row">
             <br/>
           </div>
         </div>
         <div id="controls"></div>
-        <div class="container">
-            <div class="row">
-                <div class="col-3" id="controllers">
-                    <div class="card border-dark mb-3">
-                        <div class="card-header">Dimensions</div>
-                        <div class="card-body">
-                            <form id="dimensions_form">
-                                <div class="form-group form-inline vap-controllers">
-                                    <select class="form-control form-control-sm text-danger" id="x_dim">
-                                    </select>
-                                </div>
-                                <div class="form-group form-inline vap-controllers">
-                                    <select class="form-control form-control-sm text-success" id="y_dim">
-                                    </select>
-                                </div>
-                                <div class="form-group form-inline vap-controllers">
-                                    <select class="form-control form-control-sm text-primary" id="z_dim">
-                                    </select>
-                                </div>
-                                <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="change_dim_btn">Change Dimensions</button>
-                            </form>
-                        </div>
+            <div class="grid-x grid-margin-x" style="margin-left: .1000rem;">
+              <div class="cell small-3" id="controllers">
+                  <div class="grid-y" style="height: 800px;">
+                      <div class="cell">
+                          <div class="card">
+                              <div class="card-divider">
+                                Dimensions
+                              </div>
+                              <div class="card-section">
+                                <form id="dimensions_form">
+                                    <select id="x_dim"></select>
+                                    <select id="y_dim"></select>
+                                    <select id="z_dim"></select>
+                                    <button type="button" class="button small" id="change_dim_btn">Change Dimensions</button>
+                                </form>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="cell">
+                          <div class="card">
+                              <div class="card-divider">
+                                Clustering
+                              </div>
+                              <div class="card-section">
+                                <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="formt" value="cluster">
+                                    {% if saveid %}
+                                    <input type="hidden" name="fdid" value="{{ saveid }}">
+                                    {% endif %}
+                                    {% if filename %}
+                                    <input type="hidden" name="fname" value="{{ filename|safe }}">
+                                    {% endif %}
+                                    <div class="form-group" id="clustering">
+                                    </div>
+                                    <input type="submit" class="button small" value="Clusterize">
+                                </form>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="cell large-auto">
+                          <div class="card">
+                              <div class="card-divider">
+                                Visualization Settings
+                              </div>
+                              <div class="card-section">
+                                <form id="radius_form">
+                                    <div class="form-group">
+                                        <label for="radiusRange">Spheres Radius</label>
+                                        <input type="range" class="custom-range" min="0" max="3" step="0.1" id="radiusRange">
+                                        <button type="button" class="button small" id="changeRadiusBtn">Change Radius</button>
+                                    </div>
+                                </form>
+                                <form>
+                                    <div class="form-group form-check">
+                                        <input type="checkbox" class="form-check-input" id="dragControls" onchange="changeDragMode()">
+                                        <label class="form-check-label" for="dragControls">Activate Drag Controls</label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check-label" for="choose_theme">Choose theme</label>
+                                        <select class="form-control form-control-sm" id="choose_theme" onchange="changeTheme(this);">
+                                            <option value="black">Black</option>
+                                            <option value="white">White</option>
+                                        </select>
+                                    </div>
+                                  <button type="button" class="button small" id="resetBtn">Reset Camera</button>
+                              </form>
+                              </div>
+                          </div>
+                      </div>
                     </div>
-                    <div class="card border-dark mb-3">
-                        <div class="card-header">Clustering</div>
-                        <div class="card-body">
-                            <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
-                                {% csrf_token %}
-							    <input type="hidden" name="formt" value="cluster">
-                                {% if saveid %}
-                                <input type="hidden" name="fdid" value="{{ saveid }}">
-                                {% endif %}
-                                {% if filename %}
-                                <input type="hidden" name="fname" value="{{ filename|safe }}">
-                                {% endif %}
-                                <div class="form-group" id="clustering">
-                                </div>
-                                <input type="submit" class="btn btn-secondary btn-sm vap-controllers" value="Clusterize">
-                            </form>
-                        </div>
-                    </div>
-                    <div class="card border-dark mb-3">
-                        <div class="card-header">Manage Spatial Scene</div>
-                        <div class="card-body">
-                            <form id="radius_form">
-                                <div class="form-group">
-                                    <label for="radiusRange">Spheres Radius</label>
-                                    <input type="range" class="custom-range" min="0" max="3" step="0.1" id="radiusRange">
-                                    <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="changeRadiusBtn">Change Radius</button>
-                                </div>
-                            </form>
-                            <form>
-                                <div class="form-group form-check">
-                                    <input type="checkbox" class="form-check-input" id="dragControls" onchange="changeDragMode()">
-                                    <label class="form-check-label" for="dragControls">Activate Drag Controls</label>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-check-label" for="choose_theme">Choose theme</label>
-                                    <select class="form-control form-control-sm" id="choose_theme" onchange="changeTheme(this);">
-                                        <option value="black">Black</option>
-                                        <option value="white">White</option> 
-                                    </select>
-                                </div>
-                              <button type="button" class="btn btn-secondary btn-sm vap-controllers" id="resetBtn">Reset Camera</button>
-                          </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-11 mainPicture" id="picture">
-                    <div id="gui_container"></div>
-                </div>
+              </div>
+              <div class="cell auto mainPicture" id="picture">
+                  <div id="gui_container"></div>
+              </div>
+            </div>
             </div>
         </div>
 {#        <div class="container pre-scrollable" id="output"></div>#}
@@ -179,7 +167,9 @@
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="{% static "js/bootstrap.min.js" %}"></script>
+{#<script src="{% static 'js/foundation/vendor/jquery.js' %}"></script>#}
+<script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
+{#<script src="{% static "js/bootstrap.min.js" %}"></script>#}
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 {% endblock %}
@@ -193,11 +183,11 @@
             setCookie('colortheme', colortheme, 14);
             document.getElementById('choose_theme').value = colortheme;
         }
-
-        $('#tabs a').on('click', function (e) {
-          e.preventDefault()
-          $(this).tab('show')
-        });
+{##}
+{#        $('#deeplinked-tabs a').on('click', function (e) {#}
+{#          e.preventDefault();#}
+{#          $(this).tab('show');#}
+{#        });#}
 
 		function onSceneResize() {
 			scene.onResize();
@@ -341,7 +331,7 @@
             var initial_dataset = document.getElementById("stats");
             var table = document.createElement("table");
             table.setAttribute("id", "stats-table");
-            table.classList.add("table", "table-sm", "table-hover");
+            table.classList.add("hover");
             var thead = document.createElement("thead");
             var row, th, td;
 
