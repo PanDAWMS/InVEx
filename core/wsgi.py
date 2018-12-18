@@ -1,5 +1,5 @@
 """
-WSGI config for visualanalyticsplatform project.
+WSGI config for the project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -10,12 +10,14 @@ https://docs.djangoproject.com/en/2.1/howto/deployment/wsgi/
 import os
 import sys
 
+from django.core.wsgi import get_wsgi_application
+
+DJANGO_SETTINGS_MODULE = 'core.settings'  # TODO: make one place to import from
+
+
 path = '/data/vap/'
 if path not in sys.path:
     sys.path.append(path)
 
-from django.core.wsgi import get_wsgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
-
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', DJANGO_SETTINGS_MODULE)
 application = get_wsgi_application()

@@ -3,7 +3,7 @@
 import os
 import sys
 
-DJANGO_SETTINGS_MODULE = 'core.settings'
+DJANGO_SETTINGS_MODULE = 'core.settings'  # TODO: make one place to import from
 
 
 def main():
