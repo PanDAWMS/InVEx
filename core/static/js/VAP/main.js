@@ -168,8 +168,6 @@ class Scene {
 
     createGui() {
         this.dims_gui = new dat.GUI({ autoPlace: false, width: 300 });
-		//
-		//this.dims_gui = new dat.GUI();
         this.dims_gui.domElement.id = 'gui';
         document.getElementById("gui_container").appendChild(this.dims_gui.domElement);
     }
@@ -570,9 +568,12 @@ class Scene {
 	}
 
 	dimensionControlElements() {
+		console.log("Dims Controls");
         var chooseDimArray = [];
 		var dimensionsForm = document.getElementById("dimensions_form");
+		console.log(dimensionsForm);
 		var XYZSelector = dimensionsForm.getElementsByTagName("select");
+		console.log(XYZSelector);
         for ( var i = 0; i < XYZSelector.length; i++ ) {
             var currSelector = XYZSelector[ i ];
             for ( var j = 0; j < this.dimNames.length; j++ ) {
@@ -584,6 +585,7 @@ class Scene {
                 currSelector.add(option);
             }
             chooseDimArray.push(currSelector);
+			console.log(currSelector);
         }
         var changeDimBtn = document.getElementById("change_dim_btn");
         changeDimBtn.sceneObject = this;
