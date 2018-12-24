@@ -59,7 +59,6 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     divElement.appendChild(label_select);
     divElement.appendChild(select_element);
     divElement.appendChild(document.createElement('br'));
-    console.log(curr_values);
     var elements = [];
     for ( var k = 0; k < cluster_params.length; k++ ) {
 		var el = cluster_params[ k ];
