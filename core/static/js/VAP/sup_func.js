@@ -285,3 +285,36 @@ function printDataset(element, headers, dataset, num_rows, id_num=0){
     table.dataTableObj = $('#'+table.id).DataTable();
     return table;
 }
+
+function createControlBasics(formID){
+    while(document.getElementById(formID)!==null)
+        formID+=(Math.random()*10).toString().slice(-1);
+    var form = document.createElement('form');
+    form.id = formID;
+    var div = document.createElement('div');
+    div.classList.add('form-group', 'form-check');
+    form.appendChild(div);
+    form.groupDiv = div;
+    form.createNewLine = function(){this.groupDiv.appendChild(document.createElement('br'));};
+    return form;
+}
+
+function createControlRadioWithLabel(radioID, name, text){
+    while(document.getElementById(radioID)!==null)
+        radioID+=(Math.random()*10).toString().slice(-1);
+
+    var radioButton = document.createElement('input');
+    radioButton.id = radioID;
+    radioButton.classList.add('form-check-input');
+    radioButton.setAttribute('type', 'radio');
+    radioButton.setAttribute('name', name);
+
+    var label = document.createElement('label');
+    label.id = 'for' + radioButton.id;
+    label.classList.add('form-check-label');
+    label.setAttribute('for', radioButton.id);
+    label.innerText = text;
+    radioButton.labelElement = label;
+    
+    return radioButton;
+}

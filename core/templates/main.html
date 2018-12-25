@@ -24,7 +24,9 @@
                   <li class="tabs-title"><a href="#print">Print Dataset</a></li>
                   <li class="tabs-title"><a href="#stats">Statistics</a></li>
                   <li class="tabs-title"><a href="#corr">Correlations</a></li>
+                {% if cluster_ready %}
                   <li class="tabs-title"><a href="#clusters">Clusters</a></li>
+                {% endif %}
                   <li class="tabs-title" style="visibility:hidden" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
                 {% endif %}
                 </ul>
@@ -132,35 +134,10 @@
                               <div class="card-divider">
                                 Visualization Settings
                               </div>
-                              <div class="card-section">
-                                <form id="radius_form">
-                                    <div class="form-group">
-                                        <label for="radiusRange">Spheres Radius</label>
-                                        <input type="range" class="custom-range" min="0" max="3" step="0.1" id="radiusRange">
-                                        <button type="button" class="button small" id="changeRadiusBtn">Change Radius</button>
-                                    </div>
-                                </form>
-                                <form>
-                                    <div class="form-group form-check">
-                                        <input type="radio" name="interactiontype" class="form-check-input" id="regularInteractionType" value="regular" onchange="setRegularMode(event)" checked>
-                                        <label class="form-check-label" for="regularInteractionType">Activate Regular Selection</label><br>
-                                        <input type="radio" name="interactiontype" class="form-check-input" id="multiInteractionType" value="multi" onchange="setMultiMode(event)">
-                                        <label class="form-check-label" for="multiInteractionType">Activate Multiple Selection</label><br>
-                                        <input type="radio" name="interactiontype" class="form-check-input" id="dragInteractionType" value="drag" onchange="setDragMode(event)">
-                                        <label class="form-check-label" for="dragInteractionType">Activate Drag Controls</label><br>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-check-label" for="choose_theme">Choose theme</label>
-                                        <select class="form-control form-control-sm" id="choose_theme" onchange="changeTheme(this);">
-                                            <option value="black">Black</option>
-                                            <option value="white">White</option>
-                                        </select>
-                                    </div>
-                                  <button type="button" class="button small" id="resetBtn">Reset Camera</button>
-                              </form>
+                              <div class="card-section" id='visualizationSettings'>
                               </div>
-                          </div>
-                      </div>
+                            </div>
+                        </div>
                     </div>
               </div>
               <div class="cell auto mainPicture" id="picture">
@@ -187,15 +164,6 @@
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 {% endblock %}
 	<script>
-    // SETTING:
-		countOfEdges=24;
-        var colortheme = getCookie('colortheme');
-        if (colortheme == "")
-            colortheme = 'black';
-        else{
-            setCookie('colortheme', colortheme, 14);
-            document.getElementById('choose_theme').value = colortheme;
-        }
 {##}
 {#        $('#deeplinked-tabs a').on('click', function (e) {#}
 {#          e.preventDefault();#}
@@ -206,26 +174,11 @@
 			scene.onResize();
 		}
 
-		function setDragMode(event) {
-		    scene.setInteractiveMode('drag', {});
-            document.getElementById('multichoicelink').style["visibility"] = 'hidden';
-        }
-
-		function setMultiMode(event) {
-		    scene.setInteractiveMode('multi', {'tabletab': document.getElementById('multichoice')});
-            document.getElementById('multichoicelink').style["visibility"] = 'visible';
-        }
-
-		function setRegularMode(event) {
-		    scene.setInteractiveMode('regular', {});
-            document.getElementById('multichoicelink').style["visibility"] = 'hidden';
-        }
-
         $(document).ready(function() {
             $('#stats-table').DataTable();
 
         } );
-		var scene=new Scene(document.getElementById("picture"), 0.75, countOfEdges, colortheme);
+		var scene = new Scene(document.getElementById("picture"), 0.75);
 		animate();
 		init();
 
@@ -301,10 +254,10 @@
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.setClusters(clusters);
-            scene.clusters_color_scheme = getColorScheme(clusters, scene.white_theme);
+            scene.clusters_color_scheme = getColorScheme(clusters, scene.theme);
             {% else %}
             scene.setClusters([0]);
-            scene.clusters_color_scheme = getColorScheme([0], scene.white_theme);
+            scene.clusters_color_scheme = getColorScheme([0], scene.theme);
             {% endif %}
             
 			{% if norm_dataset %}
@@ -319,7 +272,9 @@
 			{% endif %}
         
             {%  if data_is_ready %}
-			scene.createControlElements();
+			scene.createControlElements(document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+            {% else %}
+			scene.createControlElements(document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
             {% endif %}
             
             {% if saveid %}
@@ -568,12 +523,6 @@
         new_input.value = JSON.stringify(scene.saveParameters());
         submited_form.appendChild(new_input);
     }
-
-    function changeTheme(domElement){
-        scene.changeTheme(domElement.value);
-        setCookie('colortheme', domElement.value, 14);
-    }
-
 	</script>
 {% endblock %}
 

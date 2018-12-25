@@ -2,8 +2,8 @@ function invertColor(color) {
 	return new THREE.Color(1.0-color.r, 1.0-color.g, 1.0-color.b);
 }
 
-function drawPlainGrid( white_theme=false ) {
-	if (white_theme)
+function drawPlainGrid( theme='black' ) {
+	if (theme=='white')
 		var grid = new THREE.GridHelper(200, 20, '#000', '#000');
 	else
 		var grid = new THREE.GridHelper(200, 20, '#5BB', '#FFF');
@@ -17,12 +17,12 @@ function drawAxes() {
 }
 
 
-function getColorScheme( clusters, white_theme=false ) {
+function getColorScheme( clusters, theme='black' ) {
 	var clusters_unique = Array.from(new Set(clusters));
 	var len = clusters_unique.length;
 	var results = {};
 	if (len==1){
-		if (white_theme)
+		if (theme=='white')
 			results[clusters_unique[0]] = new THREE.Color(0.8,0.8,0.8);
 		else
 			results[clusters_unique[0]] = new THREE.Color(1,1,1);
@@ -37,7 +37,7 @@ function getColorScheme( clusters, white_theme=false ) {
 			if (base == 0)
 				base = 1;
 			for( var i = 0; i < len; i++ ) {
-				if (white_theme)
+				if (theme=='white')
 					results[clusters_unique[i]] = new THREE.Color( (~~(i/(parts*parts)))%parts/base*0.8 , (~~(i/parts))%parts/base*0.8 , i%parts/base*0.8 );
 				else
 					results[clusters_unique[i]] = new THREE.Color( 1-(~~(i/(parts*parts)))%parts/base , 1-(~~(i/parts))%parts/base , 1-i%parts/base );
@@ -66,9 +66,22 @@ function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
 class Scene {
 
 	// #region Scene initialization
-	constructor(mainDiv, defaultRadius, numberOfSegements, theme='black') {
+	constructor(mainDiv, defaultRadius) {
 			this.mainDiv = mainDiv;
 			mainDiv.sceneObject = this;
+
+			this.height = 10;
+			this.width = 10;
+			this.proectionSubSpace = [0,1,2];
+			this.dimNames=[];
+			this.index = '';
+            this.normData = [];
+            this.interactiveMode = 'single';
+			this.realData = [];
+			this.auxData = [];
+			this.clusters = [0];
+			this.auxNames = [];
+			this.outputTable = null;
 
 			// init renderer
 			this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -107,33 +120,36 @@ class Scene {
 			this.dragControls = null;
 			this.dragEnabled = false;
 			this.grid = undefined;
-            this.groupOfGrid.add(drawAxes());
+			this.groupOfGrid.add(drawAxes());      
 
-			//this.drawAxes();
+			this.theme = getCookie('colortheme');
+			if (this.theme == "")
+			this.theme = 'black';
+			else{
+				setCookie('colortheme', this.theme, 14);
+			}
+			this.changeTheme(this.theme);
+			
+			
+			this.__qualityRange = [{'value':'exlow', 'text':'Extra low', 'segs':5}, 
+								{'value':'low', 'text':'Low', 'segs':10},
+								{'value':'med', 'text':'Medium', 'segs':15},
+								{'value':'high', 'text':'High', 'segs':25},
+								{'value':'exhigh', 'text':'Extra high', 'segs':40}];
+			this.quality = getCookie('quality');
+			if (this.quality == "")
+				this.quality = 'med';
+			else
+				setCookie('quality', this.quality, 14);
+			this.defaultSpRad = defaultRadius;
 
             // init lights
             this.initLight();
 
-            //mainDiv.addEventListener( 'resize', this.onResize, false );
 			mainDiv.addEventListener( "click", function(event){this.sceneObject.onMouseClick(event);}, false );
-			this.changeTheme(theme);
 
-			this.height = 10;
-			this.defaultSpRad = defaultRadius;
-			this.width = 10;
-			this.proectionSubSpace = [0,1,2];
-			this.dimNames=[];
-			this.index = '';
-            this.normData = [];
-            this.interactiveMode = 'regular';
-			this.realData = [];
-			this.auxData = [];
-			this.clusters = [0];
-			this.auxNames = [];
-			this.numberOfSegements = numberOfSegements;
-			this.outputTable = null;
-			this.sphereGeometry = new THREE.SphereGeometry( this.defaultSpRad, this.numberOfSegements, this.numberOfSegements);
-            this.createGui();
+			this.changeQuality(this.quality);
+			this.createGui();
 
 	}
 	
@@ -216,53 +232,236 @@ class Scene {
         this.dims_gui.domElement.id = 'gui';
         document.getElementById("gui_container").appendChild(this.dims_gui.domElement);
 	}
+
+	interactionModeControls(multiChoiceControl, multiChoiceTab) {
+		var interactionModeID = 'interMode';
+		while(document.getElementById(interactionModeID)!==null)
+		interactionModeID += (Math.random()*10).toString().slice(-1);
+		
+		var form = createControlBasics('form' + interactionModeID);
+
+		var singleChoiceRadio = createControlRadioWithLabel('single' + interactionModeID, interactionModeID, 'Activate Single Sphere Selection');
+		singleChoiceRadio.sceneObject = this;
+		singleChoiceRadio.multiChoiceControl = multiChoiceControl;
+		if (this.interactiveMode == 'single')
+			singleChoiceRadio.checked = true;
+		singleChoiceRadio.onChange = function(event){
+			this.sceneObject.setInteractiveMode('single', {});
+			this.multiChoiceControl.style["visibility"] = 'hidden';
+		};
+
+		var multiChoiceRadio = createControlRadioWithLabel('multi' + interactionModeID, interactionModeID, 'Activate Multiple Sphere Selection');
+		multiChoiceRadio.sceneObject = this;
+		multiChoiceRadio.multiChoiceControl = multiChoiceControl;
+		multiChoiceRadio.multiChoiceTab = multiChoiceTab;
+		if (this.interactiveMode == 'multi')
+			multiChoiceRadio.checked = true;
+		multiChoiceRadio.onChange = function(event){
+			this.sceneObject.setInteractiveMode('multi', {'tabletab': this.multiChoiceTab});
+			this.multiChoiceControl.style["visibility"] = 'visible';
+		};
+
+		var dragChoiceRadio = createControlRadioWithLabel('drag' + interactionModeID, interactionModeID, 'Activate Drag Sphere Control');
+		dragChoiceRadio.sceneObject = this;
+		dragChoiceRadio.multiChoiceControl = multiChoiceControl;
+		if (this.interactiveMode == 'drag')
+			dragChoiceRadio.checked = true;
+		dragChoiceRadio.onChange = function(event){
+			this.sceneObject.setInteractiveMode('drag', {});
+			this.multiChoiceControl.style["visibility"] = 'hidden';
+		};
+		
+		form.groupDiv.appendChild(singleChoiceRadio);
+		form.groupDiv.appendChild(singleChoiceRadio.labelElement);
+		form.createNewLine();
+		form.groupDiv.appendChild(multiChoiceRadio);
+		form.groupDiv.appendChild(multiChoiceRadio.labelElement);
+		form.createNewLine();
+		form.groupDiv.appendChild(dragChoiceRadio);
+		form.groupDiv.appendChild(dragChoiceRadio.labelElement);
+		return form;
+	}
 	
-	radiusControlElement() {
-        var changeRadiusBtn = document.getElementById("changeRadiusBtn");
-        var radiusRange = document.getElementById("radiusRange");
-        changeRadiusBtn.sceneObject = this;
+	changeRadiusControls() {
+		var radChangeID = 'radiusChange';
+		while(document.getElementById(radChangeID)!==null)
+			radChangeID += (Math.random()*10).toString().slice(-1);
+		
+		var form = createControlBasics('form' + radChangeID);
+
+		var changeRadiusBtn = document.createElement('button');
+		changeRadiusBtn.id = 'button' + radChangeID;
+		changeRadiusBtn.classList.add('button', 'small');
+		changeRadiusBtn.innerText = 'Change Radius';
+		changeRadiusBtn.setAttribute('type', 'button');
+
+		var radiusRange = document.createElement('input');
+		changeRadiusBtn.id = 'range' + radChangeID;
+		radiusRange.classList.add('custom-range');
+		radiusRange.setAttribute('type', 'range');
+		radiusRange.min = 0.1;
+		radiusRange.max = 3;
+		radiusRange.step = 0.1;
+
+		var label = document.createElement('label');
+		label.id = 'for' + radiusRange.id;
+		label.setAttribute('for', radiusRange.id);
+		label.innerText = 'Spheres Radius: ';
+
+		changeRadiusBtn.sceneObject = this;
+		changeRadiusBtn.radiusRange = radiusRange;
         radiusRange.value = this.defaultSpRad.toString();
 		changeRadiusBtn.onclick = function() {
-            var radiusRange = document.getElementById("radiusRange");
-			this.sceneObject.changeRad(parseFloat(radiusRange.value));
-        };
+			this.sceneObject.changeRad(parseFloat(this.radiusRange.value));
+			return false;
+		};
+
+		form.groupDiv.appendChild(label);
+		form.groupDiv.appendChild(radiusRange);
+		form.groupDiv.appendChild(changeRadiusBtn);
+
+		return form;
     }
 
     resetControls() {
-        var resetCameraBtn = document.getElementById("resetBtn");
+		var resetID = 'resetBtn';
+		while(document.getElementById(resetID)!==null)
+			resetID+=(Math.random()*10).toString().slice(-1);
+
+		var form = createControlBasics('form' + resetID);
+		
+		var resetCameraBtn = document.createElement('button');
+		resetCameraBtn.id = resetID;
+		resetCameraBtn.classList.add('button', 'small');
+		resetCameraBtn.setAttribute('type', 'button');
+		resetCameraBtn.innerText = 'Reset Camera'
 		resetCameraBtn.sceneObject = this;
 		resetCameraBtn.onclick = function() {
 			this.sceneObject.resetCamera();
-			};
+		};
+		form.groupDiv.appendChild(resetCameraBtn);
+
+		return form;
     }
 
     printControls() {
-        var display_clusters = document.getElementById("printBtn");
-        display_clusters.sceneObject = this;
-        display_clusters.onclick = function() {
-        	var element = document.getElementById("cluster-table_wrapper");
-        	if (element) {
-        		element.parentNode.removeChild(element);
-			}
-			this.sceneObject.printClusters(document.getElementById("clusters"));
-        };
-
+		var display_clusters = document.getElementById("printBtn");
+		if (display_clusters !== null){
+			display_clusters.sceneObject = this;
+			display_clusters.onclick = function() {
+				var element = document.getElementById("cluster-table_wrapper");
+				if (element) {
+					element.parentNode.removeChild(element);
+				}
+				this.sceneObject.printClusters(document.getElementById("clusters"));
+			};
+		}
+		
 		var display_all_dataset = document.getElementById("printAllBtn");
-		display_all_dataset.sceneObject = this;
-        display_all_dataset.onclick = function() {
-            var element = document.getElementById("print-table_wrapper");
-        	if (element) {
-        		element.parentNode.removeChild(element);
-			}
-			printDataset(document.getElementById("print"), this.sceneObject.index.concat(this.sceneObject.dimNames), this.sceneObject.realData);
-        };
-    }
+		if (display_all_dataset !== null){
+			display_all_dataset.sceneObject = this;
+			display_all_dataset.onclick = function() {
+				var element = document.getElementById("print-table_wrapper");
+				if (element) {
+					element.parentNode.removeChild(element);
+				}
+				printDataset(document.getElementById("print"), this.sceneObject.index.concat(this.sceneObject.dimNames), this.sceneObject.realData);
+			};
+		}
+	}
+	
+	changeQualityControls() {
+		var changeQualityID = 'changeQuality';
+		while(document.getElementById(changeQualityID)!==null)
+			changeQualityID+=(Math.random()*10).toString().slice(-1);
 
-	createControlElements() {
-        this.dimensionControlElements();
-        this.radiusControlElement();
-        this.resetControls();
-        this.printControls();
+		var form = createControlBasics('form' + changeQualityID);
+		
+		var selectbox = document.createElement('select');
+		selectbox.classList.add('form-control', 'form-control-sm');
+		selectbox.id = changeQualityID;
+		selectbox.name = changeQualityID;
+
+		var option = null;
+		for(var i=0; i<this.__qualityRange.length; ++i){
+			option = document.createElement('option');
+			option.value = this.__qualityRange[i]['value'];
+			option.innerText = this.__qualityRange[i]['text'];
+			selectbox.appendChild(option);
+		}
+		selectbox.value = this.quality;
+
+		var label = document.createElement('label');
+		label.id = 'for' + selectbox.id;
+		label.setAttribute('for', selectbox.id);
+		label.innerText = 'Select quality: ';
+		form.groupDiv.appendChild(label);
+		form.groupDiv.appendChild(selectbox);
+		form.createNewLine();
+
+		var button = document.createElement('button');
+		button.id = 'button' + changeQualityID;
+		button.setAttribute('type', 'button');
+		button.innerText = 'Change Quality';
+		button.title = 'This may take some time';
+		button.qualitybox = selectbox;
+		button.classList.add('button', 'small');
+		button.sceneObject = this;
+		button.onclick = function(){
+			this.sceneObject.changeQuality(button.qualitybox.value);
+		}
+		form.groupDiv.appendChild(button);
+		return form;
+	}
+	
+	changeThemeControls() {
+		var changeThemeID = 'changeTheme';
+		while(document.getElementById(changeThemeID)!==null)
+			changeThemeID+=(Math.random()*10).toString().slice(-1);
+
+		var form = createControlBasics('form' + changeThemeID);
+		
+		var selectbox = document.createElement('select');
+		selectbox.classList.add('form-control', 'form-control-sm');
+		selectbox.id = changeThemeID;
+		selectbox.name = changeThemeID;
+
+		var option = document.createElement('option');
+		option.value = 'black';
+		option.innerText = 'Black';
+		selectbox.appendChild(option);
+
+		var option = document.createElement('option');
+		option.value = 'white';
+		option.innerText = 'White';
+		selectbox.appendChild(option);
+
+		selectbox.value = this.theme;
+		selectbox.sceneObject = this;
+		selectbox.onchange = function(){
+			this.sceneObject.changeTheme(this.value);
+		}
+
+		var label = document.createElement('label');
+		label.id = 'for' + selectbox.id;
+		label.setAttribute('for', selectbox.id);
+		label.innerText = 'Select Theme: ';
+		form.groupDiv.appendChild(label);
+		form.groupDiv.appendChild(selectbox);
+
+		return form;
+	}
+
+	createControlElements(sceneControlElement, multiChoiceControl, multiChoiceTab, fullload=true) {
+		if(fullload){
+			this.dimensionControlElements();
+			this.printControls();
+		}
+        sceneControlElement.appendChild(this.changeRadiusControls());
+        sceneControlElement.appendChild(this.interactionModeControls(multiChoiceControl, multiChoiceTab));
+        sceneControlElement.appendChild(this.changeThemeControls());
+        sceneControlElement.appendChild(this.changeQualityControls());
+        sceneControlElement.appendChild(this.resetControls());
 	}
 
 	printClusters(element) {
@@ -292,8 +491,8 @@ class Scene {
 	removeElementFromTable(table, element){
 		removeElementFromDataTableDynamic(table, element.realData[0]);
 	}
-
 	// #endregion
+
 	// #region User interaction
 	createSphere(normData, realData, cluster, auxData) {
 		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
@@ -318,12 +517,12 @@ class Scene {
 
 	changeTheme(newTheme){
 		if (newTheme=='white'){
-			this.white_theme = true;
+			this.theme = 'white';
 			this.select_linecube_color = new THREE.Color(0,0,0);
 			this.scene.background = new THREE.Color( 0xffffff );
 		}
 		else{
-			this.white_theme = false;
+			this.theme = 'black';
 			this.select_linecube_color = new THREE.Color(1,1,1);
 			this.scene.background = new THREE.Color( 0x333333 );
 		}
@@ -331,12 +530,13 @@ class Scene {
 		{
 			this.groupOfGrid.remove(this.grid);
 		}
-		this.grid = drawPlainGrid(this.white_theme);
+		this.grid = drawPlainGrid(this.theme);
 		this.groupOfGrid.add(this.grid);
-		this.clusters_color_scheme = getColorScheme(this.clusters, this.white_theme);
+		this.clusters_color_scheme = getColorScheme(this.clusters, this.theme);
 		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
 			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2]].clone();
-		}		
+		}
+		setCookie('colortheme', this.theme, 14);
 	}
 
 	deactivateAllInteractions(){
@@ -385,7 +585,7 @@ class Scene {
 				this.multiChoiceTableTab = parameters['tabletab'];
 				this.multiChoiceTable = this.createMultipleChoiceTable(this.multiChoiceTableTab);			
 			}else{
-				this.interactiveMode='regular';
+				this.interactiveMode='single';
 			}
 		}
 
@@ -559,8 +759,8 @@ class Scene {
 			if ( res && res.object ) {
 				if (this.interactiveMode == 'multi')
 					this.multiSelectionClick(res.object);
-				if (this.interactiveMode == 'regular')
-					this.regularSelectionClick(res.object);
+				if (this.interactiveMode == 'single')
+					this.singleSelectionClick(res.object);
 				if (this.interactiveMode == 'drag')
 					this.dragSelectionClick(res.object);
 
@@ -576,7 +776,7 @@ class Scene {
 		}
 	}
 
-	regularSelectionClick(obj){
+	singleSelectionClick(obj){
 		// If True, unselect selected object
 		if (this.selectedObject.children.includes(obj)) {
 			this.unSelectObject(obj);
@@ -684,12 +884,10 @@ class Scene {
 
 	}
 
-	changeRad(newRad){
+	redrawScene(){
 		var oldGroup = this.groupOfSpheres;
 		this.scene.remove(this.groupOfSpheres);
 		this.groupOfSpheres = new THREE.Group();
-		this.sphereGeometry = new THREE.SphereGeometry( newRad, this.numberOfSegements, this.numberOfSegements );
-		this.defaultSpRad = newRad;
 		var i = 0;
 		for (i=0; i < oldGroup.children.length; ++i) {
 			var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2], oldGroup.children[i].auxData);
@@ -705,6 +903,27 @@ class Scene {
 			this.selectObject(newSphere);
 		}
 		this.scene.add(this.selectedObject);
+	}
+
+	changeRad(newRad){
+		this.sphereGeometry = new THREE.SphereGeometry( newRad, this.numberOfSegements, this.numberOfSegements );
+		this.defaultSpRad = newRad;
+		this.redrawScene();
+	}
+
+	changeQuality(quality){
+		for(var i = 0; i<this.__qualityRange.length; ++i){
+			if(quality == this.__qualityRange[i]['value']){
+				this.numberOfSegements = this.__qualityRange[i]['segs'];
+				var realquality = true;
+			}
+		}
+		if (!realquality)
+			this.numberOfSegements = this.__qualityRange[3]['segs'];
+		this.sphereGeometry = new THREE.SphereGeometry( this.defaultSpRad, this.numberOfSegements, this.numberOfSegements);
+		this.redrawScene();
+		this.quality = quality;
+		setCookie('quality', this.quality, 14);
 	}
 
 	moveSpheres() {
