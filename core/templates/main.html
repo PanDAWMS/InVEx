@@ -20,11 +20,13 @@
                 <ul class="tabs" data-deep-link="true" data-update-history="true" data-deep-link-smudge="true" data-deep-link-smudge-delay="500" data-tabs id="deeplinked-tabs">
                   <li class="tabs-title is-active"><a href="#serverfile" aria-selected="true">Choose File from Server</a></li>
                   <li class="tabs-title"><a href="#upload">Upload File</a></li>
+                {%  if data_is_ready %}
                   <li class="tabs-title"><a href="#print">Print Dataset</a></li>
                   <li class="tabs-title"><a href="#stats">Statistics</a></li>
                   <li class="tabs-title"><a href="#corr">Correlations</a></li>
                   <li class="tabs-title"><a href="#clusters">Clusters</a></li>
                   <li class="tabs-title" style="visibility:hidden" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
+                {% endif %}
                 </ul>
 
                 <div class="tabs-content" data-tabs-content="deeplinked-tabs">
@@ -57,6 +59,7 @@
                           <input type="submit" class="button small" value="Submit">
                      </form>
                   </div>
+                {%  if data_is_ready %}
                   <div class="tabs-panel" id="print">
                     <button type="button" class="button small" id="printAllBtn">Display All</button>
                   </div>
@@ -72,6 +75,7 @@
                   </div>
                   <div class="tabs-panel" id="multichoice">
                   </div>
+                {% endif %}
                 </div>
             </div>
           </div>
@@ -80,10 +84,11 @@
             <br/>
           </div>
         </div>
-        <div id="controls"></div>
+        {#<div id="controls"></div> #}
             <div class="grid-x grid-margin-x" style="margin-left: .1000rem;">
               <div class="cell small-3" id="controllers">
-                  <div class="grid-y" style="height: 800px;">
+                  <div class="grid-y" style="height: 800px;">                  
+                    {%  if data_is_ready %}
                       <div class="cell">
                           <div class="card">
                               <div class="card-divider">
@@ -121,6 +126,7 @@
                               </div>
                           </div>
                       </div>
+                    {% endif %}
                       <div class="cell large-auto">
                           <div class="card">
                               <div class="card-divider">
@@ -226,6 +232,7 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
+            {%  if data_is_ready %}
             clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}]]
 
             var curr_algorithm;
@@ -237,6 +244,7 @@
             {% endif %}
 
             createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
+            {% endif %}
 
             {% if dim_names %}
             var dimNames = {{ dim_names|safe }};
@@ -298,6 +306,7 @@
             scene.setClusters([0]);
             scene.clusters_color_scheme = getColorScheme([0], scene.white_theme);
             {% endif %}
+            
 			{% if norm_dataset %}
             var objects = [];
 			for ( var i = 0; i < new_dataArray.length; i++ ){
@@ -308,8 +317,11 @@
 				{% endif %}
 			}
 			{% endif %}
+        
+            {%  if data_is_ready %}
 			scene.createControlElements();
-
+            {% endif %}
+            
             {% if saveid %}
             scene.setSource('{{ saveid|safe }}');
             {% endif %}
@@ -321,6 +333,7 @@
 			requestAnimationFrame( animate );
 		}
 
+        {%  if data_is_ready %}
         function fix_array(data) {
             var new_array = new Array(data.length);
             for (var i = 0; i < data.length; i++) {
@@ -333,7 +346,9 @@
             }
             return new_array;
         }
+        {% endif %}
 
+        {%  if data_is_ready %}
         function printStats(stats, dimensions){
             var initial_dataset = document.getElementById("stats");
             var table = document.createElement("table");
@@ -372,8 +387,9 @@
             table.appendChild(tbody);
             initial_dataset.appendChild(table);
          }
+        {% endif %}
 
-
+        {%  if data_is_ready %}
         function Matrix(options) {
             var margin = {top: 50, right: 50, bottom: 100, left: 100},
                 width = 40 * options.labels.length,
@@ -543,6 +559,7 @@
             .attr("transform", "translate(41," + margin.top + ")")
             .call(yAxis)
     }
+    {% endif %}
 
     function add_parameters(submited_form) {
         var new_input = document.createElement('input');
