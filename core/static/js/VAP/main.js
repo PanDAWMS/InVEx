@@ -245,7 +245,7 @@ class Scene {
 		singleChoiceRadio.multiChoiceControl = multiChoiceControl;
 		if (this.interactiveMode == 'single')
 			singleChoiceRadio.checked = true;
-		singleChoiceRadio.onChange = function(event){
+		singleChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('single', {});
 			this.multiChoiceControl.style["visibility"] = 'hidden';
 		};
@@ -256,7 +256,7 @@ class Scene {
 		multiChoiceRadio.multiChoiceTab = multiChoiceTab;
 		if (this.interactiveMode == 'multi')
 			multiChoiceRadio.checked = true;
-		multiChoiceRadio.onChange = function(event){
+		multiChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('multi', {'tabletab': this.multiChoiceTab});
 			this.multiChoiceControl.style["visibility"] = 'visible';
 		};
@@ -266,7 +266,7 @@ class Scene {
 		dragChoiceRadio.multiChoiceControl = multiChoiceControl;
 		if (this.interactiveMode == 'drag')
 			dragChoiceRadio.checked = true;
-		dragChoiceRadio.onChange = function(event){
+		dragChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('drag', {});
 			this.multiChoiceControl.style["visibility"] = 'hidden';
 		};
