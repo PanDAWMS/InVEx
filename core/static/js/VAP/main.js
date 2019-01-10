@@ -899,6 +899,7 @@ class Scene {
 		this.scene.remove(this.selectedObject);
 		this.selectedObject = new THREE.Group();
 		for (i=0; i < oldGroup.children.length; ++i) {
+			this.groupOfSelectOutlines.remove(oldGroup.children[i].selectedCircut);
 			var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2], oldGroup.children[i].auxData);
 			this.selectObject(newSphere);
 		}
@@ -938,9 +939,9 @@ class Scene {
 			sphere.position.x = sphere.dataObject[1][this.proectionSubSpace[0]];
 			sphere.position.y = sphere.dataObject[1][this.proectionSubSpace[1]];
 			sphere.position.z = sphere.dataObject[1][this.proectionSubSpace[2]];
-			sphere.selectedCircut.x = sphere.position.x;
-			sphere.selectedCircut.y = sphere.position.y;
-			sphere.selectedCircut.z = sphere.position.z;
+			sphere.selectedCircut.position.x = sphere.position.x;
+			sphere.selectedCircut.position.y = sphere.position.y;
+			sphere.selectedCircut.position.z = sphere.position.z;
 		}
 	}
 
