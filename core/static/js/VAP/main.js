@@ -571,10 +571,10 @@ class Scene {
 			this.dragControls = new THREE.DragControls(allobj, this.camera, this.renderer.domElement );
 			this.dragControls.scene = this;
 			this.dragControls.addEventListener( 'dragstart', function ( event ) { 
-				event.target.scene.controls.enabled = false; 
+				event.target.scene.controls.enabled = false;
 			} );
 			this.dragControls.addEventListener( 'dragend', function ( event ) { 
-				event.target.scene.controls.enabled = true; 
+				event.target.scene.controls.enabled = true;
 			} );
 			this.dragControls.addEventListener( 'drag', this.onSphereMove);
 			this.dragControls.activate();
@@ -608,7 +608,7 @@ class Scene {
 		else
 			if (obj.position.z>100)
 				obj.position.z=100;
-		if (event.target.scene.selectedObject.children.includes(obj)){
+		if (event.target.scene.selectedObject.children.includes(obj)) {
 			obj.selectedCircut.position.x = obj.position.x;
 			obj.selectedCircut.position.y = obj.position.y;
 			obj.selectedCircut.position.z = obj.position.z;
@@ -616,17 +616,19 @@ class Scene {
 		var x = event.target.scene.proectionSubSpace[0];
 		var y = event.target.scene.proectionSubSpace[1];
 		var z = event.target.scene.proectionSubSpace[2];
-		var min = event.target.scene.realStats[1][0];
-		var max = event.target.scene.realStats[1][1];
+		var min = event.target.scene.realStats[1][1];
+		var max = event.target.scene.realStats[1][2];
 		obj.dataObject[1][x] = obj.position.x;
 		obj.dataObject[1][y] = obj.position.y;
 		obj.dataObject[1][z] = obj.position.z;
 		obj.realData[1][x] = obj.position.x * (max[x] - min[x]) / 100 + min[x];
 		obj.realData[1][y] = obj.position.y * (max[y] - min[y]) / 100 + min[y];
 		obj.realData[1][z] = obj.position.z * (max[z] - min[z]) / 100 + min[z];
+
 		event.target.scene.printDataDialog(obj);
+
 	}
-	
+
 	animate() {
 		this.renderer.render( this.scene, this.camera );
 	}
@@ -787,7 +789,7 @@ class Scene {
 			}
 			return true;
 		}
-		
+
 		// If true, unselect old object, select the new one
 		if (this.selectedObject.children.length != 0) {
 			this.unSelectAllObjects();
@@ -836,9 +838,7 @@ class Scene {
 	}
 
 	selectObject(obj){
-		this.selectedObject.add(obj);
 		var geometry = new THREE.BoxBufferGeometry( 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius );
-		var edgesCube = new THREE.EdgesGeometry( geometry );
 		var edgesCube = new THREE.EdgesGeometry( geometry );
 		var lineCube = new THREE.LineSegments( edgesCube, new THREE.LineBasicMaterial( { color: this.select_linecube_color } ) );
 		obj.selectedCircut = lineCube;
@@ -847,6 +847,7 @@ class Scene {
 		lineCube.position.z = obj.position.z;
 		obj.material.color.set( invertColor(obj.material.color) );
 		this.groupOfSelectOutlines.add(lineCube);
+		this.selectedObject.add(obj);
 	}
 
 	unSelectAllObjects(obj){
