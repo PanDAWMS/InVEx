@@ -731,13 +731,11 @@ class Scene {
                     current_controller.onFinishChange(function(value) {
                         var currDimName = this.property;
                         var currDimNum = this.dimNames.indexOf(currDimName);
-                        var initialValue = this.initialValue;
-                        var normValue = this.selectedObject.children[0].dataObject[1][currDimNum];
                         var min = this.realStats[1][1][currDimNum];
                         var max = this.realStats[1][2][currDimNum];
                         var newNormValue = (( value - min ) / ( max - min )) * 100;
-                        this.selectedObject.children[0].dataObject[1][currDimNum] = newNormValue;
-                        var sphere = this.selectedObject.children[0];
+                        this.selectedObject.dataObject[1][currDimNum] = newNormValue;
+                        var sphere = this.selectedObject;
                         sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
                                             sphere.dataObject[1][this.subSpace[1]],
                                             sphere.dataObject[1][this.subSpace[2]]);
