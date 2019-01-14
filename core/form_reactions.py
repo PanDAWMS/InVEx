@@ -138,6 +138,7 @@ def prepare_basic(norm_dataset, real_dataset, auxiliary_dataset, op_history):
             'norm_dataset': pandas_to_js_list(norm_dataset),
             'real_dataset': pandas_to_js_list(real_dataset),
             'aux_dataset': pandas_to_js_list(auxiliary_dataset),
+            'data_is_ready':True,
             'dim_names': columns,
             'aux_names': aux_columns,
             'index': idx,

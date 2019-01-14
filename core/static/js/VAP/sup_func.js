@@ -59,7 +59,6 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     divElement.appendChild(label_select);
     divElement.appendChild(select_element);
     divElement.appendChild(document.createElement('br'));
-    console.log(curr_values);
     var elements = [];
     for ( var k = 0; k < cluster_params.length; k++ ) {
 		var el = cluster_params[ k ];
@@ -157,4 +156,165 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
         }
         return true;
     });
+}
+
+function createDataTable(parentElement, ID, headers){
+    while(document.getElementById(ID)!==null)
+        ID+=(Math.random()*10).toString().slice(-1);
+
+    var table = document.createElement("table");
+    table.id = ID;
+    table.classList.add("table", "table-sm", "table-hover");
+
+    var thead = document.createElement("thead");
+    table.appendChild(thead);
+    var row = document.createElement("tr");
+    thead.appendChild(row);
+    var cell = null;
+    for(var i = 0; i < headers.length; i++ ) {
+        cell = document.createElement("th");
+        cell.innerText = headers[i].toString();
+        row.appendChild(cell);
+    }
+
+    var tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+    table.bodyElement = tbody;
+    parentElement.appendChild(table);
+    return table;
+}
+
+function addElementToDataTable(table, data, id, numberOfHead=1, checkUnique=true){
+    if (checkUnique)
+        for(var i=0; i<table.bodyElement.rows.length; ++i){
+            if(table.bodyElement.rows[i].uniqueID==id){
+                var row=table.bodyElement.rows[i];
+                return row;
+            }
+        }
+    var row = document.createElement("tr");
+    row.uniqueID = id;
+    row.id=id;
+    var cell = null;
+    for(var i=0; i<numberOfHead; ++i){
+        cell = document.createElement("th");
+        if(typeof data[i] == 'number')
+            cell.innerText = data[i].toLocaleString(undefined, { maximumSignificantDigits: 3 });
+        else
+            cell.innerText = data[i].toString();
+        row.appendChild(cell);
+    }
+
+    for(var i = numberOfHead; i < data.length; i++ ){
+        cell = document.createElement("td");
+        if(typeof data[i] == 'number')
+            cell.innerText = data[i].toLocaleString(undefined, { maximumSignificantDigits: 3 });
+        else
+            cell.innerText = data[i].toString();
+        row.appendChild(cell);
+    }
+    table.bodyElement.append(row);
+    
+    return row;
+}
+
+function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_num=0, cust_col_def=null){
+    while(document.getElementById(ID)!==null)
+        ID+=(Math.random()*10).toString().slice(-1);
+
+    var table = document.createElement("table");
+    table.id = ID;
+    table.classList.add("table", "table-sm", "table-hover");
+
+    var thead = document.createElement("thead");
+    table.appendChild(thead);
+    var row = document.createElement("tr");
+    thead.appendChild(row);
+    var cell = null;
+    for(var i = 0; i < headers.length; i++ ) {
+        cell = document.createElement("th");
+        cell.innerText = headers[i].toString();
+        row.appendChild(cell);
+    }
+
+    var tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+    table.bodyElement = tbody;
+    parentElement.appendChild(table);
+    columndef=[{ className: "datatableboldcolumn", "targets": [...Array(numofheadrows).keys()] },
+        { "render": function ( data, type, row ) {
+          if(typeof data == 'number')
+              return data.toLocaleString(undefined, { maximumSignificantDigits: 3 });
+          else
+              return data.toString();
+      },"targets": "_all"}];
+    if (cust_col_def!==null){
+        columndef=columndef.concat(cust_col_def);
+    }
+    table.dataTableObj = $('#'+table.id).DataTable({
+        "columnDefs": columndef,
+        "rowId": id_num,
+        "deferRender": true});
+    return table;
+}
+
+function addElementToDataTableDynamic(table, data){
+    var row = table.dataTableObj.row.add(data).draw();
+    return row;
+}
+
+function removeElementFromDataTableDynamic(table, id){
+    table.dataTableObj.row('#'+id.toString()).remove();
+    table.dataTableObj.draw();
+    return null;
+}
+
+function deleteDataTable(table){
+    table.dataTableObj.destroy();
+    table.parentElement.removeChild(table);
+}
+
+
+function printDataset(element, headers, dataset, num_rows, id_num=0){
+    var table = createDataTable(element, element.id+"-table", headers);
+    if((num_rows === undefined) || (num_rows>dataset.length))
+        num_rows = dataset.length;
+    for(var i = 0; i<num_rows; ++i){
+        addElementToDataTable(table, [dataset[i][0]].concat(dataset[i][1]), dataset[i][0], 1, false);
+    }
+    table.dataTableObj = $('#'+table.id).DataTable();
+    return table;
+}
+
+function createControlBasics(formID){
+    while(document.getElementById(formID)!==null)
+        formID+=(Math.random()*10).toString().slice(-1);
+    var form = document.createElement('form');
+    form.id = formID;
+    var div = document.createElement('div');
+    div.classList.add('form-group', 'form-check');
+    form.appendChild(div);
+    form.groupDiv = div;
+    form.createNewLine = function(){this.groupDiv.appendChild(document.createElement('br'));};
+    return form;
+}
+
+function createControlRadioWithLabel(radioID, name, text){
+    while(document.getElementById(radioID)!==null)
+        radioID+=(Math.random()*10).toString().slice(-1);
+
+    var radioButton = document.createElement('input');
+    radioButton.id = radioID;
+    radioButton.classList.add('form-check-input');
+    radioButton.setAttribute('type', 'radio');
+    radioButton.setAttribute('name', name);
+
+    var label = document.createElement('label');
+    label.id = 'for' + radioButton.id;
+    label.classList.add('form-check-label');
+    label.setAttribute('for', radioButton.id);
+    label.innerText = text;
+    radioButton.labelElement = label;
+    
+    return radioButton;
 }
