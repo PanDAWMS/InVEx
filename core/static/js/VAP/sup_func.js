@@ -1,3 +1,4 @@
+// A function to validate integer input.
 function validate_integer(input){
     if (!Number.isInteger(+input.value))
         return "The value of "+input.labelText+" must be an integer";
@@ -9,6 +10,7 @@ function validate_integer(input){
     return true;
 }
 
+//function to validate float input.
 function validate_float(input){
     if (Number.isNaN(+input.value))
         return "The value of "+input.labelText+" must be an number";
@@ -21,6 +23,7 @@ function validate_float(input){
     return true;
 }
 
+//Function that validates input depending on type of field.
 function validate_field(input){
     switch (input.typeOfField){
         case 'integer':
@@ -46,8 +49,9 @@ function removeElement(id) {
     return elem.parentNode.removeChild(elem);
 }
 
+// Creates clusterization GUI elements. 
 function createClusterElements(divElement, formElement, cluster_params, curr_algorithm, curr_values) {
-
+    //Create the selector in the div.
 	var select_element = document.createElement('select');
 	select_element.classList.add('form-control');
 	select_element.classList.add('form-control-sm');
@@ -59,8 +63,11 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     divElement.appendChild(label_select);
     divElement.appendChild(select_element);
     divElement.appendChild(document.createElement('br'));
+    
+    //Create options and input fields for all the clusterization options. 
     var elements = [];
     for ( var k = 0; k < cluster_params.length; k++ ) {
+        //Create the option element and the div element assosiated with it.
 		var el = cluster_params[ k ];
         var option_element = document.createElement('option');
         option_element.innerText = el[ 1 ];
@@ -70,6 +77,8 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
         element_div.classList.add("form-group");
         elements.push(element_div);
         element_div.inputElements = [];
+
+        //Creates inputs for all the 
         for( var i = 2; i < el.length; i++ ) {
             var form_group = document.createElement("div");
             form_group.classList.add("form-group");
@@ -121,6 +130,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
         }
         divElement.appendChild(element_div);
 
+        //Make the right element visible
         if ( curr_algorithm === undefined && k == 0 ) {
             element_div.style.display = 'block';
             select_element.element_div = element_div;
@@ -158,6 +168,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     });
 }
 
+//Creates data table for information output. Use this for static tables.
 function createDataTable(parentElement, ID, headers){
     while(document.getElementById(ID)!==null)
         ID+=(Math.random()*10).toString().slice(-1);
@@ -184,6 +195,7 @@ function createDataTable(parentElement, ID, headers){
     return table;
 }
 
+//Adds the element to data table. Use this for static tables.
 function addElementToDataTable(table, data, id, numberOfHead=1, checkUnique=true){
     if (checkUnique)
         for(var i=0; i<table.bodyElement.rows.length; ++i){
@@ -218,6 +230,7 @@ function addElementToDataTable(table, data, id, numberOfHead=1, checkUnique=true
     return row;
 }
 
+//Creates data table for dynamic information output. Use this for dynamic tables.
 function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_num=0, cust_col_def=null){
     while(document.getElementById(ID)!==null)
         ID+=(Math.random()*10).toString().slice(-1);
@@ -258,11 +271,13 @@ function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_
     return table;
 }
 
+//Adds a row to a dynamic table
 function addElementToDataTableDynamic(table, data){
     var row = table.dataTableObj.row.add(data).draw();
     return row;
 }
 
+//Removes a row from dynamic table
 function removeElementFromDataTableDynamic(table, id){
     table.dataTableObj.row('#'+id.toString()).remove();
     table.dataTableObj.draw();
@@ -274,7 +289,7 @@ function deleteDataTable(table){
     table.parentElement.removeChild(table);
 }
 
-
+//Prints dataset to a static data table
 function printDataset(element, headers, dataset, num_rows, id_num=0){
     var table = createDataTable(element, element.id+"-table", headers);
     if((num_rows === undefined) || (num_rows>dataset.length))
@@ -286,6 +301,7 @@ function printDataset(element, headers, dataset, num_rows, id_num=0){
     return table;
 }
 
+//Creates a basic GUI form
 function createControlBasics(formID){
     while(document.getElementById(formID)!==null)
         formID+=(Math.random()*10).toString().slice(-1);
@@ -299,6 +315,7 @@ function createControlBasics(formID){
     return form;
 }
 
+//Creates a radio button with a label and given name.
 function createControlRadioWithLabel(radioID, name, text){
     while(document.getElementById(radioID)!==null)
         radioID+=(Math.random()*10).toString().slice(-1);
