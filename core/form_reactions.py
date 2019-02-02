@@ -92,7 +92,9 @@ def table_to_df(data):
     df.set_index(json_obj['schema']['primaryKey'], inplace=True)
     return df
 
-
+"""
+Loading data from the operations history file.
+"""
 def load_data(filename):
     if not os.path.isfile(SAVED_FILES_PATH + filename):
         logger.error('!form_reactions.load_data!: File is missing. Couldn\'t load the file. \nFilename:'
@@ -118,8 +120,20 @@ def load_data(filename):
                      + SAVED_FILES_PATH + filename + '\n' + str(exc))
         raise
 
-
-def prepare_basic(norm_dataset, real_dataset, auxiliary_dataset, op_history):
+"""
+Preparing data object for the client. 
+This object includes all information about data sample:
+- initial data sample (numerical) 
+- normalized data sample
+- auxiliary data sample
+- names of numerical features (columns)
+- names of auxiliary features (columns)
+- data sample index
+- statistics for the initial data sample
+- operations history data file
+- array for the correlation matrix
+"""
+def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_history):
     try:
         idx = [norm_dataset.index.name]
         columns = norm_dataset.columns.tolist()
@@ -148,9 +162,36 @@ def prepare_basic(norm_dataset, real_dataset, auxiliary_dataset, op_history):
         }
         return data
     except Exception as exc:
-        logger.error('!form_reactions.prepare_basic!: Failed to prepare basics of the data. \n' + str(exc))
+        logger.error('!form_reactions.prepare_data_object!: Failed to prepare basics of the data. \n' + str(exc))
         raise
 
+"""
+Data Preparation includes:
+- cleaning data sample from NaNs
+- data sample normalization
+- splitting data sample into 2 parts: numeric and auxiliary.
+Numeric part contains only numerical data and is used for clustering.
+Auxiliary part contains objects, strings, datetime etc. and can be used for data grouping
+- calculating statistics for the normalized data sample
+- saving information about normalized data sample and statistics in the operations history file with the unique ID
+"""
+def data_preparation(dataset, request):
+    calc.importcsv.dropNA(dataset)
+    numeric_columns = calc.importcsv.numeric_columns(dataset)
+    numeric_dataset = dataset[numeric_columns]
+    norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
+    calc.importcsv.dropNA(norm_dataset)
+    columns = norm_dataset.columns.tolist()
+    numeric_dataset = numeric_dataset[columns]
+    auxiliary_dataset = dataset.drop(numeric_columns, 1)
+    op_history = calc.operationshistory.OperationHistory()
+    metrics = calc.basicstatistics.BasicStatistics()
+    metrics.process_data(norm_dataset)
+    op_history.append(norm_dataset, metrics)
+    data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
+    data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+    data['request'] = request
+    return data
 
 def new_csv_file_upload(request):
     if 'customFile' in request.FILES:
@@ -165,23 +206,8 @@ def new_csv_file_upload(request):
         logger.error('!form_reactions.new_csv_file_upload!: Failed to load data. There is no file to read.\nRequest: '
                      + json.dumps(request.POST))
         return {}
-    # drop all columns and rows with NaN values
     try:
-        calc.importcsv.dropNA(dataset)
-        numeric_columns = calc.importcsv.numeric_columns(dataset)
-        numeric_dataset = dataset[numeric_columns]
-        norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
-        calc.importcsv.dropNA(norm_dataset)
-        columns = norm_dataset.columns.tolist()
-        numeric_dataset = numeric_dataset[columns]
-        auxiliary_dataset = dataset.drop(numeric_columns, 1)
-        op_history = calc.operationshistory.OperationHistory()
-        metrics = calc.basicstatistics.BasicStatistics()
-        metrics.process_data(norm_dataset)
-        op_history.append(norm_dataset, metrics)
-        data = prepare_basic(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        data['request'] = request
-        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+        data = data_preparation(dataset, request)
         data['filename'] = request.FILES['customFile']
         return data
     except Exception as exc:
@@ -209,23 +235,8 @@ def csv_file_from_server(request):
         logger.error('!form_reactions.csv_file_from_server!: Failed to get the dataset. \nRequest parameters: ' + json.dumps(
             request.POST))
         return {}
-    # drop all columns and rows with NaN values
     try:
-        calc.importcsv.dropNA(dataset)
-        numeric_columns = calc.importcsv.numeric_columns(dataset)
-        numeric_dataset = dataset[numeric_columns]
-        norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
-        calc.importcsv.dropNA(norm_dataset)
-        columns = norm_dataset.columns.tolist()
-        numeric_dataset = numeric_dataset[columns]
-        auxiliary_dataset = dataset.drop(numeric_columns, 1)
-        op_history = calc.operationshistory.OperationHistory()
-        metrics = calc.basicstatistics.BasicStatistics()
-        metrics.process_data(norm_dataset)
-        op_history.append(norm_dataset, metrics)
-        data = prepare_basic(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        data['request'] = request
-        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+        data = data_preparation(dataset, request)
         data['filename'] = request.POST['filename']
         return data
     except Exception as exc:
@@ -259,24 +270,8 @@ def csv_test_file_from_server(request):
         logger.error('!form_reactions.csv_test_file_from_server!: Could not find file. \n' + json.dumps(request.POST)
                      + '\nFile name: ' + TEST_DATASET_FILES_PATH + filename)
         return {}
-    # drop all columns and rows with NaN values
     try:
-        calc.importcsv.dropNA(dataset)
-        numeric_columns = calc.importcsv.numeric_columns(dataset)
-        numeric_dataset = dataset[numeric_columns]
-        norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
-        calc.importcsv.dropNA(norm_dataset)
-        columns = norm_dataset.columns.tolist()
-        numeric_dataset = numeric_dataset[columns]
-        auxiliary_dataset = dataset.drop(numeric_columns, 1)
-        op_history = calc.operationshistory.OperationHistory()
-        metrics = calc.basicstatistics.BasicStatistics()
-        metrics.process_data(norm_dataset)
-        op_history.append(norm_dataset, metrics)
-        data = prepare_basic(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        data['request'] = request
-        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
-        return data
+        return data_preparation(dataset, request)
     except Exception as exc:
         logger.error(
             '!form_reactions.csv_test_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
@@ -292,7 +287,7 @@ def clusterize(request):
     original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
     if dataset is None:
         return {}
-    data = prepare_basic(dataset, original, aux_dataset, op_history)
+    data = prepare_data_object(dataset, original, aux_dataset, op_history)
     data['request'] = request
     operation = None
     if 'algorithm' in request.POST:
@@ -365,7 +360,6 @@ def clusterize(request):
     return data
 
 
-# Here we have to implement prediction for point with updated coordinates
 def predict_cluster(request):
     if ('fdid' not in request.POST) or ('data' not in request.POST):
         logger.error('!form_reactions.predict_cluster!: There was no file name in the request. \nRequest parameters: '
