@@ -115,6 +115,66 @@ def main(request):
     return render(request, 'main.html', data, content_type='text/html')
 
 
+
+
+
+
+
+def site_to_site(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+    data = {}
+    if request.method == 'POST' and 'formt' in request.POST:
+        if request.POST['formt'] == 'newfile':
+            try:
+                data = form_reactions.load_json_site_to_site(request)
+            except Exception as exc:
+                logger.error(
+                    '!views.site_to_site!: Couldn\'t perform an upload of a new CSV file. \n' + str(exc))
+        elif request.POST['formt'] == 'filefromserver':
+            try:
+                data = form_reactions.load_json_site_to_site(request)
+            except Exception as exc:
+                logger.error(
+                    '!views.site_to_site!: Couldn\'t load the a CSV file from the server. \n' + str(exc))
+        # elif request.POST['formt'] == 'cluster':
+        #     try:
+        #         data = form_reactions.clusterize(request)
+        #     except Exception as exc:
+        #         logger.error('!views.performance_test_frame!: Couldn\'t perform a clusterization. \n' + str(exc))
+        # elif request.POST['formt'] == 'rebuild':
+        #     try:
+        #         data = form_reactions.predict_cluster(request)
+        #         return JsonResponse(data)
+        #     except Exception as exc:
+        #         logger.error('!views.performance_test_frame!: Couldn\'t calculate a prediction. \n' + str(exc))
+        #         return JsonResponse({})
+
+    else:
+        data = {
+            'dataset': [],
+            'dim_names': [],
+            'index': '',
+            'new_file': False,
+            'norm_dataset': [],
+            'real_dataset': [],
+            'stats': [],
+            'corr_matrix': [],
+            'aux_dataset': [],
+            'aux_names': []
+        }
+    data['built'] = datetime.now().strftime("%H:%M:%S")
+    try:
+        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.SITE_SITE_DATASET_FILES_PATH)
+    except:
+        logger.error('Could not read the list of datasets file')
+    return render(request, 'mesh.html', data, content_type='text/html')
+
+
+
+
+
 def performance_test(request):
     data = {}
     try:

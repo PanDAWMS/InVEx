@@ -150,6 +150,7 @@
 <script src="{% static "js/VAP/cookies.js" %}"></script>
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/VAP/datavisualization.js" %}"></script>
+<script src="{% static "js/VAP/meshvisualization.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 {#<script src="{% static 'js/foundation/vendor/jquery.js' %}"></script>#}
@@ -173,7 +174,12 @@
             $('#stats-table').DataTable();
 
         } );
-		var scene = new DataVisualization(document.getElementById("picture"), 0.75);
+        {% if xarray %}
+		var scene = new MeshVisualization(document.getElementById("picture"), 0.75, 2, {{ xarray|safe }}, {{ yarray|safe }});
+		{% else %}
+        var scene = new MeshVisualization(document.getElementById("picture"), 0.75, 2, [], []);
+        {% endif %}
+
 		animate();
 		init();
 
@@ -198,8 +204,9 @@
             {% endif %}
 
             {% if dim_names %}
-            var dimNames = {{ dim_names|safe }};
-            scene.setDimNames(dimNames);
+            var dimNames = {{ dim_names_short|safe }};
+            var fullDimNames = {{ dim_names|safe }};
+            scene.setDimNames(fullDimNames);
             {% endif %}
 
             {% if index %}
@@ -217,7 +224,7 @@
             var realData = {{ real_dataset|safe }};
             var new_realData = fix_array(realData);
             scene.setRealData(new_realData);
-            printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
+            printDataset(document.getElementById("print"), [index].concat(fullDimNames), new_realData, 10);
             {% endif %}
 
             {% if real_metrics %}

@@ -223,9 +223,9 @@ class DataVisualization extends Scene{
     }
 	
 	//General function to create all the scene controls
-    createControlElements(sceneControlElement, multiChoiceControl, multiChoiceTab, fullload=true) {
+    createControlElements(dimensionControlElement, sceneControlElement, multiChoiceControl, multiChoiceTab, fullload=true) {
         if(fullload){
-			this.dimensionControlElements();
+			dimensionControlElement.appendChild(this.dimensionControlElements());
 			this.printControls();
 		}
         sceneControlElement.appendChild(this.changeRadiusControls());
@@ -669,7 +669,7 @@ class DataVisualization extends Scene{
 	//Unselects given object
 	unSelectObject(obj){
 		this.groupOfSelectOutlines.remove(obj.selectedCircut);
-		obj.selectedCircut = null;
+		obj.selectedCircut = undefined;
 		obj.material.color.set( invertColor(obj.material.color) );
 		this.groupOfSpheres.add(obj);
 	}
