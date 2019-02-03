@@ -149,7 +149,8 @@ def prepare_basic(norm_dataset, real_dataset, auxiliary_dataset, op_history):
             'index': idx,
             'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
             'operation_history': op_history,
-            'corr_matrix': corr_matrix.values.tolist()
+            'corr_matrix': corr_matrix.values.tolist(),
+            'type': 'datavisualization'
         }
         return data
     except Exception as exc:
@@ -453,7 +454,8 @@ def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, xarray, yar
             'index': idx,
             'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
             'operation_history': op_history,
-            'corr_matrix': corr_matrix.values.tolist()
+            'corr_matrix': corr_matrix.values.tolist(),
+            'type': 'site2site'
         }
         return data
     except Exception as exc:

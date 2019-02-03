@@ -133,6 +133,31 @@ class MeshVisualization extends DataVisualization{
         sceneControlElement.appendChild(this.changeQualityControls());
         sceneControlElement.appendChild(this.resetControls());
     }
+
+    createCoordinatesTables(xCoordinateTab, yCoordinateTab){
+        var xtable = createDataTable(xCoordinateTab, "xCoordinate-table", ['X Coordinate']);
+        for(var i=0; i<this.meshCoordinates[0].length; ++i){
+            var row = addElementToDataTable(xtable, [this.meshCoordinates[0][i][0]], 'x'+i.toString());
+            row.sceneObject = this;
+            row.meshRowNumber = i;
+            row.onclick = function(){
+                this.sceneObject.selectXRow(this.meshRowNumber);
+            }
+        }
+        xtable.dataTableObj = $('#'+xtable.id).DataTable();
+
+        var ytable = createDataTable(yCoordinateTab, "yCoordinate-table", ['Y Coordinate']);
+        for(var i=0; i<this.meshCoordinates[1].length; ++i){
+            var row = addElementToDataTable(ytable, [this.meshCoordinates[1][i][0]],  'y'+i.toString());
+            row.sceneObject = this;
+            row.meshRowNumber = i;
+            row.onclick = function(){
+                this.sceneObject.selectYRow(this.meshRowNumber);
+            }
+        }
+        ytable.dataTableObj = $('#'+ytable.id).DataTable();
+        return [xtable, ytable];
+    }
     
     //#endregion
     //#region User interaction
@@ -159,6 +184,28 @@ class MeshVisualization extends DataVisualization{
 		sphere.auxData = auxData;
 		this.groupOfSpheres.add(sphere);
 		return sphere;
+    }
+
+    selectXRow(number){
+        this.unSelectAllObjects();
+        for(var i=0; i<this.objectsOnMesh[number].length; ++i){
+            if (this.objectsOnMesh[number][i]!=undefined){
+                for(var k=0; k<this.objectsOnMesh[number][i].length; ++k){
+                    this.selectObject(this.objectsOnMesh[number][i][k]);
+                }
+            }
+        }
+    }
+
+    selectYRow(number){
+        this.unSelectAllObjects();
+        for(var i=0; i<this.objectsOnMesh.length; ++i){
+            if (this.objectsOnMesh[i][number]!=undefined){
+                for(var k=0; k<this.objectsOnMesh[i][number].length; ++k){
+                    this.selectObject(this.objectsOnMesh[i][number][k]);
+                }
+            }
+        }
     }
 
     

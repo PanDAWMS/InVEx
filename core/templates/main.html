@@ -24,6 +24,10 @@
                   <li class="tabs-title"><a href="#print">Print Dataset</a></li>
                   <li class="tabs-title"><a href="#stats">Statistics</a></li>
                   <li class="tabs-title"><a href="#corr">Correlations</a></li>
+                {% if type == "site2site" %}
+                  <li class="tabs-title"><a href="#xcoord">X-Coordinate</a></li>
+                  <li class="tabs-title"><a href="#ycoord">Y-Coordinate</a></li>
+                {% endif %}
                 {% if cluster_ready %}
                   <li class="tabs-title"><a href="#clusters">Clusters</a></li>
                 {% endif %}
@@ -31,7 +35,7 @@
                 {% endif %}
                 </ul>
 
-                <div class="tabs-content" data-tabs-content="deeplinked-tabs">
+                <div class="tabs-content" data-tabs-content="deeplinked-tabs" id='deeplinked-content'>
                   {% if dataset_files %}
                   <div class="tabs-panel is-active" id="serverfile">
                     <form action="" method="POST" enctype='multipart/form-data'>
@@ -72,9 +76,22 @@
                         <div id="legend"></div>
                     </div>
                   </div>
+                  <div class="tabs-panel" id="corr">
+                    <div id="corr-matrix">
+                        <div id="legend"></div>
+                    </div>
+                  </div>
+                  {% if type == "site2site" %}
+                  <div class="tabs-panel" id="xcoord">
+                  </div>
+                  <div class="tabs-panel" id="ycoord">
+                  </div>
+                  {% endif %}
+                  {% if cluster_ready %}
                   <div class="tabs-panel" id="clusters">
                     <button type="button" class="button small" id="printBtn">Print Results</button>
                   </div>
+                  {% endif %}
                   <div class="tabs-panel" id="multichoice">
                   </div>
                 {% endif %}
@@ -86,7 +103,6 @@
             <br/>
           </div>
         </div>
-        {#<div id="controls"></div> #}
             <div class="grid-x grid-margin-x" style="margin-left: .1000rem;">
               <div class="cell small-3" id="controllers">
                   <div class="grid-y" style="height: 800px;">                  
@@ -100,6 +116,7 @@
                               </div>
                           </div>
                       </div>
+                      {% if type == "datavisualization" %}
                       <div class="cell">
                           <div class="card">
                               <div class="card-divider">
@@ -122,7 +139,8 @@
                               </div>
                           </div>
                       </div>
-                    {% endif %}
+                      {% endif %}
+                      {% endif %}
                       <div class="cell large-auto">
                           <div class="card">
                               <div class="card-divider">
@@ -180,7 +198,8 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-            {%  if data_is_ready %}
+            {% if type == "datavisualization" %}
+            {% if data_is_ready %}
                 clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
                                     ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
                                                          {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
@@ -195,6 +214,7 @@
             {% endif %}
 
             createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
+            {% endif %}
             {% endif %}
 
             {% if dim_names %}
@@ -270,6 +290,9 @@
 			{% endif %}
         
             {%  if data_is_ready %}
+                {% if type == "site2site" %}
+                scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                {% endif %}
 			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
             {% else %}
 			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);

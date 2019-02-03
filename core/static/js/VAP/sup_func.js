@@ -335,3 +335,43 @@ function createControlRadioWithLabel(radioID, name, text){
     
     return radioButton;
 }
+
+function createTopElement(tabTitleParentElement, tabContentParentElement, tabId, tabTitle, selected){
+    while(document.getElementById(tabId)!==null)
+        tabId+=(Math.random()*10).toString().slice(-1);
+
+    var tabTitle = document.createElement('li');
+    tabTitle.id = tabId + 'title';
+    tabTitle.classList.add('tabs-title');
+    if (selected)
+        tabTitle.classList.add('is-active');
+    tabTitle.role='presentation';
+
+    var tabTitleLink = document.createElement('a');
+    tabTitleLink.href = '#'+tabId;
+    tabTitleLink.role = 'tab';
+    tabTitleLink.id = tabId+'link';
+    tabTitleLink.tabindex = '-1';
+    tabTitleLink.innerText = tabTitle;
+    if (selected)
+        tabTitleLink.setAttribute('aria-selected', 'true');
+    else
+        tabTitleLink.setAttribute('aria-selected', 'false');
+    tabTitleLink.setAttribute('aria-controls', tabId);
+    tabTitle.appendChild(tabTitleLink);
+
+    var tabContentDiv = document.createElement('div');
+    tabContentDiv.classList.add('tabs-panel');
+    tabContentDiv.id = tabId;
+    tabContentDiv.role='tabpanel';
+    tabContentDiv.setAttribute('aria-labelledby', tabId+'-label');
+    if (selected)
+        tabContentDiv.classList.add('is-active');
+    
+    tabTitle.contentDiv = tabContentDiv;
+    tabContentDiv.tabTitleElement = tabTitle;
+    tabTitleParentElement.appendChild(tabTitle);
+    tabContentParentElement.appendChild(tabContentDiv);
+
+    return tabContentDiv;
+}

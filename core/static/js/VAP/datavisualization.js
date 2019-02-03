@@ -660,7 +660,7 @@ class DataVisualization extends Scene{
 	}
 
 	//Unselects all objects
-	unSelectAllObjects(obj){
+	unSelectAllObjects(){
 		while (this.selectedObject.children.length!=0){
 			this.unSelectObject(this.selectedObject.children.pop());
 		}
