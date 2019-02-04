@@ -418,10 +418,21 @@ def read_site_to_site_json(filename):
             columns.append('p'+str(i))
     dataset = pd.DataFrame.from_records(data['transfers']['rows'], columns=columns,
                                         coerce_float=True)
+    file.close()
     return dataset
 
 
-def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, xarray, yarray, numcols, op_history):
+def prepare_axes(dataset):
+    source_col = dataset.groupby(dataset.columns[0]).max()
+    source_col.sort_values(dataset.columns[2], inplace=True, ascending=False)
+    xaxis = source_col.index
+    destination_col = dataset.groupby(dataset.columns[1]).max()
+    destination_col.sort_values(dataset.columns[2], inplace=True, ascending=False)
+    yaxis = destination_col.index
+    return [xaxis, yaxis]
+
+
+def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, numcols, op_history):
     try:
         if norm_dataset.index.name is None:
             idx = ['id']
@@ -437,6 +448,7 @@ def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, xarray, yar
             real_dataset_stats.append(real_dataset_stats_or[i].tolist())
 
         corr_matrix = real_dataset.corr()
+        xarray, yarray = prepare_axes(norm_dataset)
         xarray_list = xarray.tolist()
         yarray_list = yarray.tolist()
         aux_columns = auxiliary_dataset.columns.tolist()
@@ -497,10 +509,6 @@ def load_json_site_to_site(request):
     # drop all columns and rows with NaN values
     try:
         calc.importcsv.dropNA(dataset)
-        source_col = dataset.iloc[:, 0].unique()
-        destination_col = dataset.iloc[:, 1].unique()
-        source_col.sort()
-        destination_col.sort()
 
         mesh_coordinates = dataset.iloc[:, :2]
         numeric_columns = calc.importcsv.numeric_columns(dataset)
@@ -511,8 +519,7 @@ def load_json_site_to_site(request):
         numeric_dataset = dataset[columns]
         auxiliary_dataset = dataset.drop(numeric_columns, 1)
         op_history = calc.operationshistory.OperationHistory()
-        data = prepare_basic_s2s(norm_dataset, numeric_dataset, auxiliary_dataset, source_col, destination_col,
-                                 numeric_columns, op_history)
+        data = prepare_basic_s2s(norm_dataset, numeric_dataset, auxiliary_dataset, numeric_columns, op_history)
         data['request'] = request
         # data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
         return data
