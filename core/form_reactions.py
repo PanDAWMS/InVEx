@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def list_csv_data_files(directory):
+    """
+    Get the list of CSV data files.
+    :param directory: 
+    :return: 
+    """
     if not os.path.isfile(directory + FILES_LIST_NAME):
         return None
     file = open(directory + FILES_LIST_NAME, 'r')
@@ -29,6 +34,11 @@ def list_csv_data_files(directory):
 
 
 def pandas_to_js_list(dataset):
+    """
+    Convert pandas DataFrame to JavaScript-like array.
+    :param dataset: 
+    :return: 
+    """
     if dataset is None:
         return []
     else:
@@ -38,7 +48,35 @@ def pandas_to_js_list(dataset):
         return results
 
 
+def table_to_df(data):
+    """
+    Convert JSON data to pandas DataFrame.
+    :param data: 
+    :return: 
+    """
+    json_obj = json.loads(data)
+    df = pd.DataFrame(json_obj['data'],
+                      columns=[t['name'] for t in json_obj['schema']['fields']])
+    for t in json_obj['schema']['fields']:
+        if t['type'] == "datetime":
+            df[t['name']] = pd.to_datetime(df[t['name']], infer_datetime_format=True)
+    df.set_index(json_obj['schema']['primaryKey'], inplace=True)
+    return df
+
 def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, filename=None):
+    """
+    Saving data to the operations history file.
+    1st line - original dataset
+    2nd line - normalized datasample
+    3rd line - operations history (list of clusterizations)
+    4th line - auxiliary data (not numeric values)
+    :param original_dataset: 
+    :param norm_dataset: 
+    :param auxiliary_dataset: 
+    :param op_history: 
+    :param filename: 
+    :return: 
+    """
     if (filename is None):
         filename = str(datetime.now().timestamp())
         while os.path.isfile(SAVED_FILES_PATH + filename):
@@ -82,20 +120,17 @@ def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, fil
         raise
 
 
-def table_to_df(data):
-    json_obj = json.loads(data)
-    df = pd.DataFrame(json_obj['data'],
-                      columns=[t['name'] for t in json_obj['schema']['fields']])
-    for t in json_obj['schema']['fields']:
-        if t['type'] == "datetime":
-            df[t['name']] = pd.to_datetime(df[t['name']], infer_datetime_format=True)
-    df.set_index(json_obj['schema']['primaryKey'], inplace=True)
-    return df
-
-"""
-Loading data from the operations history file.
-"""
 def load_data(filename):
+    """
+    Loading data from the operations history file.
+    The file is reading line by line:
+    1st line - original dataset
+    2nd line - normalized datasample
+    3rd line - operations history (list of clusterizations)
+    4th line - auxiliary data (not numeric values)
+    :param filename: 
+    :return: 
+    """
     if not os.path.isfile(SAVED_FILES_PATH + filename):
         logger.error('!form_reactions.load_data!: File is missing. Couldn\'t load the file. \nFilename:'
                      + SAVED_FILES_PATH + filename)
@@ -104,10 +139,8 @@ def load_data(filename):
         file = open(SAVED_FILES_PATH + filename, "r")
         data = file.readline()
         original_dataset = table_to_df(data)
-        # original_dataset = pd.read_json(data, orient='table')
         data = file.readline()
         norm_dataset = table_to_df(data)
-        # norm_dataset = pd.read_json(data, orient='table')
         data = file.readline()
         op_history = calc.operationshistory.OperationHistory()
         op_history.load_from_json(data)
@@ -133,6 +166,11 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
     - statistics for the initial data sample
     - operations history data file
     - array for the correlation matrix
+    :param norm_dataset: 
+    :param real_dataset: 
+    :param auxiliary_dataset: 
+    :param op_history: 
+    :return: 
     """
     try:
         idx = [norm_dataset.index.name]
@@ -209,6 +247,9 @@ def data_preparation(dataset, request):
     Auxiliary part contains objects, strings, datetime etc. and can be used for data grouping
     - calculating statistics for the normalized data sample
     - saving information about normalized data sample and statistics in the operations history file with the unique ID
+    :param dataset: 
+    :param request: 
+    :return: 
     """
     calc.importcsv.dropNA(dataset)
     numeric_columns = calc.importcsv.numeric_columns(dataset)
@@ -238,6 +279,11 @@ def data_preparation(dataset, request):
     return data
 
 def new_csv_file_upload(request):
+    """
+    Donwload CSV file from the remote location.
+    :param request: 
+    :return: 
+    """
     if 'customFile' in request.FILES:
         try:
             dataset = calc.importcsv.import_csv_file(io.StringIO(request.FILES['customFile'].read().decode('utf-8')),
@@ -261,6 +307,11 @@ def new_csv_file_upload(request):
 
 
 def csv_file_from_server(request):
+    """
+    Download CSV file from server.
+    :param request: 
+    :return: 
+    """
     list_of_files = list_csv_data_files(DATASET_FILES_PATH)
     dataset = None
     if ('filename' in request.POST) and (list_of_files is not None):
@@ -291,6 +342,11 @@ def csv_file_from_server(request):
 
 
 def csv_test_file_from_server(request):
+    """
+    Download test CSV file from server.
+    :param request: 
+    :return: 
+    """
     list_of_files = list_csv_data_files(TEST_DATASET_FILES_PATH)
     dataset = None
     if ('filename' in request.POST) and (list_of_files is not None):
@@ -324,6 +380,11 @@ def csv_test_file_from_server(request):
 
 
 def clusterize(request):
+    """
+    Implement clusterization.
+    :param request: 
+    :return: 
+    """
     if 'fdid' not in request.POST:
         logger.error('!form_reactions.clusterize!: There was no file name in the request. \nRequest parameters: '
                      + json.dumps(request.POST))
@@ -405,6 +466,11 @@ def clusterize(request):
 
 
 def predict_cluster(request):
+    """
+    Predict cluster for the data object. 
+    :param request: 
+    :return: 
+    """
     if ('fdid' not in request.POST) or ('data' not in request.POST):
         logger.error('!form_reactions.predict_cluster!: There was no file name in the request. \nRequest parameters: '
                      + json.dumps(request.POST))
