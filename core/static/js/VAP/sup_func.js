@@ -335,3 +335,63 @@ function createControlRadioWithLabel(radioID, name, text){
     
     return radioButton;
 }
+
+function printStats(stats, dimensions){
+    var initial_dataset = document.getElementById("stats");
+    var table = document.createElement("table");
+    table.setAttribute("id", "stats-table");
+    table.classList.add("hover");
+    var thead = document.createElement("thead");
+    var row, th, td;
+
+    // first row with statistics column names
+    row = document.createElement("tr");
+    th = document.createElement("th");
+    th.innerText = "  ";
+    row.appendChild(th);
+    for ( var j = 0; j < stats[ 0 ].length; j++ ) {
+        th = document.createElement("th");
+        th.innerText = stats[0][j];
+        row.appendChild(th);
+    }
+    thead.appendChild(row);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    for(var i = 0; i < dimensions.length; i++ ) {
+        row = document.createElement("tr");
+        th = document.createElement("th");
+        th.innerText = dimensions[ i ].toString();
+        row.appendChild(th);
+        for ( var j = 0; j < stats[ 0 ].length; j++ ) {
+            var stat_value = stats[ 1 ][ j ][ i ];
+            td = document.createElement("td");
+            td.innerText = stat_value.toLocaleString(undefined, { maximumSignificantDigits: 3 });
+            row.appendChild(td);
+        }
+        tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    initial_dataset.appendChild(table);
+}
+
+function add_parameters(submited_form) {
+    var new_input = document.createElement('input');
+    new_input.name = 'visualparameters';
+    new_input.type = 'hidden';
+    new_input.value = JSON.stringify(scene.saveParameters());
+    submited_form.appendChild(new_input);
+}
+
+function fix_array(data) {
+    var new_array = new Array(data.length);
+    for (var i = 0; i < data.length; i++) {
+        var values = [];
+        for (var j = 0; j < data[i][1][0].length; j++) {
+            var current_item = data[i][1][0][j];
+            values[j] = current_item
+        }
+        new_array[i] = [data[i][0].toString(), values];
+    }
+    return new_array;
+}
