@@ -48,6 +48,7 @@
                                       {% endfor %}
                                   </select>
                             </div>
+                            {% include "LoD_Generator.html" %}
                             <input type="submit" class="button small vap-controllers" value="Submit">
                       </form>
                   </div>
@@ -58,6 +59,7 @@
                           <input type="hidden" name="formt" value="newfile">
                           <label for="customFile" class="button small">Upload File</label>
                           <input type="file" id="customFile" class="show-for-sr" name="customFile">
+                          {% include "LoD_Generator.html" %}
                           <input type="submit" class="button small" value="Submit">
                      </form>
                   </div>
@@ -186,6 +188,25 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
+
+		    var lod_activation = document.getElementById("lod_activation");
+		    lod_activation.addEventListener( "click", function(event) {
+                    var lod_slider = event.srcElement.ownerDocument.getElementById("lod_slider");
+                    var lod_number = event.srcElement.ownerDocument.getElementById("lod_number");
+                    if (event.srcElement.checked) {
+                        if (lod_slider.classList.contains('disabled')) {
+                            lod_slider.classList.remove('disabled');
+                        }
+                        if (lod_number.style.display === 'none') {
+                            lod_number.style.display = 'block';
+                        }
+
+                    } else {
+                        lod_slider.classList.add('disabled');
+                        lod_number.style.display = 'none';
+                    }
+            });
+
             {%  if data_is_ready %}
                 clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
                                     ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
@@ -255,6 +276,12 @@
             scene.setAuxiliaryColumns(auxNames);
             {% endif %}
 
+            var lodData = [];
+            {% if lod_data %}
+            lodData = {{ lod_data|safe }};
+            scene.setLOD(lodData);
+            {% endif %}
+
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.setClusters(clusters);
@@ -268,9 +295,9 @@
             var objects = [];
 			for ( var i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ]));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ], lodData[ i ] ));
                 {% else %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ], lodData[ i ] ));
 				{% endif %}
 			}
 			{% endif %}

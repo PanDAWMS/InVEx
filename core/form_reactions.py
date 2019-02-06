@@ -165,6 +165,40 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
         logger.error('!form_reactions.prepare_data_object!: Failed to prepare basics of the data. \n' + str(exc))
         raise
 
+
+def prepare_lod_data_object(lod_data, norm_dataset, auxiliary_dataset, op_history):
+    try:
+        idx = [norm_dataset.index.name]
+        columns = norm_dataset.columns.tolist()
+
+        metrics = calc.basicstatistics.BasicStatistics()
+        real_dataset_stats_or = metrics.process_data(lod_data.groups_mean)
+        real_dataset_stats = []
+        for i in range(len(real_dataset_stats_or)):
+            real_dataset_stats.append(real_dataset_stats_or[i].tolist())
+
+        corr_matrix = lod_data.groups_mean.corr()
+
+        aux_columns = auxiliary_dataset.columns.tolist()
+
+        data = {
+            'norm_dataset': pandas_to_js_list(norm_dataset),
+            'real_dataset': pandas_to_js_list(lod_data.groups_mean),
+            'aux_dataset': pandas_to_js_list(auxiliary_dataset),
+            'data_is_ready':True,
+            'dim_names': columns,
+            'aux_names': aux_columns,
+            'index': idx,
+            'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
+            'operation_history': op_history,
+            'corr_matrix': corr_matrix.values.tolist(),
+            'lod_data': lod_data.groups2id
+        }
+        return data
+    except Exception as exc:
+        logger.error('!form_reactions.prepare_data_object!: Failed to prepare basics of the data. \n' + str(exc))
+        raise
+
 """
 Data Preparation includes:
 - cleaning data sample from NaNs
@@ -182,14 +216,24 @@ def data_preparation(dataset, request):
     norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
     calc.importcsv.dropNA(norm_dataset)
     columns = norm_dataset.columns.tolist()
+    logger.error(str(columns))
     numeric_dataset = numeric_dataset[columns]
     auxiliary_dataset = dataset.drop(numeric_columns, 1)
-    op_history = calc.operationshistory.OperationHistory()
-    metrics = calc.basicstatistics.BasicStatistics()
-    metrics.process_data(norm_dataset)
-    op_history.append(norm_dataset, metrics)
-    data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-    data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+    if ('lod_value' in request.POST and request.POST['lod_value'] != ''):
+        lod = int(request.POST['lod_value'])
+        lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
+        norm_lod_dataset = calc.importcsv.normalization(lod_data.groups_mean, columns)
+        aux_lod_dataset = lod_data.groups_mean.drop(columns, 1)
+        data = prepare_lod_data_object(lod_data, norm_lod_dataset, aux_lod_dataset, None)
+        # TODO:
+        # Operations History
+    else:
+        op_history = calc.operationshistory.OperationHistory()
+        metrics = calc.basicstatistics.BasicStatistics()
+        metrics.process_data(norm_dataset)
+        op_history.append(norm_dataset, metrics)
+        data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
+        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
     data['request'] = request
     return data
 

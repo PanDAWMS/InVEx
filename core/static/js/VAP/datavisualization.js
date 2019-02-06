@@ -28,6 +28,7 @@ class DataVisualization extends Scene{
         this.realData = [];
         this.auxData = [];
         this.auxNames = [];
+        this.lodData = [];
         this.interactiveMode = 'single';			
         
         //Set up the quality ranges and parameters for each quality.
@@ -100,6 +101,10 @@ class DataVisualization extends Scene{
 	setAuxiliaryData(auxData) {
 		this.auxData = auxData;
     }
+
+    setLOD(lodData) {
+    	this.lodData = lodData;
+	}
     
 // #endregion
 // #region GUI related
@@ -268,9 +273,15 @@ class DataVisualization extends Scene{
     
 	// #region User interaction
 	//Creates a sphere on the scene, adds the data to the sphere and the sphere to the data.
-    createSphere(normData, realData, cluster, auxData) {
+    createSphere(normData, realData, cluster, auxData, lodData) {
 		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
+		if (lodData != undefined) {
+			var newSphereRadius = this.defaultSpRad + ((this.defaultSpRad * lodData[3]));
+			this.sphereGeometry = new THREE.SphereGeometry( newSphereRadius, this.numberOfSegements, this.numberOfSegements );
+		}
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
+		console.log(sphere);
+
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
 		sphere.position.z = normData[1][this.proectionSubSpace[2]];
