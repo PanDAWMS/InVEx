@@ -120,20 +120,20 @@ def load_data(filename):
                      + SAVED_FILES_PATH + filename + '\n' + str(exc))
         raise
 
-"""
-Preparing data object for the client. 
-This object includes all information about data sample:
-- initial data sample (numerical) 
-- normalized data sample
-- auxiliary data sample
-- names of numerical features (columns)
-- names of auxiliary features (columns)
-- data sample index
-- statistics for the initial data sample
-- operations history data file
-- array for the correlation matrix
-"""
 def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_history):
+    """
+    Preparing data object for the client. 
+    This object includes all information about data sample:
+    - initial data sample (numerical) 
+    - normalized data sample
+    - auxiliary data sample
+    - names of numerical features (columns)
+    - names of auxiliary features (columns)
+    - data sample index
+    - statistics for the initial data sample
+    - operations history data file
+    - array for the correlation matrix
+    """
     try:
         idx = [norm_dataset.index.name]
         columns = norm_dataset.columns.tolist()
@@ -199,17 +199,17 @@ def prepare_lod_data_object(lod_data, norm_dataset, auxiliary_dataset, op_histor
         logger.error('!form_reactions.prepare_data_object!: Failed to prepare basics of the data. \n' + str(exc))
         raise
 
-"""
-Data Preparation includes:
-- cleaning data sample from NaNs
-- data sample normalization
-- splitting data sample into 2 parts: numeric and auxiliary.
-Numeric part contains only numerical data and is used for clustering.
-Auxiliary part contains objects, strings, datetime etc. and can be used for data grouping
-- calculating statistics for the normalized data sample
-- saving information about normalized data sample and statistics in the operations history file with the unique ID
-"""
 def data_preparation(dataset, request):
+    """
+    Data Preparation includes:
+    - cleaning data sample from NaNs
+    - data sample normalization
+    - splitting data sample into 2 parts: numeric and auxiliary.
+    Numeric part contains only numerical data and is used for clustering.
+    Auxiliary part contains objects, strings, datetime etc. and can be used for data grouping
+    - calculating statistics for the normalized data sample
+    - saving information about normalized data sample and statistics in the operations history file with the unique ID
+    """
     calc.importcsv.dropNA(dataset)
     numeric_columns = calc.importcsv.numeric_columns(dataset)
     numeric_dataset = dataset[numeric_columns]
