@@ -3,14 +3,18 @@ import pandas as pd
 import numpy as np
 
 class LoDGenerator:
+    """
+    Level-of-Detail Generator class provides k-means clusterization 
+    of the initial data sample into a number of clusters. 
+    """
 
     def __init__(self, dataset, n = 200):
         self.dataset = dataset.copy()
         self.initialLength = self.dataset.shape[0]
         self.n = n
         self.kmeans_clustering()
-        self.groups_mean = self.get_groups_mean()
-        self.groups2id = self.groups_to_ids()
+        self.grouped_dataset = self.get_groups_mean()
+        self.groups_metadata, self.groups = self.get_all_groups()
 
     def kmeans_clustering(self):
         self.model = KMeans(self.n)
@@ -19,21 +23,28 @@ class LoDGenerator:
         self.dataset['group'] = self.results
         self.dataset.set_index('group')
 
-    def groups_to_ids(self):
+    def get_all_groups(self):
         result = []
-        clusters = self.dataset.groupby('group')
-        for name, group in clusters:
+        groups = []
+        self.clusters = self.dataset.groupby('group')
+        for name, group in self.clusters:
             group_size = len(group)
             percentage = group_size * 100 / self.initialLength
             result.append([name, group.index.tolist(), len(group), percentage])
-        return result
+            #group = group.drop('group', axis=1)
+            groups.append([name, group])
+        return result, groups
+
+    def get_group(self, group_name):
+        return self.clusters.get_group(group_name)
 
     def get_groups_mean(self):
         return self.dataset.groupby('group').mean()
 
-# dataset = pd.DataFrame(np.random.randint(0,500,size=(500, 4)), columns=list('ABCD'))
-#
+# dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
+# print(dataset)
 # lod = LoDGenerator(dataset, 5)
 # print(lod.initialLength)
-# print(lod.groups_mean)
-# print(lod.groups2id)
+# print(lod.grouped_dataset)
+# print(lod.groups_metadata)
+# print(lod.groups)
