@@ -161,13 +161,23 @@ class MeshVisualization extends DataVisualization{
     
     //#endregion
     //#region User interaction
+    getColor(value){
+        if(value>90)
+            return new THREE.Color(0xFF0000);
+        if(value>75)
+            return new THREE.Color(0xFFFF00);
+        if(value>50)
+            return new THREE.Color(0x0000FF);
+        return new THREE.Color(0x00FF00);
+    }
+
     //Creates a sphere on the scene, adds the data to the sphere and the sphere to the data.
     createSphere(normData, realData, cluster, auxData) {
         if (!((normData[1][0] in this.meshCoordinates[2]) && (normData[1][1] in this.meshCoordinates[3])))
             return null;
         var i = this.meshCoordinates[2][normData[1][0]];
         var j = this.meshCoordinates[3][normData[1][1]];
-		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
+		var material = new THREE.MeshPhongMaterial( {color: this.getColor(normData[1][this.proectionSubSpace[1]])} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = this.meshCoordinates[0][i][1];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
@@ -242,6 +252,7 @@ class MeshVisualization extends DataVisualization{
                             this.objectsOnMesh[i][j][k].selectedCircut.position.y = this.objectsOnMesh[i][j][k].position.y;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.z = this.objectsOnMesh[i][j][k].position.z;
                         }
+                        this.objectsOnMesh[i][j][k].material.color = this.getColor(this.objectsOnMesh[i][j][k].dataObject[1][this.proectionSubSpace[1]]);
                     }
     }
     
