@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import linecache
 from . import data_converters
 
@@ -14,6 +13,13 @@ class GroupedData:
             self.groups.append(pd.DataFrame(group_data))
 
     def save_to_file(self):
+        """
+        Each data group, generated after k-means clustering, has unique cluster ID.
+        If the number of clusters is 200, then the IDs of groups will be in range of 0 - 199. 
+        All groups are saved, sorted by group ID. 
+        Each group is saved in file line by line, in accordance with group ID. 
+        :return: 
+        """
         file = open(self.fname, "w")
         for group in self.groups:
             file.write(group.to_json(orient='table'))
@@ -21,6 +27,11 @@ class GroupedData:
         file.close()
 
     def load_from_file(self, group_id):
+        """
+        To search the group in file by the group ID the exact line is extracted. 
+        :param group_id: 
+        :return: 
+        """
         line = linecache.getline(self.fname, group_id+1)
         return data_converters.table_to_df(line)
 
