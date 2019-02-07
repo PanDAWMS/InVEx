@@ -32,17 +32,20 @@ def list_csv_data_files(directory):
     csv_data_files = json.loads(file.read())
     return csv_data_files
 
-def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, filename=None):
+def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod, lod_metadata, filename=None):
     """
     Saving data to the operations history file.
     1st line - original dataset
     2nd line - normalized datasample
     3rd line - operations history (list of clusterizations)
     4th line - auxiliary data (not numeric values)
+    5th line - value of Level-of-Detail Generator
+    6th line - groups metadata
     :param original_dataset: 
     :param norm_dataset: 
     :param auxiliary_dataset: 
     :param op_history: 
+    :param lod:
     :param filename: 
     :return: 
     """
@@ -81,6 +84,10 @@ def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, fil
         file.write(op_history.save_to_json())
         file.write('\n')
         file.write(auxiliary_dataset.to_json(orient='table'))
+        file.write('\n')
+        file.write(lod)
+        file.write('\n')
+        file.write(str(lod_metadata))
         file.close()
         return filename
     except Exception as exc:
@@ -97,6 +104,8 @@ def load_data(filename):
     2nd line - normalized datasample
     3rd line - operations history (list of clusterizations)
     4th line - auxiliary data (not numeric values)
+    5th line - value of Level-of-Detail Generator
+    6th line - groups metadata
     :param filename: 
     :return: 
     """
@@ -115,8 +124,10 @@ def load_data(filename):
         op_history.load_from_json(data)
         data = file.readline()
         aux_dataset = calc.data_converters.table_to_df(data)
+        lod_value = int(file.readline())
+        groups_metadata = file.readline()
         file.close()
-        return [original_dataset, norm_dataset, op_history, aux_dataset]
+        return [original_dataset, norm_dataset, op_history, aux_dataset, lod_value, groups_metadata]
     except Exception as exc:
         logger.error('!form_reactions.load_data!: Failed to load the data. \nFilename:'
                      + SAVED_FILES_PATH + filename + '\n' + str(exc))
@@ -206,7 +217,7 @@ def data_preparation(dataset, request):
         data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
         data['lod_data'] = lod_data.groups_metadata
         groupedData = calc.grouped.GroupedData(dataset, lod_data.groups_metadata)
-        data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history)
+        data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history, str(lod), lod_data.groups_metadata)
         groupedData.set_fname(SAVED_FILES_PATH + data['saveid'] + '_group')
         groupedData.save_to_file()
     else:
@@ -215,7 +226,7 @@ def data_preparation(dataset, request):
         metrics.process_data(norm_dataset)
         op_history.append(norm_dataset, metrics)
         data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0')
     data['request'] = request
     return data
 
@@ -330,10 +341,12 @@ def clusterize(request):
         logger.error('!form_reactions.clusterize!: There was no file name in the request. \nRequest parameters: '
                      + json.dumps(request.POST))
         return {}
-    original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
+    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(request.POST['fdid'])
     if dataset is None:
         return {}
     data = prepare_data_object(dataset, original, aux_dataset, op_history)
+    if lod_value > 0:
+        data['lod_data'] = lod_metadata
     data['request'] = request
     operation = None
     if 'algorithm' in request.POST:
@@ -398,11 +411,12 @@ def clusterize(request):
                          + json.dumps(request.POST))
     else:
         logger.error('!form_reactions.clusterize!: The request was wrong. \nRequest parameters: ' + json.dumps(request.POST))
-    data['saveid'] = save_data(original, dataset, aux_dataset, op_history, request.POST['fdid'])
+    data['saveid'] = save_data(original, dataset, aux_dataset, op_history, str(lod_value), lod_metadata, request.POST['fdid'])
     data['visualparameters'] = request.POST['visualparameters']
     data['algorithm'] = request.POST['algorithm']
     data['parameters'] = operation.print_parameters()
     data['filename'] = request.POST['fname']
+    logger.error(data['lod_data'])
     return data
 
 

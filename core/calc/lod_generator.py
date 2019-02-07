@@ -40,9 +40,9 @@ class LoDGenerator:
         return self.dataset.groupby('group').mean()
 
 
-dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
-print(dataset)
-lod = LoDGenerator(dataset, 5)
-print(lod.initialLength)
-print(lod.grouped_dataset)
-print(lod.groups_metadata)
+# dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
+# print(dataset)
+# lod = LoDGenerator(dataset, 5)
+# print(lod.initialLength)
+# print(lod.grouped_dataset)
+# print(lod.groups_metadata)
