@@ -205,7 +205,7 @@ def data_preparation(dataset, request):
     columns = norm_dataset.columns.tolist()
     numeric_dataset = numeric_dataset[columns]
     auxiliary_dataset = dataset.drop(numeric_columns, 1)
-    if ('lod_value' in request.POST and request.POST['lod_value'] != ''):
+    if ('activated' in request.POST and request.POST['lod_value'] != ''):
         lod = int(request.POST['lod_value'])
         lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
         norm_lod_dataset = calc.importcsv.normalization(lod_data.grouped_dataset, columns)
