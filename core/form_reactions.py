@@ -410,7 +410,7 @@ def predict_cluster(request):
 def read_site_to_site_json(filename):
     file = open(filename)
     data = json.load(file)
-    if 'columns' in data:
+    if 'columns' in data['transfers']:
         columns = data['transfers']['columns']
     else:
         columns = ['source', 'destination']

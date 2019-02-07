@@ -913,6 +913,7 @@
   }
  }, 
  "transfers": {
+    "columns": ["source", "destination", "throughput", "success", "errors"],
   "rows": [
    [
     "OU_OSCER_ATLAS", 

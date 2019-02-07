@@ -161,14 +161,15 @@ class MeshVisualization extends DataVisualization{
     
     //#endregion
     //#region User interaction
-    getColor(value){
-        if(value>90)
+    getColor(value, max, mean){
+        if (value<=mean)
+            return new THREE.Color(0x00FF00);
+        var per = (value-mean)/(max-mean);
+        if(per>0.8)
             return new THREE.Color(0xFF0000);
-        if(value>75)
+        if(per>0.5)
             return new THREE.Color(0xFFFF00);
-        if(value>50)
-            return new THREE.Color(0x0000FF);
-        return new THREE.Color(0x00FF00);
+        return new THREE.Color(0x0000FF);
     }
 
     //Creates a sphere on the scene, adds the data to the sphere and the sphere to the data.
@@ -177,7 +178,7 @@ class MeshVisualization extends DataVisualization{
             return null;
         var i = this.meshCoordinates[2][normData[1][0]];
         var j = this.meshCoordinates[3][normData[1][1]];
-		var material = new THREE.MeshPhongMaterial( {color: this.getColor(normData[1][this.proectionSubSpace[1]])} );
+		var material = new THREE.MeshPhongMaterial( {color: this.getColor(realData[1][this.proectionSubSpace[1]], this.realStats[1][2][this.proectionSubSpace[1]-2], this.realStats[1][3][this.proectionSubSpace[1]-2])} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = this.meshCoordinates[0][i][1];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
@@ -251,8 +252,10 @@ class MeshVisualization extends DataVisualization{
                             this.objectsOnMesh[i][j][k].selectedCircut.position.x = this.objectsOnMesh[i][j][k].position.x;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.y = this.objectsOnMesh[i][j][k].position.y;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.z = this.objectsOnMesh[i][j][k].position.z;
+                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.getColor(this.objectsOnMesh[i][j][k].realData[1][this.proectionSubSpace[1]], this.realStats[1][2][this.proectionSubSpace[1]-2], this.realStats[1][3][this.proectionSubSpace[1]-2])); 
                         }
-                        this.objectsOnMesh[i][j][k].material.color = this.getColor(this.objectsOnMesh[i][j][k].dataObject[1][this.proectionSubSpace[1]]);
+                        else
+                            this.objectsOnMesh[i][j][k].material.color = this.getColor(this.objectsOnMesh[i][j][k].realData[1][this.proectionSubSpace[1]], this.realStats[1][2][this.proectionSubSpace[1]-2], this.realStats[1][3][this.proectionSubSpace[1]-2]); 
                     }
     }
     
