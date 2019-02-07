@@ -32,37 +32,6 @@ def list_csv_data_files(directory):
     csv_data_files = json.loads(file.read())
     return csv_data_files
 
-
-def pandas_to_js_list(dataset):
-    """
-    Convert pandas DataFrame to JavaScript-like array.
-    :param dataset: 
-    :return: 
-    """
-    if dataset is None:
-        return []
-    else:
-        results = []
-        for i in range(len(dataset.index)):
-            results.append([[dataset.index[i]], [dataset.values[i].tolist()]])
-        return results
-
-
-def table_to_df(data):
-    """
-    Convert JSON data to pandas DataFrame.
-    :param data: 
-    :return: 
-    """
-    json_obj = json.loads(data)
-    df = pd.DataFrame(json_obj['data'],
-                      columns=[t['name'] for t in json_obj['schema']['fields']])
-    for t in json_obj['schema']['fields']:
-        if t['type'] == "datetime":
-            df[t['name']] = pd.to_datetime(df[t['name']], infer_datetime_format=True)
-    df.set_index(json_obj['schema']['primaryKey'], inplace=True)
-    return df
-
 def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, filename=None):
     """
     Saving data to the operations history file.
@@ -138,14 +107,14 @@ def load_data(filename):
     try:
         file = open(SAVED_FILES_PATH + filename, "r")
         data = file.readline()
-        original_dataset = table_to_df(data)
+        original_dataset = calc.data_converters.table_to_df(data)
         data = file.readline()
-        norm_dataset = table_to_df(data)
+        norm_dataset = calc.data_converters.table_to_df(data)
         data = file.readline()
         op_history = calc.operationshistory.OperationHistory()
         op_history.load_from_json(data)
         data = file.readline()
-        aux_dataset = table_to_df(data)
+        aux_dataset = calc.data_converters.table_to_df(data)
         file.close()
         return [original_dataset, norm_dataset, op_history, aux_dataset]
     except Exception as exc:
@@ -187,9 +156,9 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
         aux_columns = auxiliary_dataset.columns.tolist()
 
         data = {
-            'norm_dataset': pandas_to_js_list(norm_dataset),
-            'real_dataset': pandas_to_js_list(real_dataset),
-            'aux_dataset': pandas_to_js_list(auxiliary_dataset),
+            'norm_dataset': calc.data_converters.pandas_to_js_list(norm_dataset),
+            'real_dataset': calc.data_converters.pandas_to_js_list(real_dataset),
+            'aux_dataset': calc.data_converters.pandas_to_js_list(auxiliary_dataset),
             'data_is_ready':True,
             'dim_names': columns,
             'aux_names': aux_columns,
@@ -223,7 +192,6 @@ def data_preparation(dataset, request):
     norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
     calc.importcsv.dropNA(norm_dataset)
     columns = norm_dataset.columns.tolist()
-    logger.error(str(columns))
     numeric_dataset = numeric_dataset[columns]
     auxiliary_dataset = dataset.drop(numeric_columns, 1)
     if ('lod_value' in request.POST and request.POST['lod_value'] != ''):
@@ -237,7 +205,10 @@ def data_preparation(dataset, request):
         op_history.append(norm_lod_dataset, metrics)
         data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
         data['lod_data'] = lod_data.groups_metadata
+        groupedData = calc.grouped.GroupedData(dataset, lod_data.groups_metadata)
         data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history)
+        groupedData.set_fname(SAVED_FILES_PATH + data['saveid'] + '_group')
+        groupedData.save_to_file()
     else:
         op_history = calc.operationshistory.OperationHistory()
         metrics = calc.basicstatistics.BasicStatistics()

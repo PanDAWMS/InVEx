@@ -14,7 +14,7 @@ class LoDGenerator:
         self.n = n
         self.kmeans_clustering()
         self.grouped_dataset = self.get_groups_mean()
-        self.groups_metadata, self.groups = self.get_all_groups()
+        self.groups_metadata = self.get_groups_metadata()
 
     def kmeans_clustering(self):
         self.model = KMeans(self.n)
@@ -23,17 +23,15 @@ class LoDGenerator:
         self.dataset['group'] = self.results
         self.dataset.set_index('group')
 
-    def get_all_groups(self):
+    def get_groups_metadata(self):
         result = []
-        groups = []
         self.clusters = self.dataset.groupby('group')
-        for name, group in self.clusters:
+        for i in sorted(self.clusters.groups.keys()):
+            group = self.clusters.get_group(i)
             group_size = len(group)
             percentage = group_size * 100 / self.initialLength
-            result.append([name, group.index.tolist(), len(group), percentage])
-            #group = group.drop('group', axis=1)
-            groups.append([name, group])
-        return result, groups
+            result.append([i, group.index.tolist(), len(group), percentage])
+        return result
 
     def get_group(self, group_name):
         return self.clusters.get_group(group_name)
@@ -41,10 +39,10 @@ class LoDGenerator:
     def get_groups_mean(self):
         return self.dataset.groupby('group').mean()
 
-# dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
-# print(dataset)
-# lod = LoDGenerator(dataset, 5)
-# print(lod.initialLength)
-# print(lod.grouped_dataset)
-# print(lod.groups_metadata)
-# print(lod.groups)
+
+dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
+print(dataset)
+lod = LoDGenerator(dataset, 5)
+print(lod.initialLength)
+print(lod.grouped_dataset)
+print(lod.groups_metadata)
