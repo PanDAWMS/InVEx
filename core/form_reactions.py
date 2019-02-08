@@ -216,7 +216,8 @@ def data_preparation(dataset, request):
         op_history.append(norm_lod_dataset, metrics)
         data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
         data['lod_data'] = lod_data.groups_metadata
-        groupedData = calc.grouped.GroupedData(dataset, lod_data.groups_metadata)
+        groupedData = calc.grouped.GroupedData()
+        groupedData.get_groups(dataset, lod_data.groups_metadata)
         data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history, str(lod), lod_data.groups_metadata)
         groupedData.set_fname(SAVED_FILES_PATH + data['saveid'] + '_group')
         groupedData.save_to_file()
@@ -454,3 +455,14 @@ def predict_cluster(request):
             + json.dumps(operation.save_results()) + '\nRequest parameters: '
             + json.dumps(request.POST) + '\n' + str(exc))
         raise
+
+
+def get_group_data(request):
+    group = calc.grouped.GroupedData()
+    request_dict = dict(request.POST.items())
+    result = group.load_from_file(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid']+'_group')
+    data = {}
+    data['group_data'] = calc.data_converters.pandas_to_js_list(result)
+    data['headers'] = result.columns.tolist()
+    data['index_name'] = result.index.name
+    return data

@@ -16,6 +16,7 @@ function sendAjaxPredictRequest(selectedObject, otherData, sceneObj){
 			})
 }
 
+
 class DataVisualization extends Scene{
  
  // #region Initialization
@@ -280,8 +281,6 @@ class DataVisualization extends Scene{
 			this.sphereGeometry = new THREE.SphereGeometry( newSphereRadius, this.numberOfSegements, this.numberOfSegements );
 		}
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
-		console.log(sphere);
-
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
 		sphere.position.z = normData[1][this.proectionSubSpace[2]];
@@ -619,7 +618,28 @@ class DataVisualization extends Scene{
 		}
 		
 		this.selectObject(obj);	
-		this.printDataDialog(obj);	
+		this.printDataDialog(obj);
+
+		if (this.lodData.length > 0 ) {
+			var csrftoken = Cookies.get('csrftoken');
+			var data = { formt: 'group_data',
+						 group_id: obj.dataObject[0],
+						 fdid: scene.fdid,
+						 csrfmiddlewaretoken: csrftoken
+						};
+			$.ajax({
+				type:"POST",
+				url: "",
+				data : data,
+				success : function(data, status, xhr) {
+					var headers = [data['index_name']].concat(data['headers']);
+					printDataset(document.getElementById('selected_group'), headers, fix_array(data['group_data']), 10);
+				},
+				failure: function(data, status, xhr) {
+					console.log('There was an error. Sorry');
+				}
+			});
+		}
 	}
 
 	//reaction to an object click in multiple selection mode.

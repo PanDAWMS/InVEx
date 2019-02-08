@@ -13,7 +13,7 @@ def pandas_to_js_list(dataset):
     else:
         results = []
         for i in range(len(dataset.index)):
-            results.append([[dataset.index[i]], [dataset.values[i].tolist()]])
+            results.append([[str(dataset.index[i])], [dataset.values[i].tolist()]])
         return results
 
 

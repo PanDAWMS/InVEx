@@ -15,6 +15,7 @@ import pandas as pd
 from django.shortcuts import render
 from django.conf import settings
 from core import form_reactions
+from django.template.context_processors import csrf
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -93,6 +94,13 @@ def main(request):
             except Exception as exc:
                 logger.error('!views.performance_test_frame!: Couldn\'t calculate a prediction. \n' + str(exc))
                 return JsonResponse({})
+        elif request.POST['formt'] == 'group_data':
+            try:
+                data = form_reactions.get_group_data(request)
+                return JsonResponse(data)
+            except Exception as exc:
+                logger.error('!views.performance_test_frame!: Couldn\'t get the group. \n' + str(exc))
+                return JsonResponse({})
 
     else:
         data = {
@@ -150,7 +158,7 @@ def performance_test_frame(request):
                 logger.error('!views.performance_test_frame!: Couldn\'t perform a clusterization. ' + str(exc))
         if request.POST['formt'] == 'rebuild':
             try:
-                data = form_reactions.predict_cluster(request)
+                data = json.loads(form_reactions.predict_cluster(request))
                 return JsonResponse(data)
             except Exception as exc:
                 logger.error('!views.performance_test_frame!: Couldn\'t calculate a prediction. ' + str(exc))

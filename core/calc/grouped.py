@@ -4,7 +4,10 @@ from . import data_converters
 
 class GroupedData:
 
-    def __init__(self, dataset, groups_metadata):
+    def __init__(self):
+        pass
+
+    def get_groups(self, dataset, groups_metadata):
         self.groups = []
         self.groups_metadata = groups_metadata
         for item in groups_metadata:
@@ -26,13 +29,13 @@ class GroupedData:
             file.write('\n')
         file.close()
 
-    def load_from_file(self, group_id):
+    def load_from_file(self, group_id, fname):
         """
         To search the group in file by the group ID the exact line is extracted. 
         :param group_id: 
         :return: 
         """
-        line = linecache.getline(self.fname, group_id+1)
+        line = linecache.getline(fname, group_id+1)
         return data_converters.table_to_df(line)
 
     def set_fname(self, fname):
