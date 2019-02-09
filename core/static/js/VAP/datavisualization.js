@@ -282,6 +282,7 @@ class DataVisualization extends Scene{
 		sphere.realData = realData;
 		sphere.auxData = auxData;
 		this.groupOfSpheres.add(sphere);
+		changeVisibilitySphere(sphere);
 		return sphere;
 	}
 
@@ -657,6 +658,7 @@ class DataVisualization extends Scene{
 		obj.material.color.set( invertColor(obj.material.color) );
 		this.groupOfSelectOutlines.add(lineCube);
 		this.selectedObject.add(obj);
+		lineCube.visible = obj.visible;
 	}
 
 	//Unselects all objects
@@ -665,6 +667,30 @@ class DataVisualization extends Scene{
 			this.unSelectObject(this.selectedObject.children.pop());
 		}
 	}
+
+	changeVisibilityAll(){
+		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
+			this.changeVisibilitySphere(this.groupOfSpheres.children[i]);
+		}
+		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
+			this.changeVisibilitySphere(this.selectedObject.children[i])
+		}
+	}
+
+	//Change visiblility state of the sphere
+	changeVisibilitySphere(sphere){
+		if(true){
+			sphere.visible = true;
+			if (sphere.selectedCircut != undefined)
+				sphere.selectedCircut.visible = true;
+		}
+		else{
+			sphere.visible = false;
+			if (sphere.selectedCircut != undefined)
+				sphere.selectedCircut.visible = false;
+		}
+	}
+	
 
 	//Unselects given object
 	unSelectObject(obj){
@@ -718,6 +744,7 @@ class DataVisualization extends Scene{
 			sphere.selectedCircut.position.y = sphere.position.y;
 			sphere.selectedCircut.position.z = sphere.position.z;
 		}
+		changeVisibilityAll();
     }
     
     setNewSubSpace(x1, x2, x3){

@@ -11,6 +11,7 @@ class MeshVisualization extends DataVisualization{
         this.proectionSubSpace = [0, 2, 1]
         this.meshCoordinates = [[], [], {}, {}];
         this.objectsOnMesh = [];
+        this.visibilityState = [true, true, true, true];
         for (var i = 0; i<xCoordinates.length; ++i)
         {
             this.meshCoordinates[0][i] = [xCoordinates[i], i*meshDistance];
@@ -158,18 +159,83 @@ class MeshVisualization extends DataVisualization{
         ytable.dataTableObj = $('#'+ytable.id).DataTable();
         return [xtable, ytable];
     }
+
+    createDataOnSceneElements(parentElement){
+        var greenSwitch=createSwitch('green_switch', 'green', 'Green spheres', 'medium', true, 'On', 'Off');
+        var blueSwitch=createSwitch('blue_switch', 'blue', 'Blue spheres', 'medium', true, 'On', 'Off');
+        var yellowSwitch=createSwitch('yellow_switch', 'yellow', 'Yellow spheres', 'medium', true, 'On', 'Off');
+        var redSwitch=createSwitch('red_switch', 'red', 'Red spheres', 'medium', true, 'On', 'Off');
+        greenSwitch.inputElement.sceneObj=this;
+        greenSwitch.inputElement.onchange=function(){
+            if(this.checked)
+                this.sceneObj.visibilityState[0]=true;
+            else
+                this.sceneObj.visibilityState[0]=false;
+            this.sceneObj.changeVisibilityAll();
+        };
+
+        blueSwitch.inputElement.sceneObj=this;
+        blueSwitch.inputElement.onchange=function(){
+            if(this.checked)
+                this.sceneObj.visibilityState[1]=true;
+            else
+                this.sceneObj.visibilityState[1]=false;
+            this.sceneObj.changeVisibilityAll();
+        };
+        
+        yellowSwitch.inputElement.sceneObj=this;
+        yellowSwitch.inputElement.onchange=function(){
+            console.log(this);
+            if(this.checked)
+                this.sceneObj.visibilityState[2]=true;
+            else
+                this.sceneObj.visibilityState[2]=false;
+            this.sceneObj.changeVisibilityAll();
+        };
+
+        redSwitch.inputElement.sceneObj=this;
+        redSwitch.inputElement.onchange=function(){
+            if(this.checked)
+                this.sceneObj.visibilityState[3]=true;
+            else
+                this.sceneObj.visibilityState[3]=false;
+            this.sceneObj.changeVisibilityAll();
+        };
+
+        parentElement.appendChild(greenSwitch);
+        parentElement.appendChild(blueSwitch);
+        parentElement.appendChild(yellowSwitch);
+        parentElement.appendChild(redSwitch);
+    }
     
     //#endregion
     //#region User interaction
-    getColor(value, max, mean){
-        if (value<=mean)
-            return new THREE.Color(0x00FF00);
-        var per = (value-mean)/(max-mean);
+    checkState(realData){
+        if (realData[1][this.proectionSubSpace[1]]<=this.realStats[1][3][this.proectionSubSpace[1]-2])
+            return 0;
+        var per = (realData[1][this.proectionSubSpace[1]]-this.realStats[1][3][this.proectionSubSpace[1]-2])/(this.realStats[1][2][this.proectionSubSpace[1]-2]-this.realStats[1][3][this.proectionSubSpace[1]-2]);
         if(per>0.8)
-            return new THREE.Color(0xFF0000);
+            return 3;
         if(per>0.5)
-            return new THREE.Color(0xFFFF00);
-        return new THREE.Color(0x0000FF);
+            return 2;
+        return 1;
+    }
+
+    getColor(realData){
+        return [new THREE.Color(0x00FF00), new THREE.Color(0x0000FF), new THREE.Color(0xFFFF00), new THREE.Color(0xFF0000)][this.checkState(realData)];
+    }
+
+    changeVisibilitySphere(sphere){
+        if(this.visibilityState[this.checkState(sphere.realData)]){
+			sphere.visible = true;
+			if (sphere.selectedCircut != undefined)
+				sphere.selectedCircut.visible = true;
+		}
+		else{
+			sphere.visible = false;
+			if (sphere.selectedCircut != undefined)
+                sphere.selectedCircut.visible = false;
+		}
     }
 
     //Creates a sphere on the scene, adds the data to the sphere and the sphere to the data.
@@ -178,7 +244,7 @@ class MeshVisualization extends DataVisualization{
             return null;
         var i = this.meshCoordinates[2][normData[1][0]];
         var j = this.meshCoordinates[3][normData[1][1]];
-		var material = new THREE.MeshPhongMaterial( {color: this.getColor(realData[1][this.proectionSubSpace[1]], this.realStats[1][2][this.proectionSubSpace[1]-2], this.realStats[1][3][this.proectionSubSpace[1]-2])} );
+		var material = new THREE.MeshPhongMaterial( {color: this.getColor(realData)} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = this.meshCoordinates[0][i][1];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
@@ -252,10 +318,10 @@ class MeshVisualization extends DataVisualization{
                             this.objectsOnMesh[i][j][k].selectedCircut.position.x = this.objectsOnMesh[i][j][k].position.x;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.y = this.objectsOnMesh[i][j][k].position.y;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.z = this.objectsOnMesh[i][j][k].position.z;
-                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.getColor(this.objectsOnMesh[i][j][k].realData[1][this.proectionSubSpace[1]], this.realStats[1][2][this.proectionSubSpace[1]-2], this.realStats[1][3][this.proectionSubSpace[1]-2])); 
+                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.getColor(this.objectsOnMesh[i][j][k].realData)); 
                         }
                         else
-                            this.objectsOnMesh[i][j][k].material.color = this.getColor(this.objectsOnMesh[i][j][k].realData[1][this.proectionSubSpace[1]], this.realStats[1][2][this.proectionSubSpace[1]-2], this.realStats[1][3][this.proectionSubSpace[1]-2]); 
+                            this.objectsOnMesh[i][j][k].material.color = this.getColor(this.objectsOnMesh[i][j][k].realData); 
                     }
     }
     

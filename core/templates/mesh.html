@@ -117,30 +117,44 @@
                               </div>
                           </div>
                       </div>
-                  {% if type == "datavisualization" %}
-                      <div class="cell">
-                          <div class="card">
-                              <div class="card-divider">
-                                Clustering
-                              </div>
-                              <div class="card-section">
-                                <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="formt" value="cluster">
-                                    {% if saveid %}
-                                    <input type="hidden" name="fdid" value="{{ saveid }}">
-                                    {% endif %}
-                                    {% if filename %}
-                                    <input type="hidden" name="fname" value="{{ filename|safe }}">
-                                    {% endif %}
-                                    <div class="form-group" id="clustering">
-                                    </div>
-                                    <input type="submit" class="button small" value="Clusterize">
-                                </form>
+                      {% if type == "datavisualization" %}
+                          <div class="cell">
+                              <div class="card">
+                                  <div class="card-divider">
+                                    Clustering
+                                  </div>
+                                  <div class="card-section">
+                                    <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="formt" value="cluster">
+                                        {% if saveid %}
+                                        <input type="hidden" name="fdid" value="{{ saveid }}">
+                                        {% endif %}
+                                        {% if filename %}
+                                        <input type="hidden" name="fname" value="{{ filename|safe }}">
+                                        {% endif %}
+                                        <div class="form-group" id="clustering">
+                                        </div>
+                                        <input type="submit" class="button small" value="Clusterize">
+                                    </form>
+                                  </div>
                               </div>
                           </div>
-                      </div>
-                    {% endif %}
+                        {% endif %}
+                        {% if type == "site2site" %}
+                            <div class="cell">
+                                <div class="card">
+                                    <div class="card-divider">
+                                      Data on Scene
+                                    </div>
+                                    <div class="card-section">
+                                      <form id="data_on_scene">
+                                        
+                                      </form>
+                                    </div>
+                                </div>
+                            </div>
+                          {% endif %}
                     {% endif %}
                       <div class="cell large-auto">
                           <div class="card">
@@ -301,6 +315,7 @@
             
                 {% if type == "site2site" %}
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
                 {% endif %}
 			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
             {% else %}
