@@ -216,6 +216,7 @@ def data_preparation(dataset, request):
         op_history.append(norm_lod_dataset, metrics)
         data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
         data['lod_data'] = lod_data.groups_metadata
+        data['lod_value'] = request.POST['lod_value']
         groupedData = calc.grouped.GroupedData()
         groupedData.get_groups(dataset, lod_data.groups_metadata)
         data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history, str(lod), lod_data.groups_metadata)
