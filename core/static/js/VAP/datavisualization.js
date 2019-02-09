@@ -632,8 +632,14 @@ class DataVisualization extends Scene{
 				url: "",
 				data : data,
 				success : function(data, status, xhr) {
+					var selected = document.getElementById('selected_group');
+					if (selected.children.length > 0) {
+						while (selected.firstChild) {
+							selected.firstChild.remove();
+						}
+					}
 					var headers = [data['index_name']].concat(data['headers']);
-					printDataset(document.getElementById('selected_group'), headers, fix_array(data['group_data']), 10);
+					printDataset(selected, headers, fix_array(data['group_data']), 10);
 				},
 				failure: function(data, status, xhr) {
 					console.log('There was an error. Sorry');

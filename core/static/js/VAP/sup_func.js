@@ -297,7 +297,6 @@ function printDataset(element, headers, dataset, num_rows, id_num=0){
     for(var i = 0; i<num_rows; ++i){
         addElementToDataTable(table, [dataset[i][0]].concat(dataset[i][1]), dataset[i][0], 1, false);
     }
-    console.log(table);
     table.dataTableObj = $('#'+table.id).DataTable();
     return table;
 }
