@@ -14,14 +14,14 @@ class LocalReader(BaseReader):
 
     SOURCE_FILE_FORMATS = ['csv', 'json']
 
-    def read_df(self, file_path, file_format='csv', **kwargs):
+    def read_df(self, file_path, file_format=None, **kwargs):
         """
         Read data of DataFrame format from the corresponding file.
 
         :param file_path: Full file path.
         :type file_path: str
-        :param file_format: File format: csv, json.
-        :type file_format: str
+        :param file_format: File format (e.g., csv, json).
+        :type file_format: str/None
         :param kwargs: Additional parameters.
         :type kwargs: dict
 
@@ -36,12 +36,18 @@ class LocalReader(BaseReader):
         if not os.path.isfile(file_path):
             raise Exception('Provided file does not exist.')
 
+        try:
+            file_format = file_format or file_path.rsplit('.', 1)[1]
+        except IndexError:
+            raise Exception('File format is unknown.') from None
+        else:
+            if file_format not in self.SOURCE_FILE_FORMATS:
+                raise Exception('File format is incorrect.')
+
         if file_format == 'csv':
             data = self._from_csv(file_path=file_path, **kwargs)
         elif file_format == 'json':
             data = self._from_json(file_path=file_path, **kwargs)
-        else:
-            raise Exception('Provided file format is incorrect.')
 
         # check the consistency of data
         # self._check_data_format(data=data)
