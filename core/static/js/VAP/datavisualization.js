@@ -1,5 +1,5 @@
 // Sends Ajax 
-function sendAjaxPredicRequest(selectedObject, otherData, sceneObj){
+function sendAjaxPredictRequest(selectedObject, otherData, sceneObj){
 	data = { formt: 'rebuild', data: JSON.stringify(selectedObject.dataObject[1])};
 	allData = Object.assign.apply({}, [data, otherData]);
 	$.ajax({
@@ -519,7 +519,7 @@ class DataVisualization extends Scene{
 					selectedObject: sphereToPrint,
 					scene: this,
                     Recalculate:function() {
-						sendAjaxPredicRequest(sphereToPrint, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
+						sendAjaxPredictRequest(sphereToPrint, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
                     }
                 };
 
