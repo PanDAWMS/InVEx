@@ -169,7 +169,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
 }
 
 
-function createSwitch(ID, name, label, size, state=true, texton='', textoff=''){
+function createSwitch(ID, name, label, size, state, texton, textoff){
     while(document.getElementById(ID)!==null)
         ID+=(Math.random()*10).toString().slice(-1);
     
