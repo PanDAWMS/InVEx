@@ -124,7 +124,7 @@ class DataVisualization extends Scene{
 			singleChoiceRadio.checked = true;
 		singleChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('single', {});
-			this.multiChoiceControl.style["visibility"] = 'hidden';
+			this.multiChoiceControl.style.display = 'none';
 		};
 		//radio button for multiple choice control
 		var multiChoiceRadio = createControlRadioWithLabel('multi' + interactionModeID, interactionModeID, 'Activate Multiple Sphere Selection');
@@ -135,7 +135,7 @@ class DataVisualization extends Scene{
 			multiChoiceRadio.checked = true;
 		multiChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('multi', {'tabletab': this.multiChoiceTab});
-			this.multiChoiceControl.style["visibility"] = 'visible';
+			this.multiChoiceControl.style.display = 'block';
 		};
 		//Radio button for drag control
 		var dragChoiceRadio = createControlRadioWithLabel('drag' + interactionModeID, interactionModeID, 'Activate Drag Sphere Control');
@@ -603,6 +603,8 @@ class DataVisualization extends Scene{
 			if (this.dims_gui.__folders['Auxiliary Data']) {
 				this.dims_gui.removeFolder(this.dims_aux_folder);
 			}
+			var selected_group_link = document.getElementById("selected_group_link");
+			selected_group_link.style.display = "none";
 			return true;
 		}
 
@@ -632,6 +634,8 @@ class DataVisualization extends Scene{
 				url: "",
 				data : data,
 				success : function(data, status, xhr) {
+					var selected_group_link = document.getElementById("selected_group_link");
+					selected_group_link.style.display = "block";
 					var selected = document.getElementById('selected_group');
 					if (selected.children.length > 0) {
 						while (selected.firstChild) {
@@ -639,7 +643,17 @@ class DataVisualization extends Scene{
 						}
 					}
 					var headers = [data['index_name']].concat(data['headers']);
-					printDataset(selected, headers, fix_array(data['group_data']), 10);
+					var group_info = document.createElement("div");
+					group_info.classList.add('callout');
+					group_info.classList.add('primary');
+					var h5 = document.createElement("h5");
+					h5.innerText = "Selected group: " + data['group_id'];
+					var p = document.createElement("p");
+					p.innerText = "Group size: " + data['group_data'].length;
+					group_info.appendChild(h5);
+					group_info.appendChild(p);
+					selected.appendChild(group_info);
+					printDataset(selected, headers, fix_array(data['group_data']));
 				},
 				failure: function(data, status, xhr) {
 					console.log('There was an error. Sorry');

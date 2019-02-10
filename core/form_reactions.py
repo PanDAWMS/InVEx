@@ -418,7 +418,6 @@ def clusterize(request):
     data['algorithm'] = request.POST['algorithm']
     data['parameters'] = operation.print_parameters()
     data['filename'] = request.POST['fname']
-    logger.error(data['lod_data'])
     return data
 
 
@@ -466,4 +465,5 @@ def get_group_data(request):
     data['group_data'] = calc.data_converters.pandas_to_js_list(result)
     data['headers'] = result.columns.tolist()
     data['index_name'] = result.index.name
+    data['group_id'] = request_dict['group_id']
     return data

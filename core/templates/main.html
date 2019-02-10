@@ -27,7 +27,8 @@
                 {% if cluster_ready %}
                   <li class="tabs-title"><a href="#clusters">Clusters</a></li>
                 {% endif %}
-                  <li class="tabs-title" style="visibility:hidden" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
+                  <li class="tabs-title" style="display:none" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
+                  <li class="tabs-title" style="display:none" id="selected_group_link"><a href="#selected_group">Selected Group</a></li>
                 {% endif %}
                 </ul>
 
@@ -59,7 +60,6 @@
                           <input type="hidden" name="formt" value="newfile">
                           <label for="customFile" class="button small">Upload File</label>
                           <input type="file" id="customFile" class="show-for-sr" name="customFile">
-                          {% include "LoD_Generator.html" %}
                           <input type="submit" class="button small" value="Submit">
                      </form>
                   </div>
@@ -78,6 +78,8 @@
                     <button type="button" class="button small" id="printBtn">Print Results</button>
                   </div>
                   <div class="tabs-panel" id="multichoice">
+                  </div>
+                  <div class="tabs-panel" id="selected_group">
                   </div>
                 {% endif %}
                 </div>
@@ -146,9 +148,6 @@
                     <div class="grid-y">
                         <div class="cell mainPicture" id="picture">
                           <div id="gui_container"></div>
-                        </div>
-                        <div class="cell" id="selected_group">
-
                         </div>
                       </div>
                     </div>
