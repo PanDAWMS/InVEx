@@ -185,7 +185,6 @@ class MeshVisualization extends DataVisualization{
         
         yellowSwitch.inputElement.sceneObj=this;
         yellowSwitch.inputElement.onchange=function(){
-            console.log(this);
             if(this.checked)
                 this.sceneObj.visibilityState[2]=true;
             else
