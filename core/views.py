@@ -3,7 +3,7 @@ Core Django views for VAR project
 """
 import json
 import logging
-
+from core import calc
 from datetime import datetime
 from urllib.parse import urlencode, urlparse, parse_qs
 from django.http import HttpResponse
@@ -185,3 +185,11 @@ def performance_test_frame(request):
     end_time = datetime.now()
     data['servertime'] = round((end_time - start_time).total_seconds() * 1000)
     return render(request, 'testframe.html', data, content_type='text/html')
+
+def visualize_group(request):
+    if request.method == 'GET' and 'group_id' in request.GET:
+        group = form_reactions.get_group_data(request)
+        data = form_reactions.data_preparation(calc.data_converters.table_to_df(group['group_data_df']), request)
+        data['group_vis'] = True
+        data['built'] = datetime.now().strftime("%H:%M:%S")
+    return render(request, 'main.html', data, content_type="text/html")

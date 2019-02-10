@@ -459,11 +459,16 @@ def predict_cluster(request):
 
 def get_group_data(request):
     group = calc.grouped.GroupedData()
-    request_dict = dict(request.POST.items())
+    if (request.method == 'POST'):
+        request_dict = dict(request.POST.items())
+    elif (request.method == 'GET'):
+        request_dict = dict(request.GET.items())
     result = group.load_from_file(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid']+'_group')
     data = {}
     data['group_data'] = calc.data_converters.pandas_to_js_list(result)
+    data['group_data_df'] = result.to_json(orient='table')
     data['headers'] = result.columns.tolist()
     data['index_name'] = result.index.name
     data['group_id'] = request_dict['group_id']
+    data['fdid'] = request_dict['fdid']
     return data

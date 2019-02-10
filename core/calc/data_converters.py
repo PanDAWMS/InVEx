@@ -24,7 +24,6 @@ def table_to_df(data):
     :return: 
     """
     json_obj = json.loads(data)
-    print(json_obj)
     df = pd.DataFrame(json_obj['data'],
                       columns=[t['name'] for t in json_obj['schema']['fields']])
     for t in json_obj['schema']['fields']:

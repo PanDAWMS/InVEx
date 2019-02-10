@@ -197,22 +197,15 @@
 		    var lod_activation = document.getElementById("lod_activation");
             var lod_slider = document.getElementById("lod_slider");
             var lod_value = document.getElementById("sliderOutput");
-            lod_value.value = lod_slider.value;
-            lod_slider.addEventListener("change", function(event) {
-                lod_value.value = event.srcElement.value;
-            });
-            lod_value.addEventListener("change", function(event) {
-                lod_slider.value = event.srcElement.value;
-            });
-            {% if request.POST.activated %}
-                lod_activation.checked = true;
-                lod.style.display = 'block';
-                lod_slider.value = {{ lod_value }};
-                lod_value.value = {{ lod_value }};
-            {% endif %}
-
-
-		    lod_activation.addEventListener( "click", function(event) {
+            if (lod_value && lod_activation) {
+                lod_value.value = lod_slider.value;
+                    lod_slider.addEventListener("change", function(event) {
+                        lod_value.value = event.srcElement.value;
+                    });
+                    lod_value.addEventListener("change", function(event) {
+                        lod_slider.value = event.srcElement.value;
+                    });
+                lod_activation.addEventListener( "click", function(event) {
                     if (event.srcElement.checked) {
                         if (lod.style.display == 'none') {
                             lod.style.display = 'block';
@@ -220,7 +213,15 @@
                     } else {
                         lod.style.display = 'none';
                     }
-            });
+                });
+            }
+            {% if request.POST.activated %}
+                lod_activation.checked = true;
+                lod.style.display = 'block';
+                lod_slider.value = {{ lod_value }};
+                lod_value.value = {{ lod_value }};
+            {% endif %}
+
 
             {%  if data_is_ready %}
                 clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
