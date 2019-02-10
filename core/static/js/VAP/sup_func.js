@@ -432,6 +432,8 @@ function createTopElement(tabTitleParentElement, tabContentParentElement, tabId,
     tabContentParentElement.appendChild(tabContentDiv);
 
     return tabContentDiv;
+}
+
 function printStats(stats, dimensions){
     var initial_dataset = document.getElementById("stats");
     var table = document.createElement("table");

@@ -282,7 +282,7 @@ class DataVisualization extends Scene{
 		sphere.realData = realData;
 		sphere.auxData = auxData;
 		this.groupOfSpheres.add(sphere);
-		changeVisibilitySphere(sphere);
+		this.changeVisibilitySphere(sphere);
 		return sphere;
 	}
 
