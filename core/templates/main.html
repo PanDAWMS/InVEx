@@ -18,8 +18,10 @@
           <div class="grid-x grid-margin-x">
             <div class="cell">
                 <ul class="tabs" data-deep-link="true" data-update-history="true" data-deep-link-smudge="true" data-deep-link-smudge-delay="500" data-tabs id="deeplinked-tabs">
+                {% if group_vis == False or not group_vis %}
                   <li class="tabs-title is-active"><a href="#serverfile" aria-selected="true">Choose File from Server</a></li>
                   <li class="tabs-title"><a href="#upload">Upload File</a></li>
+                {% endif %}
                 {%  if data_is_ready %}
                   <li class="tabs-title"><a href="#print">Print Dataset</a></li>
                   <li class="tabs-title"><a href="#stats">Statistics</a></li>
@@ -127,7 +129,7 @@
                                     {% endif %}
                                     <div class="form-group" id="clustering">
                                     </div>
-                                    <input type="submit" class="button small" value="Clusterize">
+                                    <input type="submit" class="button small" value="Clusterize" id="clusterize_button">
                                 </form>
                               </div>
                           </div>
