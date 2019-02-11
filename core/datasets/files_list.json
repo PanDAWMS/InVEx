@@ -5,4 +5,5 @@
 {"name": "All finished jobs for taskid = 14287024 (249 jobs, 14 parameters)", "filename": "job_records_14287024_14parameters.csv", "value": "taskid_14287024_14"},
 {"name": "All finished jobs for taskid = 14287024 (249 jobs, 4 parameters)", "filename": "job_records_14287024_short.csv", "value": "taskid_14287024_4"},
 {"name": "All finished jobs for taskid = 14773217 (464 jobs, 33 parameters)", "filename": "job_records_14773217.csv", "value": "taskid_14773217"},
-{"name": "All finished jobs for taskid = 14296407, executed on CERN-PROD_UCORE (13 700 jobs, 18 parameters)", "filename": "job_records_14296407_CERN_PROD_UCORE.csv", "value": "taskid_14296407"}]
+{"name": "All finished jobs for taskid = 14296407, executed on CERN-PROD_UCORE (13 700 jobs, 18 parameters)", "filename": "job_records_14296407_CERN_PROD_UCORE.csv", "value": "taskid_14296407"},
+{"name": "K-means", "filename": "kmeans_200.csv", "value": "kmeans"}]

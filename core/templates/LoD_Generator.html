@@ -1,0 +1,14 @@
+<input id="lod_activation" type="checkbox" name="activated">
+<label for="lod_activation">Activate Level-of-Detail Generator for large data samples</label>
+<div id="lod" style="display: none">
+    <label>Level-of-Detail</label>
+    <div class="grid-x grid-margin-x">
+        <div class="cell small-2">
+            <input type="range" min="1" max="1000" step="10" id="lod_slider">
+        </div>
+        <div class="cell small-2" id="lod_number">
+            <input type="number" id="sliderOutput" name="lod_value">
+        </div>
+    </div>
+</div>
+<br/>

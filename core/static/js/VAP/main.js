@@ -105,6 +105,7 @@ class Scene {
             // init lights
             this.initLight();
 			this.createGui();
+			this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
 	}
 	
 	saveParameters(){
