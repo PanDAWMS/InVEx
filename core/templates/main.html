@@ -18,8 +18,10 @@
           <div class="grid-x grid-margin-x">
             <div class="cell">
                 <ul class="tabs" data-deep-link="true" data-update-history="true" data-deep-link-smudge="true" data-deep-link-smudge-delay="500" data-tabs id="deeplinked-tabs">
+                {% if group_vis == False or not group_vis %}
                   <li class="tabs-title is-active"><a href="#serverfile" aria-selected="true">Choose File from Server</a></li>
                   <li class="tabs-title"><a href="#upload">Upload File</a></li>
+                {% endif %}
                 {%  if data_is_ready %}
                   <li class="tabs-title"><a href="#print">Print Dataset</a></li>
                   <li class="tabs-title"><a href="#stats">Statistics</a></li>
@@ -27,7 +29,8 @@
                 {% if cluster_ready %}
                   <li class="tabs-title"><a href="#clusters">Clusters</a></li>
                 {% endif %}
-                  <li class="tabs-title" style="visibility:hidden" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
+                  <li class="tabs-title" style="display:none" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
+                  <li class="tabs-title" style="display:none" id="selected_group_link"><a href="#selected_group">Selected Group</a></li>
                 {% endif %}
                 </ul>
 
@@ -48,6 +51,7 @@
                                       {% endfor %}
                                   </select>
                             </div>
+                            {% include "LoD_Generator.html" %}
                             <input type="submit" class="button small vap-controllers" value="Submit">
                       </form>
                   </div>
@@ -76,6 +80,8 @@
                     <button type="button" class="button small" id="printBtn">Print Results</button>
                   </div>
                   <div class="tabs-panel" id="multichoice">
+                  </div>
+                  <div class="tabs-panel" id="selected_group">
                   </div>
                 {% endif %}
                 </div>
@@ -123,7 +129,7 @@
                                     {% endif %}
                                     <div class="form-group" id="clustering">
                                     </div>
-                                    <input type="submit" class="button small" value="Clusterize">
+                                    <input type="submit" class="button small" value="Clusterize" id="clusterize_button">
                                 </form>
                               </div>
                           </div>
@@ -140,9 +146,17 @@
                         </div>
                     </div>
               </div>
-              <div class="cell auto mainPicture" id="picture">
-                  <div id="gui_container"></div>
-              </div>
+                <div class="cell auto">
+                    <div class="grid-y">
+                        <div class="cell mainPicture" id="picture">
+                          <div id="gui_container"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                </div>
+
+
             </div>
             </div>
         </div>
@@ -162,6 +176,7 @@
 <script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 {% endblock %}
 	<script>
 
@@ -180,6 +195,36 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
+            var lod = document.getElementById("lod");
+		    var lod_activation = document.getElementById("lod_activation");
+            var lod_slider = document.getElementById("lod_slider");
+            var lod_value = document.getElementById("sliderOutput");
+            if (lod_value && lod_activation) {
+                lod_value.value = lod_slider.value;
+                    lod_slider.addEventListener("change", function(event) {
+                        lod_value.value = event.srcElement.value;
+                    });
+                    lod_value.addEventListener("change", function(event) {
+                        lod_slider.value = event.srcElement.value;
+                    });
+                lod_activation.addEventListener( "click", function(event) {
+                    if (event.srcElement.checked) {
+                        if (lod.style.display == 'none') {
+                            lod.style.display = 'block';
+                        }
+                    } else {
+                        lod.style.display = 'none';
+                    }
+                });
+            }
+            {% if request.POST.activated %}
+                lod_activation.checked = true;
+                lod.style.display = 'block';
+                lod_slider.value = {{ lod_value }};
+                lod_value.value = {{ lod_value }};
+            {% endif %}
+
+
             {%  if data_is_ready %}
                 clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
                                     ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
@@ -249,6 +294,12 @@
             scene.setAuxiliaryColumns(auxNames);
             {% endif %}
 
+            var lodData = [];
+            {% if lod_data %}
+            lodData = {{ lod_data|safe }};
+            scene.setLOD(lodData);
+            {% endif %}
+
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.setClusters(clusters);
@@ -262,9 +313,9 @@
             var objects = [];
 			for ( var i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ]));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ], lodData[ i ] ));
                 {% else %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ], lodData[ i ] ));
 				{% endif %}
 			}
 			{% endif %}
