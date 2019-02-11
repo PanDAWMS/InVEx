@@ -11,9 +11,10 @@ def pandas_to_js_list(dataset):
     if dataset is None:
         return []
     else:
+        temp = dataset.values.tolist()
         results = []
         for i in range(len(dataset.index)):
-            results.append([[str(dataset.index[i])], [dataset.values[i].tolist()]])
+            results.append([[str(dataset.index[i])], [temp[i]]])
         return results
 
 
