@@ -16,6 +16,7 @@ function sendAjaxPredictRequest(selectedObject, otherData, sceneObj){
 			})
 }
 
+
 class DataVisualization extends Scene{
  
  // #region Initialization
@@ -28,6 +29,7 @@ class DataVisualization extends Scene{
         this.realData = [];
         this.auxData = [];
         this.auxNames = [];
+        this.lodData = [];
         this.interactiveMode = 'single';			
         
         //Set up the quality ranges and parameters for each quality.
@@ -100,6 +102,10 @@ class DataVisualization extends Scene{
 	setAuxiliaryData(auxData) {
 		this.auxData = auxData;
     }
+
+    setLOD(lodData) {
+    	this.lodData = lodData;
+	}
     
 // #endregion
 // #region GUI related
@@ -118,7 +124,7 @@ class DataVisualization extends Scene{
 			singleChoiceRadio.checked = true;
 		singleChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('single', {});
-			this.multiChoiceControl.style["visibility"] = 'hidden';
+			this.multiChoiceControl.style.display = 'none';
 		};
 		//radio button for multiple choice control
 		var multiChoiceRadio = createControlRadioWithLabel('multi' + interactionModeID, interactionModeID, 'Activate Multiple Sphere Selection');
@@ -129,7 +135,7 @@ class DataVisualization extends Scene{
 			multiChoiceRadio.checked = true;
 		multiChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('multi', {'tabletab': this.multiChoiceTab});
-			this.multiChoiceControl.style["visibility"] = 'visible';
+			this.multiChoiceControl.style.display = 'block';
 		};
 		//Radio button for drag control
 		var dragChoiceRadio = createControlRadioWithLabel('drag' + interactionModeID, interactionModeID, 'Activate Drag Sphere Control');
@@ -268,8 +274,12 @@ class DataVisualization extends Scene{
     
 	// #region User interaction
 	//Creates a sphere on the scene, adds the data to the sphere and the sphere to the data.
-    createSphere(normData, realData, cluster, auxData) {
+    createSphere(normData, realData, cluster, auxData, lodData) {
 		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
+		if (lodData != undefined) {
+			var newSphereRadius = this.defaultSpRad + ((this.defaultSpRad * lodData[3]));
+			this.sphereGeometry = new THREE.SphereGeometry( newSphereRadius, this.numberOfSegements, this.numberOfSegements );
+		}
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
@@ -593,6 +603,8 @@ class DataVisualization extends Scene{
 			if (this.dims_gui.__folders['Auxiliary Data']) {
 				this.dims_gui.removeFolder(this.dims_aux_folder);
 			}
+			var selected_group_link = document.getElementById("selected_group_link");
+			selected_group_link.style.display = "none";
 			return true;
 		}
 
@@ -608,7 +620,56 @@ class DataVisualization extends Scene{
 		}
 		
 		this.selectObject(obj);	
-		this.printDataDialog(obj);	
+		this.printDataDialog(obj);
+
+		if (this.lodData.length > 0 ) {
+			var csrftoken = Cookies.get('csrftoken');
+			var data = { formt: 'group_data',
+						 group_id: obj.dataObject[0],
+						 fdid: scene.fdid,
+						 csrfmiddlewaretoken: csrftoken
+						};
+			$.ajax({
+				type:"POST",
+				url: "",
+				data : data,
+				success : function(data, status, xhr) {
+					var selected_group_link = document.getElementById("selected_group_link");
+					selected_group_link.style.display = "block";
+					var selected = document.getElementById('selected_group');
+					if (selected.children.length > 0) {
+						while (selected.firstChild) {
+							selected.firstChild.remove();
+						}
+					}
+					var headers = [data['index_name']].concat(data['headers']);
+					var group_info = document.createElement("div");
+					group_info.classList.add('callout');
+					group_info.classList.add('primary');
+					var h5 = document.createElement("h5");
+					h5.innerText = "Selected group: " + data['group_id'];
+					var p = document.createElement("p");
+					p.innerText = "Group size: " + data['group_data'].length;
+					var groupBtn = document.createElement("button");
+					groupBtn.classList.add("button");
+					groupBtn.classList.add("small");
+					groupBtn.setAttribute("id", "groupVisualize");
+					groupBtn.innerHTML = "Visualize Group";
+					var get_url = "?group_id="+data["group_id"]+"&fdid="+data['fdid']
+					groupBtn.addEventListener('click', function() {
+						window.open("vis_group"+get_url, "_blank");
+					}, false);
+					group_info.appendChild(h5);
+					group_info.appendChild(p);
+					group_info.appendChild(groupBtn);
+					selected.appendChild(group_info);
+					printDataset(selected, headers, fix_array(data['group_data']));
+				},
+				failure: function(data, status, xhr) {
+					console.log('There was an error. Sorry');
+				}
+			});
+		}
 	}
 
 	//reaction to an object click in multiple selection mode.
