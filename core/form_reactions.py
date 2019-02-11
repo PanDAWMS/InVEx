@@ -12,6 +12,7 @@ import logging
 
 SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
 DATASET_FILES_PATH = BASE_DIR + '/datasets/'
+SITE_SITE_DATASET_FILES_PATH = BASE_DIR + '/site_site_datasets/'
 TEST_DATASET_FILES_PATH = BASE_DIR + '/test_datasets/'
 FILES_LIST_NAME = 'files_list.json'
 BACKUP_FILE = '_backup'
@@ -153,7 +154,10 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
     :return: 
     """
     try:
-        idx = [norm_dataset.index.name]
+        if norm_dataset.index.name is None:
+            idx = ['id']
+        else:
+            idx = [norm_dataset.index.name]
         columns = norm_dataset.columns.tolist()
 
         metrics = calc.basicstatistics.BasicStatistics()
@@ -177,6 +181,7 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
             'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
             'operation_history': op_history,
             'corr_matrix': corr_matrix.values.tolist(),
+            'type': 'datavisualization',
             'group_vis': False
         }
         return data
@@ -279,11 +284,13 @@ def csv_file_from_server(request):
                                  DATASET_FILES_PATH + file['filename'])
                     return {}
     else:
-        logger.error('!form_reactions.csv_file_from_server!: Wrong request.\nRequest parameters: ' + json.dumps(request.POST))
+        logger.error(
+            '!form_reactions.csv_file_from_server!: Wrong request.\nRequest parameters: ' + json.dumps(request.POST))
         return {}
     if dataset is None:
-        logger.error('!form_reactions.csv_file_from_server!: Failed to get the dataset. \nRequest parameters: ' + json.dumps(
-            request.POST))
+        logger.error(
+            '!form_reactions.csv_file_from_server!: Failed to get the dataset. \nRequest parameters: ' + json.dumps(
+                request.POST))
         return {}
     try:
         data = data_preparation(dataset, request)
@@ -457,6 +464,127 @@ def predict_cluster(request):
             + json.dumps(request.POST) + '\n' + str(exc))
         raise
 
+# SITE TO SITE VISUALIZATION FUNCTIONS
+def read_site_to_site_json(filename):
+    file = open(filename)
+    data = json.load(file)
+    if 'columns' in data['transfers']:
+        columns = data['transfers']['columns']
+    else:
+        columns = ['source', 'destination']
+        for i in range(2, len(data['transfers']['rows'][0])):
+            columns.append('p'+str(i))
+    dataset = pd.DataFrame.from_records(data['transfers']['rows'], columns=columns,
+                                        coerce_float=True)
+    file.close()
+    return dataset
+
+
+def prepare_axes(dataset):
+    source_col = dataset.groupby(dataset.columns[0]).max()
+    source_col.sort_values(dataset.columns[2], inplace=True, ascending=False)
+    xaxis = source_col.index
+    destination_col = dataset.groupby(dataset.columns[1]).max()
+    destination_col.sort_values(dataset.columns[2], inplace=True, ascending=False)
+    yaxis = destination_col.index
+    return [xaxis, yaxis]
+
+
+def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, numcols, op_history):
+    try:
+        if norm_dataset.index.name is None:
+            idx = ['id']
+        else:
+            idx = [norm_dataset.index.name]
+        columns = norm_dataset.columns.tolist()
+
+        metrics = calc.basicstatistics.BasicStatistics()
+        numbers_dataset = real_dataset[numcols]
+        real_dataset_stats_or = metrics.process_data(numbers_dataset)
+        real_dataset_stats = []
+        for i in range(len(real_dataset_stats_or)):
+            real_dataset_stats.append(real_dataset_stats_or[i].tolist())
+
+        corr_matrix = real_dataset.corr()
+        xarray, yarray = prepare_axes(norm_dataset)
+        xarray_list = xarray.tolist()
+        yarray_list = yarray.tolist()
+        aux_columns = auxiliary_dataset.columns.tolist()
+
+        data = {
+            'norm_dataset': calc.data_converters.pandas_to_js_list(norm_dataset),
+            'real_dataset': calc.data_converters.pandas_to_js_list(real_dataset),
+            'aux_dataset': calc.data_converters.pandas_to_js_list(auxiliary_dataset),
+            'data_is_ready': True,
+            'dim_names_short': numcols,
+            'dim_names': columns,
+            'aux_names': aux_columns,
+            'xarray': xarray_list,
+            'yarray': yarray_list,
+            'index': idx,
+            'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
+            'operation_history': op_history,
+            'corr_matrix': corr_matrix.values.tolist(),
+            'type': 'site2site'
+        }
+        return data
+    except Exception as exc:
+        logger.error('!form_reactions.prepare_basic!: Failed to prepare basics of the data. \n' + str(exc))
+        raise
+
+
+def load_json_site_to_site(request):
+    if 'customFile' in request.FILES:
+        try:
+            dataset = read_site_to_site_json(io.StringIO(request.FILES['customFile'].read().decode('utf-8')),
+                                             True, True)
+        except Exception as exc:
+            logger.error(
+                '!form_reactions.load_json_site_to_site!: Failed to load data from the uploaded csv file. \n' + str(
+                    exc))
+            raise
+    else:
+        list_of_files = list_csv_data_files(SITE_SITE_DATASET_FILES_PATH)
+        dataset = None
+        if ('filename' in request.POST) and (list_of_files is not None):
+            for file in list_of_files:
+                if request.POST['filename'] == file['value']:
+                    if os.path.isfile(SITE_SITE_DATASET_FILES_PATH + file['filename']):
+                        dataset = read_site_to_site_json(SITE_SITE_DATASET_FILES_PATH + file['filename'])
+                    else:
+                        logger.error('!form_reactions.load_json_site_to_site!: Failed to read file.\nFilename: ' +
+                                     SITE_SITE_DATASET_FILES_PATH + file['filename'])
+                        return {}
+        else:
+            logger.error('!form_reactions.load_json_site_to_site!: Wrong request.\nRequest parameters: ' + json.dumps(
+                request.POST))
+            return {}
+        if dataset is None:
+            logger.error(
+                '!form_reactions.load_json_site_to_site!: Failed to get the dataset. \nRequest parameters: ' + json.dumps(
+                    request.POST))
+            return {}
+    # drop all columns and rows with NaN values
+    try:
+        calc.importcsv.dropNA(dataset)
+
+        mesh_coordinates = dataset.iloc[:, :2]
+        numeric_columns = calc.importcsv.numeric_columns(dataset)
+        numeric_dataset = dataset
+        norm_dataset = mesh_coordinates.join(calc.importcsv.normalization(numeric_dataset, numeric_columns), how='left')
+        calc.importcsv.dropNA(norm_dataset)
+        columns = norm_dataset.columns.tolist()
+        numeric_dataset = dataset[columns]
+        auxiliary_dataset = dataset.drop(numeric_columns, 1)
+        op_history = calc.operationshistory.OperationHistory()
+        data = prepare_basic_s2s(norm_dataset, numeric_dataset, auxiliary_dataset, numeric_columns, op_history)
+        data['request'] = request
+        # data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
+        return data
+    except Exception as exc:
+        logger.error(
+            '!form_reactions.load_json_site_to_site!: Failed to prepare data after uploading from file. \n' + str(exc))
+        raise
 
 def get_group_data(request):
     group = calc.grouped.GroupedData()

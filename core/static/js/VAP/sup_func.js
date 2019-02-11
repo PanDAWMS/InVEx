@@ -168,6 +168,64 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     });
 }
 
+
+function createSwitch(ID, name, label, size, state, texton, textoff){
+    while(document.getElementById(ID)!==null)
+        ID+=(Math.random()*10).toString().slice(-1);
+    
+    var outerDiv=document.createElement('div');
+    outerDiv.id = ID;
+    var par = document.createElement('label');
+    par.id=ID+'label';
+    par.innerText=label;
+    switchElement=document.createElement('div');
+    switchElement.classList.add('switch', size);
+    switchElement.id=ID+'switchdiv';
+
+    var inputElement = document.createElement('input');
+    inputElement.id=ID+'input';
+    inputElement.type='checkbox';
+    inputElement.name=name;
+    inputElement.checked=state;
+    inputElement.classList.add('switch-input');
+    switchElement.appendChild(inputElement);
+
+    var labelElement = document.createElement('label');
+    labelElement.id=ID+'labelelement';
+    labelElement.classList.add('switch-paddle');
+    labelElement.setAttribute('for', inputElement.id);
+
+    var span=document.createElement('span');
+    span.classList.add('show-for-sr');
+    span.innerText=label;
+    labelElement.appendChild(span);
+
+    if(texton!=''){
+        var span=document.createElement('span');
+        span.classList.add('switch-active');
+        span.setAttribute('aria-hidden','true');
+        span.innerText=texton;
+        labelElement.appendChild(span);  
+    }
+
+    if(textoff!=''){
+        var span=document.createElement('span');
+        span.classList.add('switch-inactive');
+        span.setAttribute('aria-hidden','true');
+        span.innerText=textoff;
+        labelElement.appendChild(span);  
+    }
+
+    switchElement.appendChild(labelElement);
+    outerDiv.appendChild(par);
+    outerDiv.appendChild(switchElement);
+    outerDiv.switchElement = switchElement;
+    outerDiv.inputElement = inputElement;
+    outerDiv.label = par;
+
+    return outerDiv;
+}
+
 //Creates data table for information output. Use this for static tables.
 function createDataTable(parentElement, ID, headers){
     while(document.getElementById(ID)!==null)
@@ -334,6 +392,46 @@ function createControlRadioWithLabel(radioID, name, text){
     radioButton.labelElement = label;
     
     return radioButton;
+}
+
+function createTopElement(tabTitleParentElement, tabContentParentElement, tabId, tabTitle, selected){
+    while(document.getElementById(tabId)!==null)
+        tabId+=(Math.random()*10).toString().slice(-1);
+
+    var tabTitle = document.createElement('li');
+    tabTitle.id = tabId + 'title';
+    tabTitle.classList.add('tabs-title');
+    if (selected)
+        tabTitle.classList.add('is-active');
+    tabTitle.role='presentation';
+
+    var tabTitleLink = document.createElement('a');
+    tabTitleLink.href = '#'+tabId;
+    tabTitleLink.role = 'tab';
+    tabTitleLink.id = tabId+'link';
+    tabTitleLink.tabindex = '-1';
+    tabTitleLink.innerText = tabTitle;
+    if (selected)
+        tabTitleLink.setAttribute('aria-selected', 'true');
+    else
+        tabTitleLink.setAttribute('aria-selected', 'false');
+    tabTitleLink.setAttribute('aria-controls', tabId);
+    tabTitle.appendChild(tabTitleLink);
+
+    var tabContentDiv = document.createElement('div');
+    tabContentDiv.classList.add('tabs-panel');
+    tabContentDiv.id = tabId;
+    tabContentDiv.role='tabpanel';
+    tabContentDiv.setAttribute('aria-labelledby', tabId+'-label');
+    if (selected)
+        tabContentDiv.classList.add('is-active');
+    
+    tabTitle.contentDiv = tabContentDiv;
+    tabContentDiv.tabTitleElement = tabTitle;
+    tabTitleParentElement.appendChild(tabTitle);
+    tabContentParentElement.appendChild(tabContentDiv);
+
+    return tabContentDiv;
 }
 
 function printStats(stats, dimensions){

@@ -160,31 +160,65 @@ class Scene {
 	}
 
 	// Creates dimension control elements with selectors.
-	///TODO Rewrite it to create the elements, not pick them from the document.
 	dimensionControlElements() {
-        var chooseDimArray = [];
-		var dimensionsForm = document.getElementById("dimensions_form");
-		var XYZSelector = dimensionsForm.getElementsByTagName("select");
+		var dimensionControlID = 'dimensionControl';
+		while(document.getElementById(dimensionControlID)!==null)
+			dimensionControlID+=(Math.random()*10).toString().slice(-1);
+
+		var form = createControlBasics('form' + dimensionControlID);
+		var XYZSelector = [];
+
+		var selectbox = document.createElement('select');
+		selectbox.classList.add('form-control', 'form-control-sm');
+		selectbox.id = 'x_' + dimensionControlID;
+		selectbox.name = 'x_' + dimensionControlID;
+		selectbox.style.color = 'red';
+		XYZSelector.push(selectbox);
+		form.groupDiv.appendChild(selectbox);
+
+		selectbox = document.createElement('select');
+		selectbox.classList.add('form-control', 'form-control-sm');
+		selectbox.id = 'y_' + dimensionControlID;
+		selectbox.name = 'y_' + dimensionControlID;
+		selectbox.style.color = 'green';
+		XYZSelector.push(selectbox);
+		form.groupDiv.appendChild(selectbox);
+
+		selectbox = document.createElement('select');
+		selectbox.classList.add('form-control', 'form-control-sm');
+		selectbox.id = 'z_' + dimensionControlID;
+		selectbox.name = 'z_' + dimensionControlID;
+		selectbox.style.color = 'blue';
+		XYZSelector.push(selectbox);
+		form.groupDiv.appendChild(selectbox);
+		
         for ( var i = 0; i < XYZSelector.length; i++ ) {
-            var currSelector = XYZSelector[ i ];
             for ( var j = 0; j < this.dimNames.length; j++ ) { // Create options for all the dimensions
 				var option = document.createElement("option");
                 if ( this.proectionSubSpace[ i ] == j )
 					option.selected = true;
                 option.value = j.toString();
-                option.text = this.dimNames[ j ];
-                currSelector.add(option);
+				option.text = this.dimNames[ j ];
+				XYZSelector[i].add(option);
             }
-            chooseDimArray.push(currSelector);
-        }
-        var changeDimBtn = document.getElementById("change_dim_btn"); //Create button to change the dimension
+		}
+		
+        var changeDimBtn = document.createElement('button'); //Create button to change the dimension
+		changeDimBtn.id = 'button' + dimensionControlID;
+		changeDimBtn.setAttribute('type', 'button');
+		changeDimBtn.innerText = 'Change Dimensions';
+		changeDimBtn.title = 'This may take some time';
+		changeDimBtn.classList.add('button', 'small');
         changeDimBtn.sceneObject = this;
-		changeDimBtn.dimsSelectArray = chooseDimArray;
+		changeDimBtn.dimsSelectArray = XYZSelector;
 		changeDimBtn.onclick=function(){
 			this.sceneObject.setNewSubSpace(parseInt(this.dimsSelectArray[0].value),
 											parseInt(this.dimsSelectArray[1].value),
 											parseInt(this.dimsSelectArray[2].value));
-        };
+		};
+		form.appendChild(changeDimBtn);
+
+		return form;
 	}
 
 	// Creates the reset camera button and form around it.
@@ -294,9 +328,9 @@ class Scene {
 	}
 
 	//Main function to create control elements. Fullload indicates if all the control should be created
-	createControlElements(sceneControlElement, fullload=true) {
+	createControlElements(dimensionControlElement, sceneControlElement, fullload=true) {
 		if(fullload){
-			this.dimensionControlElements();
+			dimensionControlElement.appendChild(this.dimensionControlElements());
 		}
         sceneControlElement.appendChild(this.changeThemeControls());
         sceneControlElement.appendChild(this.changeQualityControls());

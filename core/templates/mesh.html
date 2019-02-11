@@ -18,27 +18,24 @@
           <div class="grid-x grid-margin-x">
             <div class="cell">
                 <ul class="tabs" data-deep-link="true" data-update-history="true" data-deep-link-smudge="true" data-deep-link-smudge-delay="500" data-tabs id="deeplinked-tabs">
-                {% if group_vis == False or not group_vis %}
                   <li class="tabs-title is-active"><a href="#serverfile" aria-selected="true">Choose File from Server</a></li>
                   <li class="tabs-title"><a href="#upload">Upload File</a></li>
-                {% endif %}
                 {%  if data_is_ready %}
                   <li class="tabs-title"><a href="#print">Print Dataset</a></li>
                   <li class="tabs-title"><a href="#stats">Statistics</a></li>
                   <li class="tabs-title"><a href="#corr">Correlations</a></li>
-                {% if type == "site2site" %}
-                  <li class="tabs-title"><a href="#xcoord">X-Coordinate</a></li>
-                  <li class="tabs-title"><a href="#ycoord">Y-Coordinate</a></li>
-                {% endif %}
-                {% if cluster_ready %}
-                  <li class="tabs-title"><a href="#clusters">Clusters</a></li>
-                {% endif %}
-                  <li class="tabs-title" style="display:none" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
-                  <li class="tabs-title" style="display:none" id="selected_group_link"><a href="#selected_group">Selected Group</a></li>
+                  {% if type == "site2site" %}
+                    <li class="tabs-title"><a href="#xcoord">X-Coordinate</a></li>
+                    <li class="tabs-title"><a href="#ycoord">Y-Coordinate</a></li>
+                  {% endif %}
+                  {% if cluster_ready %}
+                    <li class="tabs-title"><a href="#clusters">Clusters</a></li>
+                  {% endif %}
+                  <li class="tabs-title" style="visibility:hidden" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
                 {% endif %}
                 </ul>
 
-                <div class="tabs-content" data-tabs-content="deeplinked-tabs" id='deeplinked-content'>
+                <div class="tabs-content" data-tabs-content="deeplinked-tabs">
                   {% if dataset_files %}
                   <div class="tabs-panel is-active" id="serverfile">
                     <form action="" method="POST" enctype='multipart/form-data'>
@@ -55,7 +52,6 @@
                                       {% endfor %}
                                   </select>
                             </div>
-                            {% include "LoD_Generator.html" %}
                             <input type="submit" class="button small vap-controllers" value="Submit">
                       </form>
                   </div>
@@ -98,8 +94,6 @@
                   {% endif %}
                   <div class="tabs-panel" id="multichoice">
                   </div>
-                  <div class="tabs-panel" id="selected_group">
-                  </div>
                 {% endif %}
                 </div>
             </div>
@@ -109,6 +103,7 @@
             <br/>
           </div>
         </div>
+        {#<div id="controls"></div> #}
             <div class="grid-x grid-margin-x" style="margin-left: .1000rem;">
               <div class="cell small-3" id="controllers">
                   <div class="grid-y" style="height: 800px;">                  
@@ -123,30 +118,44 @@
                           </div>
                       </div>
                       {% if type == "datavisualization" %}
-                      <div class="cell">
-                          <div class="card">
-                              <div class="card-divider">
-                                Clustering
-                              </div>
-                              <div class="card-section">
-                                <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="formt" value="cluster">
-                                    {% if saveid %}
-                                    <input type="hidden" name="fdid" value="{{ saveid }}">
-                                    {% endif %}
-                                    {% if filename %}
-                                    <input type="hidden" name="fname" value="{{ filename|safe }}">
-                                    {% endif %}
-                                    <div class="form-group" id="clustering">
-                                    </div>
-                                    <input type="submit" class="button small" value="Clusterize" id="clusterize_button">
-                                </form>
+                          <div class="cell">
+                              <div class="card">
+                                  <div class="card-divider">
+                                    Clustering
+                                  </div>
+                                  <div class="card-section">
+                                    <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="formt" value="cluster">
+                                        {% if saveid %}
+                                        <input type="hidden" name="fdid" value="{{ saveid }}">
+                                        {% endif %}
+                                        {% if filename %}
+                                        <input type="hidden" name="fname" value="{{ filename|safe }}">
+                                        {% endif %}
+                                        <div class="form-group" id="clustering">
+                                        </div>
+                                        <input type="submit" class="button small" value="Clusterize">
+                                    </form>
+                                  </div>
                               </div>
                           </div>
-                      </div>
-                      {% endif %}
-                      {% endif %}
+                        {% endif %}
+                        {% if type == "site2site" %}
+                            <div class="cell">
+                                <div class="card">
+                                    <div class="card-divider">
+                                      Data on Scene
+                                    </div>
+                                    <div class="card-section">
+                                      <form id="data_on_scene">
+                                        
+                                      </form>
+                                    </div>
+                                </div>
+                            </div>
+                          {% endif %}
+                    {% endif %}
                       <div class="cell large-auto">
                           <div class="card">
                               <div class="card-divider">
@@ -158,17 +167,9 @@
                         </div>
                     </div>
               </div>
-                <div class="cell auto">
-                    <div class="grid-y">
-                        <div class="cell mainPicture" id="picture">
-                          <div id="gui_container"></div>
-                        </div>
-                      </div>
-                    </div>
-
-                </div>
-
-
+              <div class="cell auto mainPicture" id="picture">
+                  <div id="gui_container"></div>
+              </div>
             </div>
             </div>
         </div>
@@ -182,15 +183,22 @@
 <script src="{% static "js/VAP/cookies.js" %}"></script>
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/VAP/datavisualization.js" %}"></script>
+<script src="{% static "js/VAP/meshvisualization.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="{% static "js/VAP/correlation_matrix.js" %}"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+{#<script src="{% static 'js/foundation/vendor/jquery.js' %}"></script>#}
 <script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
+{#<script src="{% static "js/bootstrap.min.js" %}"></script>#}
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 {% endblock %}
 	<script>
+{##}
+{#        $('#deeplinked-tabs a').on('click', function (e) {#}
+{#          e.preventDefault();#}
+{#          $(this).tab('show');#}
+{#        });#}
 
 		function onSceneResize() {
 			scene.onResize();
@@ -200,45 +208,21 @@
             $('#stats-table').DataTable();
 
         } );
-		var scene = new DataVisualization(document.getElementById("picture"), 0.75);
+        {% if xarray %}
+		var scene = new MeshVisualization(document.getElementById("picture"), 0.75, 2, {{ xarray|safe }}, {{ yarray|safe }});
+		{% else %}
+        var scene = new MeshVisualization(document.getElementById("picture"), 0.75, 2, [], []);
+        {% endif %}
+
 		animate();
 		init();
 
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-            var lod = document.getElementById("lod");
-		        var lod_activation = document.getElementById("lod_activation");
-            var lod_slider = document.getElementById("lod_slider");
-            var lod_value = document.getElementById("sliderOutput");
-            if (lod_value && lod_activation) {
-                lod_value.value = lod_slider.value;
-                    lod_slider.addEventListener("change", function(event) {
-                        lod_value.value = event.srcElement.value;
-                    });
-                    lod_value.addEventListener("change", function(event) {
-                        lod_slider.value = event.srcElement.value;
-                    });
-                lod_activation.addEventListener( "click", function(event) {
-                    if (event.srcElement.checked) {
-                        if (lod.style.display == 'none') {
-                            lod.style.display = 'block';
-                        }
-                    } else {
-                        lod.style.display = 'none';
-                    }
-                });
-            }
-            {% if request.POST.activated %}
-                lod_activation.checked = true;
-                lod.style.display = 'block';
-                lod_slider.value = {{ lod_value }};
-                lod_value.value = {{ lod_value }};
-            {% endif %}
 
             {% if type == "datavisualization" %}
-            {%  if data_is_ready %}
-
+            {% if data_is_ready %}
                 clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
                                     ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
                                                          {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
@@ -251,14 +235,14 @@
             curr_algorithm = "{{ algorithm }}";
             curr_parameters = {{ parameters|safe }};
             {% endif %}
-
             createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
             {% endif %}
             {% endif %}
 
             {% if dim_names %}
-            var dimNames = {{ dim_names|safe }};
-            scene.setDimNames(dimNames);
+            var dimNames = {{ dim_names_short|safe }};
+            var fullDimNames = {{ dim_names|safe }};
+            scene.setDimNames(fullDimNames);
             {% endif %}
 
             {% if index %}
@@ -276,7 +260,7 @@
             var realData = {{ real_dataset|safe }};
             var new_realData = fix_array(realData);
             scene.setRealData(new_realData);
-            printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
+            printDataset(document.getElementById("print"), [index].concat(fullDimNames), new_realData, 10);
             {% endif %}
 
             {% if real_metrics %}
@@ -308,12 +292,6 @@
             scene.setAuxiliaryColumns(auxNames);
             {% endif %}
 
-            var lodData = [];
-            {% if lod_data %}
-            lodData = {{ lod_data|safe }};
-            scene.setLOD(lodData);
-            {% endif %}
-
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.setClusters(clusters);
@@ -327,16 +305,18 @@
             var objects = [];
 			for ( var i = 0; i < new_dataArray.length; i++ ){
                 {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ], lodData[ i ] ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ]));
                 {% else %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ], lodData[ i ] ));
+				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ] ));
 				{% endif %}
 			}
 			{% endif %}
         
             {%  if data_is_ready %}
+            
                 {% if type == "site2site" %}
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
                 {% endif %}
 			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
             {% else %}
@@ -353,7 +333,6 @@
 			scene.animate();
 			requestAnimationFrame( animate );
 		}
-
 	</script>
 {% endblock %}
 
