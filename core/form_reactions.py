@@ -279,6 +279,45 @@ def csv_test_file_from_server(request):
         raise
 
 
+def get_jobs_from_panda(request):
+    """
+    Get jobs data from PanDA system (by using providers.panda reader-client).
+
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :return: Data for analysis (pre-processed by the preparation method).
+    :rtype: dict
+    """
+    output = {}
+    err_msg_subj = '[get_jobs_from_panda]'
+
+    dataset = None
+    if 'taskid' in request.GET:
+        try:
+            from .providers import PandaReader
+        except ImportError as exc:
+            logger.error('{0} {1}'.format(err_msg_subj, exc))
+        else:
+            dataset = PandaReader().read_jobs_df(task_id=request.GET['taskid'],
+                                                 filter_params={'days': 365})
+            if not dataset.empty:
+                dataset.set_index('pandaid', inplace=True)
+    else:
+        logger.error('{0} Request parameters are incorrect: {1}'.
+                     format(err_msg_subj, json.dumps(request.GET)))
+
+    if dataset is not None:
+        try:
+            output = data_preparation(dataset, request)
+        except Exception as exc:
+            logger.error('{0} Failed to prepare data: {1}'.
+                         format(err_msg_subj, exc))
+            # TODO: check that the raise of the Exception is needed.
+            raise
+
+    return output
+
+
 def clusterize(request):
     if 'fdid' not in request.POST:
         logger.error('!form_reactions.clusterize!: There was no file name in the request. \nRequest parameters: '
