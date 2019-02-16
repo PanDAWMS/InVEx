@@ -113,15 +113,24 @@
               <div class="cell small-3" id="controllers">
                   <div class="grid-y" style="height: 800px;">                  
                     {%  if data_is_ready %}
-                      <div class="cell">
-                          <div class="card">
-                              <div class="card-divider">
-                                Dimensions
-                              </div>
-                              <div class="card-section" id="dimensions_changer">
-                              </div>
-                          </div>
-                      </div>
+                    <div class="cell">
+                        <div class="card">
+                            <div class="card-divider">
+                              Dimensions
+                            </div>
+                            <div class="card-section" id="dimensions_changer">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cell">
+                        <div class="card">
+                            <div class="card-divider">
+                              Color Data
+                            </div>
+                            <div class="card-section" id="color_changer">
+                            </div>
+                        </div>
+                    </div>
                       {% if type == "datavisualization" %}
                       <div class="cell">
                           <div class="card">
@@ -336,11 +345,14 @@
         
             {%  if data_is_ready %}
                 {% if type == "site2site" %}
-                scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                  scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                {% elif type == "datavisualization" %}
+                  document.getElementById('color_changer').appendChild(scene.createNewGroupElement());
                 {% endif %}
-			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+              scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+
             {% else %}
-			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
+			        scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
             {% endif %}
             
             {% if saveid %}
