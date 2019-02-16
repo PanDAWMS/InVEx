@@ -164,9 +164,10 @@ class DataVisualization extends Scene{
     interactionModeControls(multiChoiceControl, multiChoiceTab) {
 		var interactionModeID = 'interMode';
 		while(document.getElementById(interactionModeID)!==null)
-		interactionModeID += (Math.random()*10).toString().slice(-1);
+			interactionModeID += (Math.random()*10).toString().slice(-1);
 		//Form that contains all the controls
 		var form = createControlBasics('form' + interactionModeID);
+		form.classList.add('text-left');
 		//Radio button for single choice
 		var singleChoiceRadio = createControlRadioWithLabel('single' + interactionModeID, interactionModeID, 'Activate Single Sphere Selection');
 		singleChoiceRadio.sceneObject = this;
