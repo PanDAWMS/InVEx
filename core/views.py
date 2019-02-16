@@ -102,6 +102,16 @@ def main(request):
                 logger.error('!views.performance_test_frame!: Couldn\'t get the group. \n' + str(exc))
                 return JsonResponse({})
 
+    elif request.method == 'GET' and 'remotesrc' in request.GET:
+        err_msg_subj = '[views/remotesrc=pandajobs]'
+
+        if request.GET['remotesrc'] == 'pandajobs':
+            try:
+                data = form_reactions.get_jobs_from_panda(request)
+            except Exception as exc:
+                logger.error('{0} Remote data are not accessible: {1}'.
+                             format(err_msg_subj, exc))
+
     else:
         data = {
             'dataset': [],
