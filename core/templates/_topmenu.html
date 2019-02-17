@@ -14,7 +14,7 @@
 {% if cluster_ready %}
     <li class="tabs-title"><a href="#clusters">Clusters</a></li>
 {% endif %}
-    <li class="tabs-title" style="display:none" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
+    <li class="tabs-title hide" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
     <li class="tabs-title" style="display:none" id="selected_group_link"><a href="#selected_group">Selected Group</a></li>
 {% endif %}
 </ul>
@@ -31,7 +31,7 @@
                             {% if filename|safe == fileonserver.value|safe %}
                                 <option value="{{ fileonserver.value|safe }}" selected>{{ fileonserver.name|safe }}</option>
                             {% else %}
-                                    <option value="{{ fileonserver.value|safe }}">{{ fileonserver.name|safe }}</option>
+                                <option value="{{ fileonserver.value|safe }}">{{ fileonserver.name|safe }}</option>
                             {% endif %}
                         {% endfor %}
                     </select>

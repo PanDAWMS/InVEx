@@ -23,7 +23,7 @@ function getColorScheme( clusters, theme='black' ) {
 	var results = {};
 	if (len==1){
 		if (theme=='white')
-			results[clusters_unique[0]] = new THREE.Color(0.8,0.8,0.8);
+			results[clusters_unique[0]] = new THREE.Color(0.7,0.7,0.7);
 		else
 			results[clusters_unique[0]] = new THREE.Color(1,1,1);
 	}
@@ -176,7 +176,7 @@ class DataVisualization extends Scene{
 			singleChoiceRadio.checked = true;
 		singleChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('single', {});
-			this.multiChoiceControl.style.display = 'none';
+			this.multiChoiceControl.classList.add('hide');
 		};
 		//radio button for multiple choice control
 		var multiChoiceRadio = createControlRadioWithLabel('multi' + interactionModeID, interactionModeID, 'Activate Multiple Sphere Selection');
@@ -187,7 +187,7 @@ class DataVisualization extends Scene{
 			multiChoiceRadio.checked = true;
 		multiChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('multi', {'tabletab': this.multiChoiceTab});
-			this.multiChoiceControl.style.display = 'block';
+			this.multiChoiceControl.classList.remove('hide');
 		};
 		//Radio button for drag control
 		var dragChoiceRadio = createControlRadioWithLabel('drag' + interactionModeID, interactionModeID, 'Activate Drag Sphere Control');
@@ -197,7 +197,7 @@ class DataVisualization extends Scene{
 			dragChoiceRadio.checked = true;
 		dragChoiceRadio.onchange = function(event){
 			this.sceneObject.setInteractiveMode('drag', {});
-			this.multiChoiceControl.style["visibility"] = 'hidden';
+			this.multiChoiceControl.classList.add('hide');
 		};
 		
 		form.groupDiv.appendChild(singleChoiceRadio);
@@ -252,10 +252,33 @@ class DataVisualization extends Scene{
 
 		return form;
 	}
+
+	createResetClustersButton(){
+		var resetClustersID = 'resetclusters';
+		while(document.getElementById(resetClustersID)!==null)
+			resetClustersID += (Math.random()*10).toString().slice(-1);
+		
+		var form = createControlBasics('form' + resetClustersID);
+
+		var resetClustersBtn = document.createElement('button');
+		resetClustersBtn.id = 'button' + resetClustersID;
+		resetClustersBtn.classList.add('button', 'small');
+		resetClustersBtn.innerText = 'Reset clusters';
+		resetClustersBtn.setAttribute('type', 'button');
+		resetClustersBtn.sceneObject = this;
+		resetClustersBtn.onclick = function(event) {
+			event.preventDefault();
+			this.sceneObject.resetClusters();
+			this.classList.add('hide');
+			return false;
+		};
+		form.appendChild(document.createElement('br'));
+		form.appendChild(resetClustersBtn);
+		
+		return form;
+	}
 	
 	createNewGroupElement(){
-		if (this.auxNames==undefined || this.auxNames.length==0)
-			console.log('123123123');
 		var newGroupID = 'groupelements';
 		while(document.getElementById(newGroupID)!==null)
 			newGroupID += (Math.random()*10).toString().slice(-1);
@@ -315,10 +338,10 @@ class DataVisualization extends Scene{
 			}
 			form.appendChild(element_div);
 			if (k!=0){
-				element_div.style.display='none';
+				element_div.classList.add('hide');
 			}
 			else
-				element_div.style.display='block';
+				element_div.classList.remove('hide');
 		}
 
 		for ( var k = 0; k < this.dimNames.length; k++ ) {
@@ -381,18 +404,18 @@ class DataVisualization extends Scene{
 			}
 			form.appendChild(element_div);
 			if ((this.auxNames.length!=0)||(k!=0)){
-				element_div.style.display='none';
+				element_div.classList.add('hide');
 			}
 			else
-				element_div.style.display='block';
+				element_div.classList.remove('hide');
 		}
 
 		main_select_element.elements = elements;
 		main_select_element.onchange = function() {
 			for( var i = 0; i < this.elements.length; i++ ){
-				this.elements[i].style.display = 'none';
+				this.elements[i].classList.add('hide');
 			}
-			this.selectedOptions[0].div.style.display = 'block';
+			this.selectedOptions[0].div.classList.remove('hide');
 		};
 
 		var color_picker = document.createElement("input");
@@ -401,7 +424,7 @@ class DataVisualization extends Scene{
 		form.appendChild(color_picker);
 
 		var changeColorBtn = document.createElement('button');
-		changeColorBtn.id = 'button' + newGroupID;
+		changeColorBtn.id = 'colorButton' + newGroupID;
 		changeColorBtn.classList.add('button', 'small');
 		changeColorBtn.innerText = 'Change color';
 		changeColorBtn.setAttribute('type', 'button');
@@ -409,9 +432,28 @@ class DataVisualization extends Scene{
 		changeColorBtn.selectObject = main_select_element;
 		changeColorBtn.onclick = function() {
 			this.selectObject.selectedOptions[0].div.submitfunction(this.colorinput.value);
+			this.undoButton.classList.remove('hide');
 			return false;
 		};
 		form.appendChild(changeColorBtn);
+
+		var undoColorBtn = document.createElement('button');
+		undoColorBtn.id = 'undoButton' + newGroupID;
+		undoColorBtn.classList.add('button', 'small', 'hide');
+		undoColorBtn.innerText = 'Undo color';
+		undoColorBtn.setAttribute('type', 'button');
+		undoColorBtn.sceneObject = this;
+		undoColorBtn.onclick = function(event) {
+			event.preventDefault();
+			if (this.sceneObject.undoColorGroup()){
+				this.classList.add('hide');
+				return false;
+			}
+			return false;
+		};
+		form.appendChild(document.createElement('br'));
+		form.appendChild(undoColorBtn);
+		changeColorBtn.undoButton=undoColorBtn;
 		return form;
 	}
 
@@ -460,11 +502,11 @@ class DataVisualization extends Scene{
 		var table = createDataTable(element, element.id+"-table", ['Cluster', this.index.toString()].concat(this.dimNames), 2, 1);
 		var row=null;
 		for(var i = 0; i<this.groupOfSpheres.children.length; ++i){
-			row = addElementToDataTable(table, [this.groupOfSpheres.children[i].dataObject[2], this.groupOfSpheres.children[i].realData[0]].concat(this.groupOfSpheres.children[i].realData[1]), this.groupOfSpheres.children[i].realData[0], 2, false);
+			row = addElementToDataTable(table, [this.groupOfSpheres.children[i].dataObject[2][0], this.groupOfSpheres.children[i].realData[0]].concat(this.groupOfSpheres.children[i].realData[1]), this.groupOfSpheres.children[i].realData[0], 2, false);
 			row.cells[0].bgColor = (this.groupOfSpheres.children[i].material.color).getHexString();
 		}
 		for(var i = 0; i<this.selectedObject.length; ++i){
-			row = addElementToDataTable(table, [this.selectedObject.children[i].dataObject[2], this.selectedObject.children[i].realData[0]].concat(this.selectedObject.children[i].realData[1]), this.selectedObject.children[i].realData[0], 2, false);
+			row = addElementToDataTable(table, [this.selectedObject.children[i].dataObject[2][0], this.selectedObject.children[i].realData[0]].concat(this.selectedObject.children[i].realData[1]), this.selectedObject.children[i].realData[0], 2, false);
 			row.cells[0].bgColor = invertColor(this.selectedObject.children[i].material.color).getHexString();
 		}
 		table.dataTableObj = $('#'+table.id).DataTable();
@@ -498,7 +540,7 @@ class DataVisualization extends Scene{
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
 		sphere.position.z = normData[1][this.proectionSubSpace[2]];
-		normData[2] = cluster;
+		normData[2] = [cluster];
 		normData[3] = sphere;
 		realData[3] = sphere;
 		auxData[3] = sphere;
@@ -523,11 +565,29 @@ class DataVisualization extends Scene{
 		return result;
 	}
 
+	resetClusters(){
+		this.clusters=[0];
+		this.clusters_color_scheme = this.createColorScheme();
+		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
+			this.groupOfSpheres.children[i].dataObject[2][this.groupOfSpheres.children[i].dataObject[2].length-1]=0;
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]];
+		}
+		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {	
+			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
+			this.selectedObject.children[i].material.color = this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]];
+		}
+		
+	}
+
 	changeCluster(sphere, newCluster){
 		scene.unSelectObject(sphere);
-		sphere.dataObject[2] = newCluster;
+		sphere.dataObject[2].unshift(newCluster);
 		sphere.material.color = this.clusters_color_scheme[newCluster];
 		scene.selectObject(sphere);
+	}
+
+	createColorScheme(){
+		return Object.assign({}, this.customColors, getColorScheme(this.clusters, this.theme));
 	}
 	
 	// Changes the theme. Currently there are two themes "white" and "black"
@@ -541,25 +601,44 @@ class DataVisualization extends Scene{
 			this.select_linecube_color = new THREE.Color(1,1,1);
 			this.scene.background = new THREE.Color( 0x333333 );
 		}
-		this.clusters_color_scheme = Object.assign({}, this.customColors, getColorScheme(this.clusters, this.theme));
+		this.clusters_color_scheme = this.createColorScheme();
 		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2]].clone();
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
 		}
 	}
 
 	// Color group of spheres
 	changeColorGroup(group, color){
-		var i=0;
-		while(('group'+i) in this.customColors){
-			++i;
+		var groupnumber=0;
+		while(('group'+groupnumber) in this.customColors){
+			++groupnumber;
 		}
-		var newgroup = 'group'+i;
+		var newgroup = 'group'+groupnumber;
 		this.customColors[newgroup]=color;
 		this.clusters_color_scheme[newgroup]=color;
 		for(var i = 0; i< group.length; ++i){
-			group[i].dataObject[2] = newgroup;
+			group[i].dataObject[2].unshift(newgroup);
 			group[i].material.color = this.customColors[newgroup];
 		}
+	}
+
+	undoColorGroup(){
+		var groupnumber=0;
+		while(('group'+groupnumber) in this.customColors){
+			++groupnumber;
+		}
+		var oldgroup = 'group'+--groupnumber;
+		delete this.customColors[oldgroup];
+		delete this.clusters_color_scheme[oldgroup];
+		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
+			this.groupOfSpheres.children[i].dataObject[2].shift();
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]];
+		}
+		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {			
+			this.selectedObject.children[i].dataObject[2].shift();
+			this.selectedObject.children[i].material.color = this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]];
+		}
+		return groupnumber==0;
 	}
 
 	// Changes the quality of the picture. 
@@ -587,7 +666,7 @@ class DataVisualization extends Scene{
 		this.groupOfSpheres = new THREE.Group();
 		var i = 0;
 		for (i=0; i < oldGroup.children.length; ++i) {
-			var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2], oldGroup.children[i].auxData);
+			var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2][0], oldGroup.children[i].auxData);
 			this.groupOfSpheres.add(newSphere);
 		}
 		this.scene.add(this.groupOfSpheres);
@@ -597,7 +676,7 @@ class DataVisualization extends Scene{
 		this.selectedObject = new THREE.Group();
 		for (i=0; i < oldGroup.children.length; ++i) {
 			this.groupOfSelectOutlines.remove(oldGroup.children[i].selectedCircut);
-			var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2], oldGroup.children[i].auxData);
+			var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2][0], oldGroup.children[i].auxData);
 			this.selectObject(newSphere);
 		}
 		this.scene.add(this.selectedObject);

@@ -159,10 +159,10 @@
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.setClusters(clusters);
-            scene.clusters_color_scheme = getColorScheme(clusters, scene.theme);
+            //scene.clusters_color_scheme = getColorScheme(clusters, scene.theme);
             {% else %}
             scene.setClusters([0]);
-            scene.clusters_color_scheme = getColorScheme([0], scene.theme);
+            //scene.clusters_color_scheme = getColorScheme([0], scene.theme);
             {% endif %}
             
 			{% if norm_dataset %}

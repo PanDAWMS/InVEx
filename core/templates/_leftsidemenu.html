@@ -14,7 +14,7 @@
     {% if type == "datavisualization" %}
     <li class="accordion-item text-center" data-accordion-item>
         <a href="#" class="accordion-title">Clustering</a>
-        <div class="accordion-content" data-tab-content>
+        <div class="accordion-content" data-tab-content id='clusterrelated'>
             <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
             {% csrf_token %}
             <input type="hidden" name="formt" value="cluster">

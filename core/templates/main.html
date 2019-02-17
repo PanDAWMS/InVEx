@@ -188,11 +188,10 @@
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.setClusters(clusters);
-            scene.clusters_color_scheme = getColorScheme(clusters, scene.theme);
             {% else %}
             scene.setClusters([0]);
-            scene.clusters_color_scheme = getColorScheme([0], scene.theme);
             {% endif %}
+            scene.clusters_color_scheme = scene.createColorScheme();
             
 			{% if norm_dataset %}
             var objects = [];
@@ -210,6 +209,9 @@
                   scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 {% elif type == "datavisualization" %}
                   document.getElementById('color_changer').appendChild(scene.createNewGroupElement());
+                {% if cluster_ready %}
+                  document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
+                {% endif %}
                 {% endif %}
               scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
 
