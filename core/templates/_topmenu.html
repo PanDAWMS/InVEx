@@ -1,5 +1,5 @@
 <ul class="tabs" data-deep-link="true" data-update-history="true" data-deep-link-smudge="true" data-deep-link-smudge-delay="500" data-tabs id="deeplinked-tabs">
-{% if group_vis == False or not group_vis %}
+{% if dataset_files %}
     <li class="tabs-title is-active"><a href="#serverfile" aria-selected="true">Choose File from Server</a></li>
     <li class="tabs-title"><a href="#upload">Upload File</a></li>
 {% endif %}
@@ -36,7 +36,9 @@
                         {% endfor %}
                     </select>
             </div>
+            {% if type == "datavisualization" %}
             {% include "LoD_Generator.html" %}
+            {% endif %}
             <input type="submit" class="button small vap-controllers" value="Submit">
         </form>
     </div>

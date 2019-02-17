@@ -1,21 +1,23 @@
 {% extends "_base.html" %}
 {% load staticfiles %}
-{#{% block page_title %} VAP {% endblock %}#}
-{#{% block subtitle %}Visual analytics platform home{% endblock %}#}
 
 {% block extra_css %}{% endblock %}
 
 {% block body %}
     {% csrf_token %}
+<div class="grid-x grid-padding-x">
+  <div class="cell">
   <div class="card text-white bg-dark mb-3">
   <div class="card-body">
     <h2 class="card-title">InVEx for ATLAS</h2>
       <h5>Interactive Visual Explorer</h5>
   </div>
   </div>
+  </div>
+  </div>
     <div class="vap_container">
         <div class="grid-container fluid">
-          <div class="grid-x grid-margin-x">
+          <div class="grid-x grid-padding-x">
             <div class="cell">
                 {% include "_topmenu.html" %}
             </div>
@@ -25,7 +27,7 @@
             <br/>
           </div>
         </div>
-            <div class="grid-x grid-margin-x" style="margin-left: .1000rem;">
+            <div class="grid-x grid-padding-x">
                   {% include "_leftsidemenu.html" %}
             </div>
             <div class="cell auto">
@@ -42,7 +44,6 @@
             </div>
             </div>
         </div>
-{#        <div class="container pre-scrollable" id="output"></div>#}
 	</div>
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
@@ -99,7 +100,7 @@
                     }
                 });
             }
-            {% if request.POST.activated %}
+            {% if lod_activated %}
                 lod_activation.checked = true;
                 lod.style.display = 'block';
                 lod_slider.value = {{ lod_value }};

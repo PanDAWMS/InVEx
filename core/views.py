@@ -19,7 +19,23 @@ from django.template.context_processors import csrf
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
-
+EMPTY_DATA = data = {
+            'dataset': [],
+            'dim_names': [],
+            'index': '',
+            'new_file': False,
+            'norm_dataset': [],
+            'real_dataset': [],
+            'filename': False,
+            'visualparameters': False,
+            'lod_data': False,
+            'algorithm': False,
+            'xarray': False,
+            'stats': [],
+            'corr_matrix': [],
+            'aux_dataset': [],
+            'aux_names': []
+        }
 
 def initRequest(request):
     """
@@ -103,22 +119,13 @@ def main(request):
                 return JsonResponse({})
 
     else:
-        data = {
-            'dataset': [],
-            'dim_names': [],
-            'index': '',
-            'new_file': False,
-            'norm_dataset': [],
-            'real_dataset': [],
-            'stats': [],
-            'corr_matrix': [],
-            'aux_dataset': [],
-            'aux_names': []
-        }
+        data = EMPTY_DATA
     data['built'] = datetime.now().strftime("%H:%M:%S")
+    data['PAGE_TITLE'] = "InVEx"
     try:
         data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.DATASET_FILES_PATH)
     except:
+        data['dataset_files'] = False
         logger.error('Could not read the list of datasets file')
     return render(request, 'main.html', data, content_type='text/html')
 
@@ -146,36 +153,15 @@ def site_to_site(request):
             except Exception as exc:
                 logger.error(
                     '!views.site_to_site!: Couldn\'t load the a CSV file from the server. \n' + str(exc))
-        # elif request.POST['formt'] == 'cluster':
-        #     try:
-        #         data = form_reactions.clusterize(request)
-        #     except Exception as exc:
-        #         logger.error('!views.performance_test_frame!: Couldn\'t perform a clusterization. \n' + str(exc))
-        # elif request.POST['formt'] == 'rebuild':
-        #     try:
-        #         data = form_reactions.predict_cluster(request)
-        #         return JsonResponse(data)
-        #     except Exception as exc:
-        #         logger.error('!views.performance_test_frame!: Couldn\'t calculate a prediction. \n' + str(exc))
-        #         return JsonResponse({})
 
     else:
-        data = {
-            'dataset': [],
-            'dim_names': [],
-            'index': '',
-            'new_file': False,
-            'norm_dataset': [],
-            'real_dataset': [],
-            'stats': [],
-            'corr_matrix': [],
-            'aux_dataset': [],
-            'aux_names': []
-        }
+        data = EMPTY_DATA
     data['built'] = datetime.now().strftime("%H:%M:%S")
+    data['PAGE_TITLE'] = "InVEx"
     try:
         data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.SITE_SITE_DATASET_FILES_PATH)
     except:
+        data['dataset_files'] = False
         logger.error('Could not read the list of datasets file')
     return render(request, 'mesh.html', data, content_type='text/html')
 
