@@ -1,0 +1,23 @@
+.whiteaccordion.accordion, .whiteaccordion.accordion .accordion-item, .whiteaccordion.accordion .accordion-title, .whiteaccordion.accordion .accordion-title:hover, .whiteaccordion.accordion .accordion-title:focus, .whiteaccordion.accordion .accordion-content{
+    background: inherit;
+    border:0px;
+    color:inherit;
+}
+
+.whiteaccordion.accordion{
+    border-left: 1px;
+    border-right: 1px;
+    border-top: 1px;
+    border-bottom: 1px;
+    border-style: solid;
+    border-color: inherit;
+}
+
+.whiteaccordion.accordion .accordion-title, .whiteaccordion.accordion .accordion-title:hover, .whiteaccordion.accordion .accordion-title:focus{
+    background-color:#e6e6e6;
+    font-weight: bold;
+}
+
+.whiteaccordion.accordion .accordion-title:hover{
+    background-color: #c0c0c0;
+}

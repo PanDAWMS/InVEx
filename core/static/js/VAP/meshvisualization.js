@@ -220,8 +220,12 @@ class MeshVisualization extends DataVisualization{
         return 1;
     }
 
-    getColor(realData){
-        return [new THREE.Color(0x00FF00), new THREE.Color(0x0000FF), new THREE.Color(0xFFFF00), new THREE.Color(0xFF0000)][this.checkState(realData)];
+    createColorScheme(){
+        return Object.assign({}, this.customColors, {0: new THREE.Color(0x00FF00), 1: new THREE.Color(0x0000FF), 2: new THREE.Color(0xFFFF00), 3: new THREE.Color(0xFF0000)});
+    }
+
+    changeState(sphere){
+        sphere.normData[2][sphere.normData[2].length - 1] = this.checkState(sphere);
     }
 
     changeVisibilitySphere(sphere){
@@ -243,7 +247,11 @@ class MeshVisualization extends DataVisualization{
             return null;
         var i = this.meshCoordinates[2][normData[1][0]];
         var j = this.meshCoordinates[3][normData[1][1]];
-		var material = new THREE.MeshPhongMaterial( {color: this.getColor(realData)} );
+        if (Array.isArray(cluster))
+            normData[2] = cluster;
+        else
+            normData[2] = [this.checkState(realData)];
+		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[normData[2][0]]} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = this.meshCoordinates[0][i][1];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
@@ -251,7 +259,6 @@ class MeshVisualization extends DataVisualization{
         if (this.objectsOnMesh[i][j] == undefined)
             this.objectsOnMesh[i][j] = [];
         this.objectsOnMesh[i][j].push(sphere);
-		normData[2] = cluster;
 		normData[3] = sphere;
 		realData[3] = sphere;
 		auxData[3] = sphere;
@@ -313,14 +320,15 @@ class MeshVisualization extends DataVisualization{
                         this.objectsOnMesh[i][j][k].position.x = this.meshCoordinates[0][i][1];
                         this.objectsOnMesh[i][j][k].position.y = this.objectsOnMesh[i][j][k].dataObject[1][this.proectionSubSpace[1]];
                         this.objectsOnMesh[i][j][k].position.z = this.meshCoordinates[1][j][1];
+                        this.changeState(this.objectsOnMesh[i][j][k]);
                         if (this.objectsOnMesh[i][j][k].selectedCircut != undefined){
                             this.objectsOnMesh[i][j][k].selectedCircut.position.x = this.objectsOnMesh[i][j][k].position.x;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.y = this.objectsOnMesh[i][j][k].position.y;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.z = this.objectsOnMesh[i][j][k].position.z;
-                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.getColor(this.objectsOnMesh[i][j][k].realData)); 
+                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]]); 
                         }
                         else
-                            this.objectsOnMesh[i][j][k].material.color = this.getColor(this.objectsOnMesh[i][j][k].realData); 
+                            this.objectsOnMesh[i][j][k].material.color = this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]]; 
                     }
     }
     

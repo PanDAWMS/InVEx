@@ -174,10 +174,17 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
             'norm_dataset': calc.data_converters.pandas_to_js_list(norm_dataset),
             'real_dataset': calc.data_converters.pandas_to_js_list(real_dataset),
             'aux_dataset': calc.data_converters.pandas_to_js_list(auxiliary_dataset),
-            'data_is_ready':True,
+            'data_is_ready': True,
+            'cluster_ready': False,
+            'lod_activated': False,
+            'algorithm': False,
+            'visualparameters': False,
+            'lod_data': False,
+            'algorithm': False,
             'dim_names': columns,
             'aux_names': aux_columns,
             'index': idx,
+            'filename': False,
             'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
             'operation_history': op_history,
             'corr_matrix': corr_matrix.values.tolist(),
@@ -223,6 +230,7 @@ def data_preparation(dataset, request):
         data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
         data['lod_data'] = lod_data.groups_metadata
         data['lod_value'] = request.POST['lod_value']
+        data['lod_activated'] = True
         groupedData = calc.grouped.GroupedData()
         groupedData.get_groups(dataset, lod_data.groups_metadata)
         data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history, str(lod), lod_data.groups_metadata)
@@ -555,6 +563,13 @@ def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, numcols, op
             'real_dataset': calc.data_converters.pandas_to_js_list(real_dataset),
             'aux_dataset': calc.data_converters.pandas_to_js_list(auxiliary_dataset),
             'data_is_ready': True,
+            'cluster_ready': False,
+            'lod_activated': False,
+            'filename': False,
+            'visualparameters': False,
+            'lod_data': False,
+            'saveid': False,
+            'algorithm': False,
             'dim_names_short': numcols,
             'dim_names': columns,
             'aux_names': aux_columns,
