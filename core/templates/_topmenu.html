@@ -37,7 +37,7 @@
                     </select>
             </div>
             {% if type == "datavisualization" %}
-            {% include "LoD_Generator.html" %}
+                <div id="serverfileLOD"></div>
             {% endif %}
             <input type="submit" class="button small vap-controllers" value="Submit">
         </form>
@@ -49,6 +49,7 @@
             <input type="hidden" name="formt" value="newfile">
             <label for="customFile" class="button small">Upload File</label>
             <input type="file" id="customFile" class="show-for-sr" name="customFile">
+            <div id="newfileLOD"></div>
             <input type="submit" class="button small" value="Submit">
         </form>
     </div>
