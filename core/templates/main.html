@@ -1,108 +1,25 @@
 {% extends "_base.html" %}
 {% load staticfiles %}
-{#{% block page_title %} VAP {% endblock %}#}
-{#{% block subtitle %}Visual analytics platform home{% endblock %}#}
 
 {% block extra_css %}{% endblock %}
 
 {% block body %}
     {% csrf_token %}
+<div class="grid-x grid-padding-x">
+  <div class="cell">
   <div class="card text-white bg-dark mb-3">
   <div class="card-body">
     <h2 class="card-title">InVEx for ATLAS</h2>
       <h5>Interactive Visual Explorer</h5>
   </div>
   </div>
+  </div>
+  </div>
     <div class="vap_container">
         <div class="grid-container fluid">
-          <div class="grid-x grid-margin-x">
+          <div class="grid-x grid-padding-x">
             <div class="cell">
-                <ul class="tabs" data-deep-link="true" data-update-history="true" data-deep-link-smudge="true" data-deep-link-smudge-delay="500" data-tabs id="deeplinked-tabs">
-                {% if group_vis == False or not group_vis %}
-                  <li class="tabs-title is-active"><a href="#serverfile" aria-selected="true">Choose File from Server</a></li>
-                  <li class="tabs-title"><a href="#upload">Upload File</a></li>
-                {% endif %}
-                {%  if data_is_ready %}
-                  <li class="tabs-title"><a href="#print">Print Dataset</a></li>
-                  <li class="tabs-title"><a href="#stats">Statistics</a></li>
-                  <li class="tabs-title"><a href="#corr">Correlations</a></li>
-                {% if type == "site2site" %}
-                  <li class="tabs-title"><a href="#xcoord">X-Coordinate</a></li>
-                  <li class="tabs-title"><a href="#ycoord">Y-Coordinate</a></li>
-                {% endif %}
-                {% if cluster_ready %}
-                  <li class="tabs-title"><a href="#clusters">Clusters</a></li>
-                {% endif %}
-                  <li class="tabs-title" style="display:none" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
-                  <li class="tabs-title" style="display:none" id="selected_group_link"><a href="#selected_group">Selected Group</a></li>
-                {% endif %}
-                </ul>
-
-                <div class="tabs-content" data-tabs-content="deeplinked-tabs" id='deeplinked-content'>
-                  {% if dataset_files %}
-                  <div class="tabs-panel is-active" id="serverfile">
-                    <form action="" method="POST" enctype='multipart/form-data'>
-                            {% csrf_token %}
-                            <div class="custom-file">
-                                  <input type="hidden" name="formt" value="filefromserver">
-                                  <select name="filename">
-                                      {% for fileonserver in dataset_files %}
-                                            {% if filename|safe == fileonserver.value|safe %}
-                                                <option value="{{ fileonserver.value|safe }}" selected>{{ fileonserver.name|safe }}</option>
-                                            {% else %}
-                                                 <option value="{{ fileonserver.value|safe }}">{{ fileonserver.name|safe }}</option>
-                                            {% endif %}
-                                      {% endfor %}
-                                  </select>
-                            </div>
-                            <div id="serverfileLOD"></div>
-                            <input type="submit" class="button small vap-controllers" value="Submit">
-                      </form>
-                  </div>
-                  {% endif %}
-                  <div class="tabs-panel" id="upload">
-                    <form action="" method="POST" enctype='multipart/form-data'>
-                            {% csrf_token %}
-                          <input type="hidden" name="formt" value="newfile">
-                          <label for="customFile" class="button small">Upload File</label>
-                          <input type="file" id="customFile" class="show-for-sr" name="customFile">
-                          <div id="newfileLOD"></div>
-                          <input type="submit" class="button small" value="Submit">
-                     </form>
-                  </div>
-                {%  if data_is_ready %}
-                  <div class="tabs-panel" id="print">
-                    <button type="button" class="button small" id="printAllBtn">Display All</button>
-                  </div>
-                  <div class="tabs-panel" id="stats">
-                  </div>
-                  <div class="tabs-panel" id="corr">
-                    <div id="corr-matrix">
-                        <div id="legend"></div>
-                    </div>
-                  </div>
-                  <div class="tabs-panel" id="corr">
-                    <div id="corr-matrix">
-                        <div id="legend"></div>
-                    </div>
-                  </div>
-                  {% if type == "site2site" %}
-                  <div class="tabs-panel" id="xcoord">
-                  </div>
-                  <div class="tabs-panel" id="ycoord">
-                  </div>
-                  {% endif %}
-                  {% if cluster_ready %}
-                  <div class="tabs-panel" id="clusters">
-                    <button type="button" class="button small" id="printBtn">Print Results</button>
-                  </div>
-                  {% endif %}
-                  <div class="tabs-panel" id="multichoice">
-                  </div>
-                  <div class="tabs-panel" id="selected_group">
-                  </div>
-                {% endif %}
-                </div>
+                {% include "_topmenu.html" %}
             </div>
           </div>
         </div>
@@ -110,70 +27,23 @@
             <br/>
           </div>
         </div>
-            <div class="grid-x grid-margin-x" style="margin-left: .1000rem;">
-              <div class="cell small-3" id="controllers">
-                  <div class="grid-y" style="height: 800px;">                  
-                    {%  if data_is_ready %}
-                      <div class="cell">
-                          <div class="card">
-                              <div class="card-divider">
-                                Dimensions
-                              </div>
-                              <div class="card-section" id="dimensions_changer">
-                              </div>
-                          </div>
-                      </div>
-                      {% if type == "datavisualization" %}
-                      <div class="cell">
-                          <div class="card">
-                              <div class="card-divider">
-                                Clustering
-                              </div>
-                              <div class="card-section">
-                                <form onsubmit="add_parameters(this);" action="" autocomplete="off" id="cluster_form" method="POST">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="formt" value="cluster">
-                                    {% if saveid %}
-                                    <input type="hidden" name="fdid" value="{{ saveid }}">
-                                    {% endif %}
-                                    {% if filename %}
-                                    <input type="hidden" name="fname" value="{{ filename|safe }}">
-                                    {% endif %}
-                                    <div class="form-group" id="clustering">
-                                    </div>
-                                    <input type="submit" class="button small" value="Clusterize" id="clusterize_button">
-                                </form>
-                              </div>
-                          </div>
-                      </div>
-                      {% endif %}
-                      {% endif %}
-                      <div class="cell large-auto">
-                          <div class="card">
-                              <div class="card-divider">
-                                Visualization Settings
-                              </div>
-                              <div class="card-section" id='visualizationSettings'>
-                              </div>
-                            </div>
-                        </div>
+            <div class="grid-x grid-padding-x">
+                  {% include "_leftsidemenu.html" %}
+            </div>
+            <div class="cell auto">
+                <div class="grid-y">
+                    <div class="cell mainPicture" id="picture">
+                      <div id="gui_container"></div>
                     </div>
-              </div>
-                <div class="cell auto">
-                    <div class="grid-y">
-                        <div class="cell mainPicture" id="picture">
-                          <div id="gui_container"></div>
-                        </div>
-                      </div>
-                    </div>
-
+                  </div>
                 </div>
+
+            </div>
 
 
             </div>
             </div>
         </div>
-{#        <div class="container pre-scrollable" id="output"></div>#}
 	</div>
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
@@ -302,11 +172,10 @@
             {% if cluster_ready %}
             var clusters = {{ clusters|safe }};
             scene.setClusters(clusters);
-            scene.clusters_color_scheme = getColorScheme(clusters, scene.theme);
             {% else %}
             scene.setClusters([0]);
-            scene.clusters_color_scheme = getColorScheme([0], scene.theme);
             {% endif %}
+            scene.clusters_color_scheme = scene.createColorScheme();
             
 			{% if norm_dataset %}
             var objects = [];
@@ -321,11 +190,17 @@
         
             {%  if data_is_ready %}
                 {% if type == "site2site" %}
-                scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                  scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                {% elif type == "datavisualization" %}
+                  document.getElementById('color_changer').appendChild(scene.createNewGroupElement());
+                {% if cluster_ready %}
+                  document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
                 {% endif %}
-			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+                {% endif %}
+              scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+
             {% else %}
-			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
+			        scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
             {% endif %}
             
             {% if saveid %}

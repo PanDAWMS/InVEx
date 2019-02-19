@@ -16,37 +16,6 @@ function drawAxes() {
 	return axes;
 }
 
-//calculates a color scheme for clusters. Clusters have to be an array, the result is a dictionary
-function getColorScheme( clusters, theme='black' ) {
-	var clusters_unique = Array.from(new Set(clusters));
-	var len = clusters_unique.length;
-	var results = {};
-	if (len==1){
-		if (theme=='white')
-			results[clusters_unique[0]] = new THREE.Color(0.8,0.8,0.8);
-		else
-			results[clusters_unique[0]] = new THREE.Color(1,1,1);
-	}
-	else
-		if ( len == 2 ) {
-			results[clusters_unique[0]] = new THREE.Color(1,0,0);
-			results[clusters_unique[1]] = new THREE.Color(0,0,1);
-		} else {
-			// code the clusters as a 3-digits number in base-base number system. 
-			var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
-			var base = parts - 1;
-			if (base == 0)
-				base = 1;
-			for( var i = 0; i < len; i++ ) {
-				if (theme=='white')
-					results[clusters_unique[i]] = new THREE.Color( (~~(i/(parts*parts)))%parts/base*0.8 , (~~(i/parts))%parts/base*0.8 , i%parts/base*0.8 );
-				else
-					results[clusters_unique[i]] = new THREE.Color( 1-(~~(i/(parts*parts)))%parts/base , 1-(~~(i/parts))%parts/base , 1-i%parts/base );
-			}
-		}
-	return results;
-}
-
 class Scene {
 
 	// #region Scene initialization
