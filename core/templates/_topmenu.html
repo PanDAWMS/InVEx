@@ -44,7 +44,7 @@
     </div>
     {% endif %}
     <div class="tabs-panel" id="upload">
-    <form action="" method="POST" enctype='multipart/form-data'>
+        <form action="" method="POST" enctype='multipart/form-data'>
             {% csrf_token %}
             <input type="hidden" name="formt" value="newfile">
             <label for="customFile" class="button small">Upload File</label>
@@ -55,34 +55,29 @@
     </div>
 {%  if data_is_ready %}
     <div class="tabs-panel" id="print">
-    <button type="button" class="button small" id="printAllBtn">Display All</button>
+        <button type="button" class="button small" id="printAllBtn">Display All</button>
     </div>
-    <div class="tabs-panel" id="stats">
+    <div class="tabs-panel" id="stats"></div>
+    <div class="tabs-panel" id="corr">
+        <div id="corr-matrix">
+            <div id="legend"></div>
+        </div>
     </div>
     <div class="tabs-panel" id="corr">
-    <div id="corr-matrix">
-        <div id="legend"></div>
-    </div>
-    </div>
-    <div class="tabs-panel" id="corr">
-    <div id="corr-matrix">
-        <div id="legend"></div>
-    </div>
+        <div id="corr-matrix">
+            <div id="legend"></div>
+        </div>
     </div>
     {% if type == "site2site" %}
-    <div class="tabs-panel" id="xcoord">
-    </div>
-    <div class="tabs-panel" id="ycoord">
-    </div>
+    <div class="tabs-panel" id="xcoord"></div>
+    <div class="tabs-panel" id="ycoord"></div>
     {% endif %}
     {% if cluster_ready %}
     <div class="tabs-panel" id="clusters">
-    <button type="button" class="button small" id="printBtn">Print Results</button>
+        <button type="button" class="button small" id="printBtn">Print Results</button>
     </div>
     {% endif %}
-    <div class="tabs-panel" id="multichoice">
-    </div>
-    <div class="tabs-panel" id="selected_group">
-    </div>
+    <div class="tabs-panel" id="multichoice"></div>
+    <div class="tabs-panel" id="selected_group"></div>
 {% endif %}
 </div>
