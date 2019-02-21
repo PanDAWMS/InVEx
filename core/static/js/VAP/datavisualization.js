@@ -1133,22 +1133,4 @@ class DataVisualization extends Scene{
         super.setNewSubSpace(x1, x2, x3);
 		this.moveSpheres();
     }
-
-    printClusterStats(dimNames, realdata) {
-		for (var i = 0; i < length(realdata); i++) {
-			for (var j = 0; j < length(realdata[1]); j++) {
-				var dimension = dimNames[ j ];
-
-			}
-
-		}
-		// Require simple statistics
-		var ss = require('simple-statistics');
-		var sum = ss.sum(dataset),
-			mean = ss.mean(dataset),
-			min = ss.min(dataset),
-			geometric_mean = ss.geometric_mean(dataset),
-			max = ss.max(dataset),
-			quantile = ss.quantile(0.25);
-	}
 }

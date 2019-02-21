@@ -473,6 +473,45 @@ function printStats(stats, dimensions){
     initial_dataset.appendChild(table);
 }
 
+function printClusterStats(realdata, clusters, cluster_number, dimNames) {
+    var cluster_list = [];
+    for (var i = 0; i < clusters.length; i++ ) {
+        if (clusters[i] == cluster_number)
+            cluster_list.push(i);
+    }
+    var data_cluster = [];
+    for (var j = 0; j < realdata.length; j++) {
+        if (cluster_list.includes(j) === true)
+            data_cluster.push(realdata[j][1]);
+    }
+    var result = Array.from({ length: data_cluster[0].length }, function(x, row) {
+      return Array.from({ length: data_cluster.length }, function(x, col) {
+        return data_cluster[col][row];
+      });
+    });
+    var stat = [];
+    stat.push(["Count", "Mean", "Std", "Min", "Max"]);
+    var counts = [];
+    var means = [];
+    var maxs = [];
+    var mins = [];
+    var stds = [];
+    for (var i = 0; i < result.length; i++) {
+        var count = result[i].length,
+        mean = ss.mean(result[i]),
+        std = ss.standardDeviation(result[i]),
+        min = ss.min(result[i]),
+        max = ss.max(result[i]);
+        counts.push(count);
+        means.push(mean);
+        maxs.push(max);
+        mins.push(min);
+        stds.push(std);
+    }
+    stat.push([counts, means, maxs, mins, stds]);
+    printStats(stat, dimNames);
+}
+
 function add_parameters(submited_form) {
     var new_input = document.createElement('input');
     new_input.name = 'visualparameters';

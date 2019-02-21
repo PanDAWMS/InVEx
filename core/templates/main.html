@@ -61,7 +61,8 @@
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
-<script src="{% static "js/VAP/simple-statistics.min.js" %}"></script>
+<script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'>
+</script>
 {% endblock %}
 	<script>
 
@@ -177,6 +178,9 @@
                 scene.setClusters([0]);
             {% endif %}
             scene.clusters_color_scheme = scene.createColorScheme();
+            {% if cluster_ready %}
+                printClusterStats(scene.realData, scene.clusters, 0, scene.dimNames);
+            {% endif %}
             
 			{% if norm_dataset %}
                 var objects = [];
