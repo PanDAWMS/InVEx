@@ -635,7 +635,7 @@ class DataVisualization extends Scene{
 		this.clusters_color_scheme[newgroup]=color;
 		for(var i = 0; i< group.length; ++i){
 			group[i].dataObject[2].unshift(newgroup);
-			group[i].material.color = this.customColors[newgroup];
+			group[i].material.color = this.customColors[newgroup].clone();
 		}
 	}
 
