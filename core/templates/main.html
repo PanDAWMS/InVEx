@@ -180,6 +180,7 @@
             scene.clusters_color_scheme = scene.createColorScheme();
             {% if cluster_ready %}
                 printClusterStats(scene.realData, scene.clusters, 0, scene.dimNames);
+                cluster_selector(scene.clusters_color_scheme);
             {% endif %}
             
 			{% if norm_dataset %}

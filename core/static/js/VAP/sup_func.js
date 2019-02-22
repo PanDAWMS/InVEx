@@ -473,6 +473,33 @@ function printStats(stats, dimensions){
     initial_dataset.appendChild(table);
 }
 
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(color) {
+    var r = color["r"];
+    var g = color["g"];
+    var b = color["b"];
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+function cluster_selector(clusters_color_scheme) {
+    var selector = document.getElementById("cluster-selector");
+    for (var cluster in clusters_color_scheme) {
+        var color = clusters_color_scheme[cluster];
+        var option = document.createElement("option");
+        option.value = cluster;
+        option.innerHTML = cluster;
+        console.log(color);
+        console.log(rgbToHex(color));
+        option.style.background = 'red';
+        //option.style.color = rgbToHex(color);
+        selector.appendChild(option);
+    }
+}
+
 function printClusterStats(realdata, clusters, cluster_number, dimNames) {
     var cluster_list = [];
     for (var i = 0; i < clusters.length; i++ ) {
