@@ -170,8 +170,6 @@ def site_to_site(request):
         data = EMPTY_DATA
         data['type'] = 'site2site'
     data['built'] = datetime.now().strftime("%H:%M:%S")
-    data['type'] = 'datavisualization'
-    data['PAGE_TITLE'] = "InVEx"
     try:
         data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.SITE_SITE_DATASET_FILES_PATH)
     except:
