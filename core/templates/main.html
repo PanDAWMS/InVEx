@@ -64,6 +64,7 @@
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+<script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
 <script src="{% static "js/spectrum.js" %}"></script>
 {% endblock %}
 	<script>
@@ -107,8 +108,8 @@
             var curr_parameters;
 
             {%  if algorithm %}
-            curr_algorithm = "{{ algorithm }}";
-            curr_parameters = {{ parameters|safe }};
+                curr_algorithm = "{{ algorithm }}";
+                curr_parameters = {{ parameters|safe }};
             {% endif %}
 
             createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
@@ -116,101 +117,104 @@
             {% endif %}
 
             {% if dim_names %}
-            var dimNames = {{ dim_names|safe }};
-            scene.setDimNames(dimNames);
+                var dimNames = {{ dim_names|safe }};
+                scene.setDimNames(dimNames);
             {% endif %}
 
             {% if index %}
-            var index = {{ index|safe }};
-            scene.setIndex(index);
+                var index = {{ index|safe }};
+                scene.setIndex(index);
             {% endif %}
 
             {% if norm_dataset %}
-            var dataArray = {{ norm_dataset|safe }};
-            var new_dataArray = fix_array(dataArray);
-            scene.setDataArray(new_dataArray);
+                var dataArray = {{ norm_dataset|safe }};
+                var new_dataArray = fix_array(dataArray);
+                scene.setDataArray(new_dataArray);
             {% endif %}
 
             {% if real_dataset %}
-            var realData = {{ real_dataset|safe }};
-            var new_realData = fix_array(realData);
-            scene.setRealData(new_realData);
-            printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
+                var realData = {{ real_dataset|safe }};
+                var new_realData = fix_array(realData);
+                scene.setRealData(new_realData);
+                printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
             {% endif %}
 
             {% if real_metrics %}
-            var statistics_real = {{ real_metrics|safe }};
-            printStats(statistics_real, dimNames);
-            scene.setRealStats(statistics_real);
+                var statistics_real = {{ real_metrics|safe }};
+                printStats(statistics_real, dimNames, "stats");
+                scene.setRealStats(statistics_real);
             {% endif %}
 
             {% if corr_matrix %}
-            var corr_matrix = {{ corr_matrix|safe }};
-			Matrix({
-				container : '#corr-matrix',
-				data      : corr_matrix,
-				labels    : dimNames,
-				start_color : '#ffffff',
-				end_color : '#3498db'
-			});
+                var corr_matrix = {{ corr_matrix|safe }};
+                Matrix({
+                    container : '#corr-matrix',
+                    data      : corr_matrix,
+                    labels    : dimNames,
+                    start_color : '#ffffff',
+                    end_color : '#3498db'
+                });
             {% endif %}
 
             {% if visualparameters %}
-            scene.loadParameters({{ visualparameters|safe }});
+                scene.loadParameters({{ visualparameters|safe }});
             {% endif %}
 
             {% if aux_dataset %}
-            var auxData = {{ aux_dataset|safe }};
-            var new_auxData = fix_array(auxData);
-            scene.setAuxiliaryData(new_auxData);
-            var auxNames = {{ aux_names|safe }};
-            scene.setAuxiliaryColumns(auxNames);
+                var auxData = {{ aux_dataset|safe }};
+                var new_auxData = fix_array(auxData);
+                scene.setAuxiliaryData(new_auxData);
+                var auxNames = {{ aux_names|safe }};
+                scene.setAuxiliaryColumns(auxNames);
             {% endif %}
 
             var lodData = [];
             {% if lod_data %}
-            lodData = {{ lod_data|safe }};
-            scene.setLOD(lodData);
+                lodData = {{ lod_data|safe }};
+                scene.setLOD(lodData);
             {% endif %}
 
             {% if cluster_ready %}
-            var clusters = {{ clusters|safe }};
-            scene.setClusters(clusters);
+                var clusters = {{ clusters|safe }};
+                scene.setClusters(clusters);
             {% else %}
-            scene.setClusters([0]);
+                scene.setClusters([0]);
             {% endif %}
             scene.clusters_color_scheme = scene.createColorScheme();
+            {% if cluster_ready %}
+                cluster_selector(scene.clusters_color_scheme, "cluster_stat");
+            {% endif %}
             
 			{% if norm_dataset %}
-            var objects = [];
-			for ( var i = 0; i < new_dataArray.length; i++ ){
-                {% if cluster_ready %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ], lodData[ i ] ));
-                {% else %}
-				objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ], lodData[ i ] ));
-				{% endif %}
-			}
+                var objects = [];
+                for ( var i = 0; i < new_dataArray.length; i++ ){
+                    {% if cluster_ready %}
+                        objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ], lodData[ i ] ));
+                    {% else %}
+                        objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ], lodData[ i ] ));
+                    {% endif %}
+                }
 			{% endif %}
         
             {%  if data_is_ready %}
                 {% if type == "site2site" %}
-                  scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                    scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 {% elif type == "datavisualization" %}
                   var temp=scene.createNewGroupElement();
                   document.getElementById('color_changer').appendChild(temp);
                   temp.ready();
                 {% if cluster_ready %}
-                  document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
+                    document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
                 {% endif %}
                 {% endif %}
-              scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+                scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
 
             {% else %}
-			        scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
+                scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
             {% endif %}
             
             {% if saveid %}
-            scene.setSource('{{ saveid|safe }}');
+                scene.setSource('{{ saveid|safe }}');
             {% endif %}
 
 		}

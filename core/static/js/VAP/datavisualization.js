@@ -114,7 +114,7 @@ class DataVisualization extends Scene{
         this.changeQuality(this.quality);
     }
 
-    saveParameters(){
+    saveParameters() {
         var params = super.saveParameters();
         params['sphrad'] = this.defaultSpRad;
         return params;
