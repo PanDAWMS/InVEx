@@ -434,8 +434,8 @@ function createTopElement(tabTitleParentElement, tabContentParentElement, tabId,
     return tabContentDiv;
 }
 
-function printStats(stats, dimensions){
-    var initial_dataset = document.getElementById("stats");
+function printStats(stats, dimensions, parent){
+    var initial_dataset = document.getElementById(parent);
     var table = document.createElement("table");
     table.setAttribute("id", "stats-table");
     table.classList.add("hover");
@@ -473,34 +473,53 @@ function printStats(stats, dimensions){
     initial_dataset.appendChild(table);
 }
 
-function componentToHex(c) {
-    var hex = c.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
-}
-
 function rgbToHex(color) {
-    var r = color["r"];
-    var g = color["g"];
-    var b = color["b"];
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    var R = color["r"] * 255;
+    var G = color["g"] * 255;
+    var B = color["b"] * 255;
+    return "#"+toHex(R)+toHex(G)+toHex(B);
+}
+function toHex(n) {
+ n = parseInt(n,10);
+ if (isNaN(n)) return "00";
+ n = Math.max(0,Math.min(n,255));
+ return "0123456789ABCDEF".charAt((n-n%16)/16)
+      + "0123456789ABCDEF".charAt(n%16);
 }
 
-function cluster_selector(clusters_color_scheme) {
-    var selector = document.getElementById("cluster-selector");
+function cluster_selector(clusters_color_scheme, parent_element) {
+    var selector = document.getElementById("clusters");
+    var label = document.createElement("label");
+    label.innerHTML = "Choose cluster";
+    var btnGroup = document.createElement("div");
+    btnGroup.classList.add("small");
+    btnGroup.classList.add("button-group");
     for (var cluster in clusters_color_scheme) {
         var color = clusters_color_scheme[cluster];
-        var option = document.createElement("option");
-        option.value = cluster;
-        option.innerHTML = cluster;
-        console.log(color);
-        console.log(rgbToHex(color));
-        option.style.background = 'red';
-        //option.style.color = rgbToHex(color);
-        selector.appendChild(option);
+        var a = document.createElement("a");
+        a.setAttribute("href","#")
+        a.classList.add("button");
+        a.innerHTML = cluster;
+        a.style.background = rgbToHex(color);
+        a.onclick=function(event) {
+            event.preventDefault();
+            var cluster_stat = document.getElementById(parent_element);
+            while (cluster_stat.firstChild) {
+                cluster_stat.removeChild(cluster_stat.firstChild);
+            }
+            var parent = document.getElementById(parent_element);
+            var h3 = document.createElement("h3");
+            h3.innerText = "Cluster №" + parseInt(event.target.innerText) + " statistics";
+            parent.appendChild(h3);
+            printClusterStats(scene.realData, scene.clusters, parseInt(event.target.innerText), scene.dimNames, parent_element);
+        };
+        btnGroup.appendChild(a);
     }
+    selector.appendChild(label);
+    selector.appendChild(btnGroup);
 }
 
-function printClusterStats(realdata, clusters, cluster_number, dimNames) {
+function printClusterStats(realdata, clusters, cluster_number, dimNames, parent_element) {
     var cluster_list = [];
     for (var i = 0; i < clusters.length; i++ ) {
         if (clusters[i] == cluster_number)
@@ -536,7 +555,8 @@ function printClusterStats(realdata, clusters, cluster_number, dimNames) {
         stds.push(std);
     }
     stat.push([counts, means, maxs, mins, stds]);
-    printStats(stat, dimNames);
+
+    printStats(stat, dimNames, parent_element);
 }
 
 function add_parameters(submited_form) {

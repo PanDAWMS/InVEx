@@ -138,7 +138,7 @@
 
             {% if real_metrics %}
                 var statistics_real = {{ real_metrics|safe }};
-                printStats(statistics_real, dimNames);
+                printStats(statistics_real, dimNames, "stats");
                 scene.setRealStats(statistics_real);
             {% endif %}
 
@@ -179,8 +179,7 @@
             {% endif %}
             scene.clusters_color_scheme = scene.createColorScheme();
             {% if cluster_ready %}
-                printClusterStats(scene.realData, scene.clusters, 0, scene.dimNames);
-                cluster_selector(scene.clusters_color_scheme);
+                cluster_selector(scene.clusters_color_scheme, "cluster_stat");
             {% endif %}
             
 			{% if norm_dataset %}
