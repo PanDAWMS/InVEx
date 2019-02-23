@@ -1,1 +1,10 @@
-[{"name": "ASANA test file", "filename": "asana.json", "value": "asana"}, {"name": "ASANA float test file", "filename": "asana_n.json", "value": "asana_n"}]
+[{"name": "ASANA test file", "filename": "asana.json", "value": "asana"},
+  {"name": "ASANA float test file", "filename": "asana_n.json", "value": "asana_n"},
+  {"name": "4hours_sites", "filename": "4hours_sites.json", "value": "4hours_sites"},
+  {"name": "12hours_sites", "filename": "12hours_sites.json", "value": "12hours_sites"},
+  {"name": "1day_sites", "filename": "1day_sites.json", "value": "1day_sites"},
+  {"name": "2days_sites", "filename": "2days_sites.json", "value": "2days_sites"},
+  {"name": "week_sites", "filename": "week_sites.json", "value": "week_sites"},
+  {"name": "14days_sites", "filename": "14days_sites.json", "value": "14days_sites"},
+  {"name": "28days_sites", "filename": "28days_sites.json", "value": "28days_sites"}
+]

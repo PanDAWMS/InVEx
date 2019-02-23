@@ -131,7 +131,7 @@
 
             {% if real_metrics %}
             var statistics_real = {{ real_metrics|safe }};
-            printStats(statistics_real, dimNames);
+            printStats(statistics_real, dimNames, "stats");
             scene.setRealStats(statistics_real);
             {% endif %}
 
