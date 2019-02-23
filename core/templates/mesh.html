@@ -174,7 +174,9 @@
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
                 {% endif %}
-                  document.getElementById('color_changer').appendChild(scene.createNewGroupElement());
+                var temp=scene.createNewGroupElement();
+                document.getElementById('color_changer').appendChild(temp);
+                temp.ready();
 			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
             {% else %}
 			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
