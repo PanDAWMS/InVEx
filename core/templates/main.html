@@ -1,20 +1,23 @@
 {% extends "_base.html" %}
 {% load staticfiles %}
 
-{% block extra_css %}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static "css/spectrum.css" %}">
+{% endblock %}
 
 {% block body %}
     {% csrf_token %}
 <div class="grid-x grid-padding-x">
   <div class="cell">
-  <div class="card text-white bg-dark mb-3">
-  <div class="card-body">
-    <h2 class="card-title">InVEx for ATLAS</h2>
-      <h5>Interactive Visual Explorer</h5>
+      <div class="grid-x">
+        <div class="cell small-4">
+            <img src="{% static "img/Original/Original.jpg" %}">
+        </div>
+          <div class="cell auto">
+          </div>
+      </div>
   </div>
-  </div>
-  </div>
-  </div>
+</div>
     <div class="vap_container">
         <div class="grid-container fluid">
           <div class="grid-x grid-padding-x">
@@ -61,8 +64,8 @@
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
-<script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'>
-</script>
+<script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
+<script src="{% static "js/spectrum.js" %}"></script>
 {% endblock %}
 	<script>
 
@@ -197,7 +200,9 @@
                 {% if type == "site2site" %}
                     scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 {% elif type == "datavisualization" %}
-                    document.getElementById('color_changer').appendChild(scene.createNewGroupElement());
+                  var temp=scene.createNewGroupElement();
+                  document.getElementById('color_changer').appendChild(temp);
+                  temp.ready();
                 {% if cluster_ready %}
                     document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
                 {% endif %}

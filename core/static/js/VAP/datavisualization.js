@@ -419,9 +419,20 @@ class DataVisualization extends Scene{
 		};
 
 		var color_picker = document.createElement("input");
-		color_picker.setAttribute("type", "color");
+		color_picker.setAttribute("type", "text");
+		color_picker.id="colorpicker"+newGroupID;
 		color_picker.value='#0000ff';
+
+		var label = document.createElement('label');
+		label.setAttribute("for", color_picker.id);
+		label.textContent = 'Choose Color: ';
+		label.classList.add("control-label");
+		label.style.display='inline';
+		form.appendChild(label);
+
 		form.appendChild(color_picker);
+		form.appendChild(document.createElement('br'));
+		form.color_picker = color_picker;
 
 		var changeColorBtn = document.createElement('button');
 		changeColorBtn.id = 'colorButton' + newGroupID;
@@ -454,6 +465,12 @@ class DataVisualization extends Scene{
 		form.appendChild(document.createElement('br'));
 		form.appendChild(undoColorBtn);
 		changeColorBtn.undoButton=undoColorBtn;
+		form.ready=function(){
+			$('#'+this.color_picker.id).spectrum({showPalette: true,
+				palette: ["red", "green", "blue", "orange", "yellow", "violet" ],
+				showInitial: true,
+				preferredFormat: "hex",});
+		}
 		return form;
 	}
 
@@ -618,7 +635,7 @@ class DataVisualization extends Scene{
 		this.clusters_color_scheme[newgroup]=color;
 		for(var i = 0; i< group.length; ++i){
 			group[i].dataObject[2].unshift(newgroup);
-			group[i].material.color = this.customColors[newgroup];
+			group[i].material.color = this.customColors[newgroup].clone();
 		}
 	}
 
