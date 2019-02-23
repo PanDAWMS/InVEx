@@ -397,7 +397,7 @@ class DataVisualization extends Scene{
 			element_div.sceneObject = this;
 			element_div.submitfunction = function(color){
 				var determFunction=function(sphere, parameters){
-					return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]>=parameters[2]);
+					return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]<=parameters[2]);
 				}
 				var group = this.sceneObject.getSphereGroup(determFunction, [this.dataNumber, this.mininput.value, this.maxinput.value]);
 				this.sceneObject.changeColorGroup(group, new THREE.Color(color));
