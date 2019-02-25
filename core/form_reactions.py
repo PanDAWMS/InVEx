@@ -379,6 +379,7 @@ def get_jobs_from_panda(request):
     if dataset is not None:
         try:
             output = data_preparation(dataset, request)
+            output['filename'] = "taskid_" + request.GET['taskid']
         except Exception as exc:
             logger.error('{0} Failed to prepare data: {1}'.
                          format(err_msg_subj, exc))
