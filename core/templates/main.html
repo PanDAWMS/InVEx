@@ -77,7 +77,7 @@
             {% if group_vis == False or not group_vis %}
                 var lod_value = 0;
                 var activated = false;
-                {%  if request.POST.activated %}
+                {%  if lod_activated %}
                     lod_value = {{ lod_value }};
                     activated = true;
                 {% endif %}
@@ -100,9 +100,10 @@
                 curr_algorithm = "{{ algorithm }}";
                 curr_parameters = {{ parameters|safe }};
             {% endif %}
-
+                {% if group_vis == False %}
             createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
-            {% endif %}
+                    {% endif %}
+                {% endif %}
             {% endif %}
 
             {% if dim_names %}

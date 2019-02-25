@@ -14,8 +14,8 @@ from django.core.wsgi import get_wsgi_application
 
 DJANGO_SETTINGS_MODULE = 'core.settings'  # TODO: make one place to import from
 
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-path = '/data/vap/'
 if path not in sys.path:
     sys.path.append(path)
 
