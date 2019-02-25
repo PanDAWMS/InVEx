@@ -510,6 +510,7 @@ function cluster_selector(clusters_color_scheme, parent_element) {
             var parent = document.getElementById(parent_element);
             var h3 = document.createElement("h3");
             h3.innerText = "Cluster №" + parseInt(event.target.innerText) + " statistics";
+            h3.style.background = event.target.style.background;
             parent.appendChild(h3);
             printClusterStats(scene.realData, scene.clusters, parseInt(event.target.innerText), scene.dimNames, parent_element);
         };
@@ -535,26 +536,28 @@ function printClusterStats(realdata, clusters, cluster_number, dimNames, parent_
         return data_cluster[col][row];
       });
     });
+    var count = result[0].length;
     var stat = [];
-    stat.push(["Count", "Mean", "Std", "Min", "Max"]);
-    var counts = [];
+    stat.push(["Min", "Max", "Mean", "Std"]);
     var means = [];
     var maxs = [];
     var mins = [];
     var stds = [];
     for (var i = 0; i < result.length; i++) {
-        var count = result[i].length,
-        mean = ss.mean(result[i]),
+        var mean = ss.mean(result[i]),
         std = ss.standardDeviation(result[i]),
         min = ss.min(result[i]),
         max = ss.max(result[i]);
-        counts.push(count);
         means.push(mean);
         maxs.push(max);
         mins.push(min);
         stds.push(std);
     }
-    stat.push([counts, means, maxs, mins, stds]);
+    stat.push([mins, maxs, means, stds]);
+    var count_info = document.createElement("h5");
+    count_info.innerText = "Number of elements: " + count.toString();
+    var parent = document.getElementById(parent_element);
+    parent.appendChild(count_info);
 
     printStats(stat, dimNames, parent_element);
 }
