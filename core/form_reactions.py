@@ -368,9 +368,14 @@ def get_jobs_from_panda(request):
         except ImportError as exc:
             logger.error('{0} {1}'.format(err_msg_subj, exc))
         else:
-            dataset = PandaReader().read_jobs_df(
-                task_id=request.GET['taskid'],
-                filter_params={'days': request.GET.get('days', default=1825)})
+            filter_params = {}
+            if 'days' in request.GET:
+                filter_params['days'] = request.GET['days']
+            else:
+                filter_params['fulllist'] = 'true'
+
+            dataset = PandaReader().read_jobs_df(task_id=request.GET['taskid'],
+                                                 filter_params=filter_params)
             if not dataset.empty:
                 dataset.set_index('pandaid', inplace=True)
     else:
