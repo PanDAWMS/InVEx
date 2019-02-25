@@ -1,3 +1,4 @@
+// A function to validate integer input.
 function validate_integer(input){
     if (!Number.isInteger(+input.value))
         return "The value of "+input.labelText+" must be an integer";
@@ -9,6 +10,7 @@ function validate_integer(input){
     return true;
 }
 
+//function to validate float input.
 function validate_float(input){
     if (Number.isNaN(+input.value))
         return "The value of "+input.labelText+" must be an number";
@@ -21,6 +23,7 @@ function validate_float(input){
     return true;
 }
 
+//Function that validates input depending on type of field.
 function validate_field(input){
     switch (input.typeOfField){
         case 'integer':
@@ -46,8 +49,9 @@ function removeElement(id) {
     return elem.parentNode.removeChild(elem);
 }
 
+// Creates clusterization GUI elements. 
 function createClusterElements(divElement, formElement, cluster_params, curr_algorithm, curr_values) {
-
+    //Create the selector in the div.
 	var select_element = document.createElement('select');
 	select_element.classList.add('form-control');
 	select_element.classList.add('form-control-sm');
@@ -59,8 +63,11 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     divElement.appendChild(label_select);
     divElement.appendChild(select_element);
     divElement.appendChild(document.createElement('br'));
+    
+    //Create options and input fields for all the clusterization options. 
     var elements = [];
     for ( var k = 0; k < cluster_params.length; k++ ) {
+        //Create the option element and the div element assosiated with it.
 		var el = cluster_params[ k ];
         var option_element = document.createElement('option');
         option_element.innerText = el[ 1 ];
@@ -70,6 +77,8 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
         element_div.classList.add("form-group");
         elements.push(element_div);
         element_div.inputElements = [];
+
+        //Creates inputs for all the 
         for( var i = 2; i < el.length; i++ ) {
             var form_group = document.createElement("div");
             form_group.classList.add("form-group");
@@ -121,6 +130,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
         }
         divElement.appendChild(element_div);
 
+        //Make the right element visible
         if ( curr_algorithm === undefined && k == 0 ) {
             element_div.style.display = 'block';
             select_element.element_div = element_div;
@@ -158,6 +168,65 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     });
 }
 
+
+function createSwitch(ID, name, label, size, state, texton, textoff){
+    while(document.getElementById(ID)!==null)
+        ID+=(Math.random()*10).toString().slice(-1);
+    
+    var outerDiv=document.createElement('div');
+    outerDiv.id = ID;
+    var par = document.createElement('label');
+    par.id=ID+'label';
+    par.innerText=label;
+    switchElement=document.createElement('div');
+    switchElement.classList.add('switch', size);
+    switchElement.id=ID+'switchdiv';
+
+    var inputElement = document.createElement('input');
+    inputElement.id=ID+'input';
+    inputElement.type='checkbox';
+    inputElement.name=name;
+    inputElement.checked=state;
+    inputElement.classList.add('switch-input');
+    switchElement.appendChild(inputElement);
+
+    var labelElement = document.createElement('label');
+    labelElement.id=ID+'labelelement';
+    labelElement.classList.add('switch-paddle');
+    labelElement.setAttribute('for', inputElement.id);
+
+    var span=document.createElement('span');
+    span.classList.add('show-for-sr');
+    span.innerText=label;
+    labelElement.appendChild(span);
+
+    if(texton!=''){
+        var span=document.createElement('span');
+        span.classList.add('switch-active');
+        span.setAttribute('aria-hidden','true');
+        span.innerText=texton;
+        labelElement.appendChild(span);  
+    }
+
+    if(textoff!=''){
+        var span=document.createElement('span');
+        span.classList.add('switch-inactive');
+        span.setAttribute('aria-hidden','true');
+        span.innerText=textoff;
+        labelElement.appendChild(span);  
+    }
+
+    switchElement.appendChild(labelElement);
+    outerDiv.appendChild(par);
+    outerDiv.appendChild(switchElement);
+    outerDiv.switchElement = switchElement;
+    outerDiv.inputElement = inputElement;
+    outerDiv.label = par;
+
+    return outerDiv;
+}
+
+//Creates data table for information output. Use this for static tables.
 function createDataTable(parentElement, ID, headers){
     while(document.getElementById(ID)!==null)
         ID+=(Math.random()*10).toString().slice(-1);
@@ -184,6 +253,7 @@ function createDataTable(parentElement, ID, headers){
     return table;
 }
 
+//Adds the element to data table. Use this for static tables.
 function addElementToDataTable(table, data, id, numberOfHead=1, checkUnique=true){
     if (checkUnique)
         for(var i=0; i<table.bodyElement.rows.length; ++i){
@@ -218,6 +288,7 @@ function addElementToDataTable(table, data, id, numberOfHead=1, checkUnique=true
     return row;
 }
 
+//Creates data table for dynamic information output. Use this for dynamic tables.
 function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_num=0, cust_col_def=null){
     while(document.getElementById(ID)!==null)
         ID+=(Math.random()*10).toString().slice(-1);
@@ -258,11 +329,13 @@ function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_
     return table;
 }
 
+//Adds a row to a dynamic table
 function addElementToDataTableDynamic(table, data){
     var row = table.dataTableObj.row.add(data).draw();
     return row;
 }
 
+//Removes a row from dynamic table
 function removeElementFromDataTableDynamic(table, id){
     table.dataTableObj.row('#'+id.toString()).remove();
     table.dataTableObj.draw();
@@ -274,7 +347,7 @@ function deleteDataTable(table){
     table.parentElement.removeChild(table);
 }
 
-
+//Prints dataset to a static data table
 function printDataset(element, headers, dataset, num_rows, id_num=0){
     var table = createDataTable(element, element.id+"-table", headers);
     if((num_rows === undefined) || (num_rows>dataset.length))
@@ -286,6 +359,7 @@ function printDataset(element, headers, dataset, num_rows, id_num=0){
     return table;
 }
 
+//Creates a basic GUI form
 function createControlBasics(formID){
     while(document.getElementById(formID)!==null)
         formID+=(Math.random()*10).toString().slice(-1);
@@ -299,6 +373,7 @@ function createControlBasics(formID){
     return form;
 }
 
+//Creates a radio button with a label and given name.
 function createControlRadioWithLabel(radioID, name, text){
     while(document.getElementById(radioID)!==null)
         radioID+=(Math.random()*10).toString().slice(-1);
@@ -317,4 +392,193 @@ function createControlRadioWithLabel(radioID, name, text){
     radioButton.labelElement = label;
     
     return radioButton;
+}
+
+function createTopElement(tabTitleParentElement, tabContentParentElement, tabId, tabTitle, selected){
+    while(document.getElementById(tabId)!==null)
+        tabId+=(Math.random()*10).toString().slice(-1);
+
+    var tabTitle = document.createElement('li');
+    tabTitle.id = tabId + 'title';
+    tabTitle.classList.add('tabs-title');
+    if (selected)
+        tabTitle.classList.add('is-active');
+    tabTitle.role='presentation';
+
+    var tabTitleLink = document.createElement('a');
+    tabTitleLink.href = '#'+tabId;
+    tabTitleLink.role = 'tab';
+    tabTitleLink.id = tabId+'link';
+    tabTitleLink.tabindex = '-1';
+    tabTitleLink.innerText = tabTitle;
+    if (selected)
+        tabTitleLink.setAttribute('aria-selected', 'true');
+    else
+        tabTitleLink.setAttribute('aria-selected', 'false');
+    tabTitleLink.setAttribute('aria-controls', tabId);
+    tabTitle.appendChild(tabTitleLink);
+
+    var tabContentDiv = document.createElement('div');
+    tabContentDiv.classList.add('tabs-panel');
+    tabContentDiv.id = tabId;
+    tabContentDiv.role='tabpanel';
+    tabContentDiv.setAttribute('aria-labelledby', tabId+'-label');
+    if (selected)
+        tabContentDiv.classList.add('is-active');
+    
+    tabTitle.contentDiv = tabContentDiv;
+    tabContentDiv.tabTitleElement = tabTitle;
+    tabTitleParentElement.appendChild(tabTitle);
+    tabContentParentElement.appendChild(tabContentDiv);
+
+    return tabContentDiv;
+}
+
+function printStats(stats, dimensions, parent){
+    var initial_dataset = document.getElementById(parent);
+    var table = document.createElement("table");
+    table.setAttribute("id", "stats-table");
+    table.classList.add("hover");
+    var thead = document.createElement("thead");
+    var row, th, td;
+
+    // first row with statistics column names
+    row = document.createElement("tr");
+    th = document.createElement("th");
+    th.innerText = "  ";
+    row.appendChild(th);
+    for ( var j = 0; j < stats[ 0 ].length; j++ ) {
+        th = document.createElement("th");
+        th.innerText = stats[0][j];
+        row.appendChild(th);
+    }
+    thead.appendChild(row);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    for(var i = 0; i < dimensions.length; i++ ) {
+        row = document.createElement("tr");
+        th = document.createElement("th");
+        th.innerText = dimensions[ i ].toString();
+        row.appendChild(th);
+        for ( var j = 0; j < stats[ 0 ].length; j++ ) {
+            var stat_value = stats[ 1 ][ j ][ i ];
+            td = document.createElement("td");
+            td.innerText = stat_value.toLocaleString(undefined, { maximumSignificantDigits: 3 });
+            row.appendChild(td);
+        }
+        tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    initial_dataset.appendChild(table);
+}
+
+function rgbToHex(color) {
+    var R = color["r"] * 255;
+    var G = color["g"] * 255;
+    var B = color["b"] * 255;
+    return "#"+toHex(R)+toHex(G)+toHex(B);
+}
+function toHex(n) {
+ n = parseInt(n,10);
+ if (isNaN(n)) return "00";
+ n = Math.max(0,Math.min(n,255));
+ return "0123456789ABCDEF".charAt((n-n%16)/16)
+      + "0123456789ABCDEF".charAt(n%16);
+}
+
+function cluster_selector(clusters_color_scheme, parent_element) {
+    var selector = document.getElementById("clusters");
+    var label = document.createElement("label");
+    label.innerHTML = "Choose cluster";
+    var btnGroup = document.createElement("div");
+    btnGroup.classList.add("small");
+    btnGroup.classList.add("button-group");
+    for (var cluster in clusters_color_scheme) {
+        var color = clusters_color_scheme[cluster];
+        var a = document.createElement("a");
+        a.setAttribute("href","#")
+        a.classList.add("button");
+        a.innerHTML = cluster;
+        a.style.background = rgbToHex(color);
+        a.onclick=function(event) {
+            event.preventDefault();
+            var cluster_stat = document.getElementById(parent_element);
+            while (cluster_stat.firstChild) {
+                cluster_stat.removeChild(cluster_stat.firstChild);
+            }
+            var parent = document.getElementById(parent_element);
+            var h3 = document.createElement("h3");
+            h3.innerText = "Cluster №" + parseInt(event.target.innerText) + " statistics";
+            h3.style.background = event.target.style.background;
+            parent.appendChild(h3);
+            printClusterStats(scene.realData, scene.clusters, parseInt(event.target.innerText), scene.dimNames, parent_element);
+        };
+        btnGroup.appendChild(a);
+    }
+    selector.appendChild(label);
+    selector.appendChild(btnGroup);
+}
+
+function printClusterStats(realdata, clusters, cluster_number, dimNames, parent_element) {
+    var cluster_list = [];
+    for (var i = 0; i < clusters.length; i++ ) {
+        if (clusters[i] == cluster_number)
+            cluster_list.push(i);
+    }
+    var data_cluster = [];
+    for (var j = 0; j < realdata.length; j++) {
+        if (cluster_list.includes(j) === true)
+            data_cluster.push(realdata[j][1]);
+    }
+    var result = Array.from({ length: data_cluster[0].length }, function(x, row) {
+      return Array.from({ length: data_cluster.length }, function(x, col) {
+        return data_cluster[col][row];
+      });
+    });
+    var count = result[0].length;
+    var stat = [];
+    stat.push(["Min", "Max", "Mean", "Std"]);
+    var means = [];
+    var maxs = [];
+    var mins = [];
+    var stds = [];
+    for (var i = 0; i < result.length; i++) {
+        var mean = ss.mean(result[i]),
+        std = ss.standardDeviation(result[i]),
+        min = ss.min(result[i]),
+        max = ss.max(result[i]);
+        means.push(mean);
+        maxs.push(max);
+        mins.push(min);
+        stds.push(std);
+    }
+    stat.push([mins, maxs, means, stds]);
+    var count_info = document.createElement("h5");
+    count_info.innerText = "Number of elements: " + count.toString();
+    var parent = document.getElementById(parent_element);
+    parent.appendChild(count_info);
+
+    printStats(stat, dimNames, parent_element);
+}
+
+function add_parameters(submited_form) {
+    var new_input = document.createElement('input');
+    new_input.name = 'visualparameters';
+    new_input.type = 'hidden';
+    new_input.value = JSON.stringify(scene.saveParameters());
+    submited_form.appendChild(new_input);
+}
+
+function fix_array(data) {
+    var new_array = new Array(data.length);
+    for (var i = 0; i < data.length; i++) {
+        var values = [];
+        for (var j = 0; j < data[i][1][0].length; j++) {
+            var current_item = data[i][1][0][j];
+            values[j] = current_item
+        }
+        new_array[i] = [data[i][0].toString(), values];
+    }
+    return new_array;
 }

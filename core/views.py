@@ -3,7 +3,7 @@ Core Django views for VAR project
 """
 import json
 import logging
-
+from core import calc
 from datetime import datetime
 from urllib.parse import urlencode, urlparse, parse_qs
 from django.http import HttpResponse
@@ -15,10 +15,28 @@ import pandas as pd
 from django.shortcuts import render
 from django.conf import settings
 from core import form_reactions
+from django.template.context_processors import csrf
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
-
+EMPTY_DATA = data = {
+            'dataset': [],
+            'dim_names': [],
+            'index': '',
+            'new_file': False,
+            'norm_dataset': [],
+            'real_dataset': [],
+            'filename': False,
+            'visualparameters': False,
+            'lod_data': False,
+            'algorithm': False,
+            'type': False,
+            'xarray': False,
+            'stats': [],
+            'corr_matrix': [],
+            'aux_dataset': [],
+            'aux_names': []
+        }
 
 def initRequest(request):
     """
@@ -93,26 +111,74 @@ def main(request):
             except Exception as exc:
                 logger.error('!views.performance_test_frame!: Couldn\'t calculate a prediction. \n' + str(exc))
                 return JsonResponse({})
+        elif request.POST['formt'] == 'group_data':
+            try:
+                data = form_reactions.get_group_data(request)
+                return JsonResponse(data)
+            except Exception as exc:
+                logger.error('!views.performance_test_frame!: Couldn\'t get the group. \n' + str(exc))
+                return JsonResponse({})
+
+    elif request.method == 'GET' and 'remotesrc' in request.GET:
+        err_msg_subj = '[views/remotesrc=pandajobs]'
+
+        if request.GET['remotesrc'] == 'pandajobs':
+            try:
+                data = form_reactions.get_jobs_from_panda(request)
+            except Exception as exc:
+                logger.error('{0} Remote data are not accessible: {1}'.
+                             format(err_msg_subj, exc))
 
     else:
-        data = {
-            'dataset': [],
-            'dim_names': [],
-            'index': '',
-            'new_file': False,
-            'norm_dataset': [],
-            'real_dataset': [],
-            'stats': [],
-            'corr_matrix': [],
-            'aux_dataset': [],
-            'aux_names': []
-        }
+        data = EMPTY_DATA
+        data['type'] = 'datavisualization'
     data['built'] = datetime.now().strftime("%H:%M:%S")
+    data['PAGE_TITLE'] = "InVEx"
     try:
         data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.DATASET_FILES_PATH)
     except:
+        data['dataset_files'] = False
         logger.error('Could not read the list of datasets file')
     return render(request, 'main.html', data, content_type='text/html')
+
+
+
+
+
+
+
+def site_to_site(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+    data = {}
+    if request.method == 'POST' and 'formt' in request.POST:
+        if request.POST['formt'] == 'newfile':
+            try:
+                data = form_reactions.load_json_site_to_site(request)
+            except Exception as exc:
+                logger.error(
+                    '!views.site_to_site!: Couldn\'t perform an upload of a new CSV file. \n' + str(exc))
+        elif request.POST['formt'] == 'filefromserver':
+            try:
+                data = form_reactions.load_json_site_to_site(request)
+            except Exception as exc:
+                logger.error(
+                    '!views.site_to_site!: Couldn\'t load the a CSV file from the server. \n' + str(exc))
+
+    else:
+        data = EMPTY_DATA
+        data['type'] = 'site2site'
+    data['built'] = datetime.now().strftime("%H:%M:%S")
+    try:
+        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.SITE_SITE_DATASET_FILES_PATH)
+    except:
+        data['dataset_files'] = False
+        logger.error('Could not read the list of datasets file')
+    return render(request, 'mesh.html', data, content_type='text/html')
+
+
+
 
 
 def performance_test(request):
@@ -150,7 +216,7 @@ def performance_test_frame(request):
                 logger.error('!views.performance_test_frame!: Couldn\'t perform a clusterization. ' + str(exc))
         if request.POST['formt'] == 'rebuild':
             try:
-                data = form_reactions.predict_cluster(request)
+                data = json.loads(form_reactions.predict_cluster(request))
                 return JsonResponse(data)
             except Exception as exc:
                 logger.error('!views.performance_test_frame!: Couldn\'t calculate a prediction. ' + str(exc))
@@ -177,3 +243,11 @@ def performance_test_frame(request):
     end_time = datetime.now()
     data['servertime'] = round((end_time - start_time).total_seconds() * 1000)
     return render(request, 'testframe.html', data, content_type='text/html')
+
+def visualize_group(request):
+    if request.method == 'GET' and 'group_id' in request.GET:
+        group = form_reactions.get_group_data(request)
+        data = form_reactions.data_preparation(calc.data_converters.table_to_df(group['group_data_df']), request)
+        data['group_vis'] = True
+        data['built'] = datetime.now().strftime("%H:%M:%S")
+    return render(request, 'main.html', data, content_type="text/html")
