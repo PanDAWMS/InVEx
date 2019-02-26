@@ -444,7 +444,7 @@ class DataVisualization extends Scene{
 		var changeColorBtn = document.createElement('button');
 		changeColorBtn.id = 'colorButton' + newGroupID;
 		changeColorBtn.classList.add('button', 'small');
-		changeColorBtn.innerText = 'Change color';
+		changeColorBtn.innerText = 'Change Color';
 		changeColorBtn.setAttribute('type', 'button');
 		changeColorBtn.colorinput = color_picker;
 		changeColorBtn.selectObject = main_select_element;
