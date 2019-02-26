@@ -1143,7 +1143,7 @@ class DataVisualization extends Scene{
 			sphere.selectedCircut.position.y = sphere.position.y;
 			sphere.selectedCircut.position.z = sphere.position.z;
 		}
-		changeVisibilityAll();
+		this.changeVisibilityAll();
     }
     
     setNewSubSpace(x1, x2, x3){
