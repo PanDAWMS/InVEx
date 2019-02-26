@@ -366,7 +366,7 @@ function createControlBasics(formID){
     var form = document.createElement('form');
     form.id = formID;
     var div = document.createElement('div');
-    div.classList.add('form-group', 'form-check');
+    div.classList.add('form-group', 'form-check', 'text-center');
     form.appendChild(div);
     form.groupDiv = div;
     form.createNewLine = function(){this.groupDiv.appendChild(document.createElement('br'));};

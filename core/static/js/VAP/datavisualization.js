@@ -219,15 +219,20 @@ class DataVisualization extends Scene{
 		
 		var form = createControlBasics('form' + radChangeID);
 
+		var buttonDiv = document.createElement('div');
+		buttonDiv.setAttribute("align", "center");
+
 		var changeRadiusBtn = document.createElement('button');
 		changeRadiusBtn.id = 'button' + radChangeID;
 		changeRadiusBtn.classList.add('button', 'small');
 		changeRadiusBtn.innerText = 'Change Radius';
 		changeRadiusBtn.setAttribute('type', 'button');
+		buttonDiv.appendChild(changeRadiusBtn);
 
 		var radiusRange = document.createElement('input');
 		changeRadiusBtn.id = 'range' + radChangeID;
 		radiusRange.classList.add('custom-range');
+		radiusRange.style.width = '100%';
 		radiusRange.setAttribute('type', 'range');
 		radiusRange.min = 0.1;
 		radiusRange.max = 3;
@@ -236,6 +241,7 @@ class DataVisualization extends Scene{
 		var label = document.createElement('label');
 		label.id = 'for' + radiusRange.id;
 		label.setAttribute('for', radiusRange.id);
+		label.classList.add('text-center');
 		label.innerText = 'Spheres Radius: ';
 
 		changeRadiusBtn.sceneObject = this;
@@ -248,7 +254,7 @@ class DataVisualization extends Scene{
 
 		form.groupDiv.appendChild(label);
 		form.groupDiv.appendChild(radiusRange);
-		form.groupDiv.appendChild(changeRadiusBtn);
+		form.groupDiv.appendChild(buttonDiv);
 
 		return form;
 	}
@@ -431,6 +437,7 @@ class DataVisualization extends Scene{
 		form.appendChild(label);
 
 		form.appendChild(color_picker);
+		form.appendChild(document.createElement('br'));
 		form.appendChild(document.createElement('br'));
 		form.color_picker = color_picker;
 
