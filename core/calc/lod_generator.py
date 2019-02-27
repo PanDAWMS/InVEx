@@ -1,4 +1,4 @@
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 import pandas as pd
 import numpy as np
 
@@ -17,8 +17,8 @@ class LoDGenerator:
         self.groups_metadata = self.get_groups_metadata()
 
     def kmeans_clustering(self):
-        self.model = KMeans(self.n)
-        self.model.fit(self.dataset)
+        self.model = MiniBatchKMeans(n_clusters=self.n, random_state=0, batch_size=6, max_iter=10, init_size=3000).fit(
+            self.dataset)
         self.results = self.model.predict(self.dataset)
         self.dataset['group'] = self.results
         self.dataset.set_index('group')
