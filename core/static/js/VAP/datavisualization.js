@@ -79,6 +79,7 @@ class DataVisualization extends Scene{
         this.auxData = [];
         this.auxNames = [];
         this.lodData = [];
+        this.selectionsHistory = [];
         this.interactiveMode = 'single';			
         
         //Set up the quality ranges and parameters for each quality.
@@ -373,12 +374,12 @@ class DataVisualization extends Scene{
 			input.max = this.realStats[1][2][k];
 			input.step = (this.realStats[1][2][k] - this.realStats[1][1][k])/100;
 			input.value = this.realStats[1][3][k];
+            input.labelText = 'Min';
 			var label = document.createElement('label');
 			label.setAttribute("for", input.id);
 			label.textContent = 'Min';
 			label.classList.add("control-label");
 			element_div.appendChild(label);
-			input.labelText = 'Min';
 			element_div.appendChild(input);
 			element_div.mininput = input;
 		
@@ -448,7 +449,36 @@ class DataVisualization extends Scene{
 		changeColorBtn.setAttribute('type', 'button');
 		changeColorBtn.colorinput = color_picker;
 		changeColorBtn.selectObject = main_select_element;
-		changeColorBtn.onclick = function() {
+        var self = this;
+		changeColorBtn.onclick = function(event) {
+            var featureID = event.target.form[0].value;
+            console.log(featureID);
+            var selected_feature = event.target.form[0][event.target.form[0].value].innerText;
+            var history_dict = {};
+            history_dict['selected_feature'] = selected_feature;
+            console.log(event.target.form[featureID+1]);
+            if (event.target.ownerDocument.getElementById('ingroupelements'+featureID) != undefined) {
+                history_dict['value'] = event.target.ownerDocument.getElementById('ingroupelements'+featureID).innerText;
+            } else {
+                if (event.target.ownerDocument.getElementById('ingroupelements'+featureID+'min') != undefined) {
+                    history_dict['min'] = event.target.ownerDocument.getElementById('ingroupelements'+featureID+'min').value;
+                    history_dict['max'] = event.target.ownerDocument.getElementById('ingroupelements'+featureID+'max').value;
+                }
+            }
+            //var selected_value = event.target.form[1].value;
+            var color = this.colorinput.value;
+            console.log(event);
+
+            history_dict['color'] = color;
+            self.selectionsHistory.push(history_dict);
+            console.log(self.selectionsHistory);
+            var div = document.createElement("div");
+            if (history_dict['value'])
+                div.innerText = selected_feature + " = " + history_dict['value'];
+            else if (history_dict['min'])
+                div.innerText = selected_feature + " : " + history_dict['min'] + ' - ' + history_dict['max'];
+            div.style.color = color;
+            event.target.form.appendChild(div);
 			this.selectObject.selectedOptions[0].div.submitfunction(this.colorinput.value);
 			this.undoButton.classList.remove('hide');
 			return false;
