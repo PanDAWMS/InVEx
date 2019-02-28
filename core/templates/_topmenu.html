@@ -7,10 +7,10 @@
     <li class="tabs-title"><a href="#print">Print Dataset</a></li>
     <li class="tabs-title"><a href="#stats">Statistics</a></li>
     <li class="tabs-title"><a href="#corr">Correlations</a></li>
-{% if type == "site2site" %}
+{% comment %} {% if type == "site2site" %}
     <li class="tabs-title"><a href="#xcoord">X-Coordinate</a></li>
     <li class="tabs-title"><a href="#ycoord">Y-Coordinate</a></li>
-{% endif %}
+{% endif %} {% endcomment %}
 {% if cluster_ready %}
     <li class="tabs-title"><a href="#clusters">Clusters</a></li>
 {% endif %}

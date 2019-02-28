@@ -421,35 +421,20 @@ class DataVisualization extends Scene{
 		}
 	}
 
-	
-	createNewGroupElement(){
-		var newGroupID = 'groupelements';
-		while(document.getElementById(newGroupID)!==null)
-			newGroupID += (Math.random()*10).toString().slice(-1);
-
-		var form = createControlBasics('form' + newGroupID);
-		
-		var main_select_element = document.createElement('select');
-		main_select_element.classList.add('form-control', 'form-control-sm');
-		main_select_element.id = 'select' + newGroupID;
-		main_select_element.name = 'algorithm';
-		form.appendChild(main_select_element);
-
+	createNewGroupElementAuxElements(form, selectelement, startvalueindex){
 		var uniquedata = prepareUniqueData(this.auxData);
-		//Adding Aux data
-		var elements = [];
 		for ( var k = 0; k < this.auxNames.length; k++ ) {
 			//Create the option element and the div element assosiated with it.
 			var option_element = document.createElement('option');
 			option_element.innerText = this.auxNames[k];
-			option_element.value = k;
-			main_select_element.appendChild(option_element);
+			option_element.value = startvalueindex + k;
+			selectelement.appendChild(option_element);
 			var element_div = document.createElement('div');
 			element_div.classList.add("form-group");
 			option_element.div = element_div;
-			elements.push(element_div);
+			selectelement.elements.push(element_div);
 			
-            var inputid = 'inp'+newGroupID+k;
+            var inputid = 'inp'+form.id+option_element.value;
 			while(document.getElementById(inputid)!==null)
 				inputid += (Math.random()*10).toString().slice(-1);
 			
@@ -486,19 +471,21 @@ class DataVisualization extends Scene{
 			else
 				element_div.classList.remove('hide');
 		}
+	}
 
+	createNewGroupElementNumericalElements(form, selectelement, startvalueindex){
 		for ( var k = 0; k < this.dimNames.length; k++ ) {
 			//Create the option element and the div element assosiated with it.
 			var option_element = document.createElement('option');
 			option_element.innerText = this.dimNames[k];
-			option_element.value = this.auxNames.length+k;
-			main_select_element.appendChild(option_element);
+			option_element.value = startvalueindex+k;
+			selectelement.appendChild(option_element);
 			var element_div = document.createElement('div');
 			element_div.classList.add("form-group");
 			option_element.div = element_div;
-			elements.push(element_div);
+			selectelement.elements.push(element_div);
 			
-            var inputid = 'inp'+newGroupID+option_element.value;
+            var inputid = 'inp'+form.id+option_element.value;
 			while(document.getElementById(inputid)!==null)
 				inputid += (Math.random()*10).toString().slice(-1);
 			
@@ -552,8 +539,142 @@ class DataVisualization extends Scene{
 			else
 				element_div.classList.remove('hide');
 		}
+	}
+	
+	createNewGroupElement(){
+		var newGroupID = 'groupelements';
+		while(document.getElementById(newGroupID)!==null)
+			newGroupID += (Math.random()*10).toString().slice(-1);
+		
+		var form = createControlBasics('form' + newGroupID);
+		
+		var main_select_element = document.createElement('select');
+		main_select_element.classList.add('form-control', 'form-control-sm');
+		main_select_element.id = 'select' + newGroupID;
+		main_select_element.name = 'algorithm';
+		form.appendChild(main_select_element);
 
-		main_select_element.elements = elements;
+		//Adding Aux data
+		var elements = [];
+		main_select_element.elements = [];
+		this.createNewGroupElementAuxElements(form, main_select_element, 0);
+		this.createNewGroupElementNumericalElements(form, main_select_element, this.auxNames.length);
+		// for ( var k = 0; k < this.auxNames.length; k++ ) {
+		// 	//Create the option element and the div element assosiated with it.
+		// 	var option_element = document.createElement('option');
+		// 	option_element.innerText = this.auxNames[k];
+		// 	option_element.value = k;
+		// 	main_select_element.appendChild(option_element);
+		// 	var element_div = document.createElement('div');
+		// 	element_div.classList.add("form-group");
+		// 	option_element.div = element_div;
+		// 	elements.push(element_div);
+			
+        //     var inputid = 'inp'+newGroupID+k;
+		// 	while(document.getElementById(inputid)!==null)
+		// 		inputid += (Math.random()*10).toString().slice(-1);
+			
+		// 	var input = document.createElement("select");
+		// 	input.classList.add("form-control", "form-control-sm");
+		// 	input.id = inputid;
+			
+		// 	//Create options for the select
+		// 	for(var i=0; i<uniquedata[k].length; ++i){
+		// 		var option = document.createElement('option');
+		// 		option.innerText = uniquedata[k][i];
+		// 		option.value = uniquedata[k][i];
+		// 		input.appendChild(option);
+		// 		if (i==0){
+		// 			option.selected=true;
+		// 		}
+		// 	}
+		// 	element_div.appendChild(input);
+
+		// 	element_div.input = input;
+		// 	element_div.auxNumber = k;
+		// 	element_div.sceneObject = this;
+		// 	element_div.submitfunction = function(color){
+		// 		var determFunction=function(sphere, parameters){
+		// 			return sphere.auxData[1][parameters[0]]==parameters[1];
+		// 		}
+		// 		var group = this.sceneObject.getSphereGroup(determFunction, [this.auxNumber, this.input.value]);
+		// 		this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+		// 	}
+		// 	form.appendChild(element_div);
+		// 	if (k!=0){
+		// 		element_div.classList.add('hide');
+		// 	}
+		// 	else
+		// 		element_div.classList.remove('hide');
+		// }
+
+		// for ( var k = 0; k < this.dimNames.length; k++ ) {
+		// 	//Create the option element and the div element assosiated with it.
+		// 	var option_element = document.createElement('option');
+		// 	option_element.innerText = this.dimNames[k];
+		// 	option_element.value = this.auxNames.length+k;
+		// 	main_select_element.appendChild(option_element);
+		// 	var element_div = document.createElement('div');
+		// 	element_div.classList.add("form-group");
+		// 	option_element.div = element_div;
+		// 	elements.push(element_div);
+			
+        //     var inputid = 'inp'+newGroupID+option_element.value;
+		// 	while(document.getElementById(inputid)!==null)
+		// 		inputid += (Math.random()*10).toString().slice(-1);
+			
+		// 	var input = document.createElement("input");
+		// 	input.setAttribute("type", "number");
+		// 	input.classList.add("form-control", "form-control-sm");
+		// 	input.id = inputid+'min';
+		// 	input.min = this.realStats[1][1][k];
+		// 	input.max = this.realStats[1][2][k];
+		// 	input.step = (this.realStats[1][2][k] - this.realStats[1][1][k])/100;
+		// 	input.value = this.realStats[1][3][k];
+		// 	var label = document.createElement('label');
+		// 	label.setAttribute("for", input.id);
+		// 	label.textContent = 'Min';
+		// 	label.classList.add("control-label");
+		// 	element_div.appendChild(label);
+		// 	input.labelText = 'Min';
+		// 	element_div.appendChild(input);
+		// 	element_div.mininput = input;
+		
+		// 	input = document.createElement("input");
+		// 	input.setAttribute("type", "number");
+		// 	input.classList.add("form-control", "form-control-sm");
+		// 	input.id = inputid+'max';
+		// 	input.min = this.realStats[1][1][k];
+		// 	input.max = this.realStats[1][2][k];
+		// 	input.step = (this.realStats[1][2][k] - this.realStats[1][1][k])/100.0;
+		// 	input.value = this.realStats[1][3][k];
+		// 	var label = document.createElement('label');
+		// 	label.setAttribute("for", input.id);
+		// 	label.textContent = 'Max';
+		// 	label.classList.add("control-label");
+		// 	element_div.appendChild(label);
+		// 	input.labelText = 'Max';
+		// 	element_div.appendChild(input);
+		// 	element_div.maxinput = input;
+
+		// 	element_div.dataNumber = k;
+		// 	element_div.sceneObject = this;
+		// 	element_div.submitfunction = function(color){
+		// 		var determFunction=function(sphere, parameters){
+		// 			return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]<=parameters[2]);
+		// 		}
+		// 		var group = this.sceneObject.getSphereGroup(determFunction, [this.dataNumber, this.mininput.value, this.maxinput.value]);
+		// 		this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+		// 	}
+		// 	form.appendChild(element_div);
+		// 	if ((this.auxNames.length!=0)||(k!=0)){
+		// 		element_div.classList.add('hide');
+		// 	}
+		// 	else
+		// 		element_div.classList.remove('hide');
+		// }
+
+		//main_select_element.elements = elements;
 		main_select_element.onchange = function() {
 			for( var i = 0; i < this.elements.length; i++ ){
 				this.elements[i].classList.add('hide');
@@ -811,7 +932,11 @@ class DataVisualization extends Scene{
 		this.clusters_color_scheme[newgroup]=color;
 		for(var i = 0; i< group.length; ++i){
 			group[i].dataObject[2].unshift(newgroup);
-			group[i].material.color = this.customColors[newgroup].clone();
+			if (this.selectedObject.children.includes(group[i])){
+				group[i].material.color = invertColor(this.customColors[newgroup].clone());
+			}
+			else
+				group[i].material.color = this.customColors[newgroup].clone();
 		}
 	}
 
@@ -825,11 +950,11 @@ class DataVisualization extends Scene{
 		delete this.clusters_color_scheme[oldgroup];
 		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
 			this.groupOfSpheres.children[i].dataObject[2].shift();
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]];
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
 		}
 		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {			
 			this.selectedObject.children[i].dataObject[2].shift();
-			this.selectedObject.children[i].material.color = this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]];
+			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
 		}
 		return groupnumber==0;
 	}
@@ -1223,6 +1348,8 @@ class DataVisualization extends Scene{
 
 	//selects the given object
 	selectObject(obj){
+		if(obj==undefined)
+			return false
 		var geometry = new THREE.BoxBufferGeometry( 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius );
 		var edgesCube = new THREE.EdgesGeometry( geometry );
 		var lineCube = new THREE.LineSegments( edgesCube, new THREE.LineBasicMaterial( { color: this.select_linecube_color } ) );
