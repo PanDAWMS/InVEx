@@ -206,6 +206,70 @@ class MeshVisualization extends DataVisualization{
         parentElement.appendChild(yellowSwitch);
         parentElement.appendChild(redSwitch);
     }
+
+    createNewGroupElementNumericalElements(form, selectelement, startvalueindex){
+		for ( var k = 2; k < this.dimNames.length; k++ ) {
+			//Create the option element and the div element assosiated with it.
+			var option_element = document.createElement('option');
+			option_element.innerText = this.dimNames[k];
+			option_element.value = startvalueindex+k;
+			selectelement.appendChild(option_element);
+			var element_div = document.createElement('div');
+			element_div.classList.add("form-group");
+			option_element.div = element_div;
+			selectelement.elements.push(element_div);
+			
+            var inputid = 'inp'+form.id+option_element.value;
+			while(document.getElementById(inputid)!==null)
+				inputid += (Math.random()*10).toString().slice(-1);
+			
+			var input = document.createElement("input");
+			input.setAttribute("type", "number");
+			input.classList.add("form-control", "form-control-sm");
+			input.id = inputid+'min';
+			input.min = this.realStats[1][1][k-2];
+			input.max = this.realStats[1][2][k-2];
+			input.step = (this.realStats[1][2][k-2] - this.realStats[1][1][k-2])/100;
+			input.value = this.realStats[1][3][k-2];
+			var label = document.createElement('label');
+			label.setAttribute("for", input.id);
+			label.textContent = 'Min';
+			label.classList.add("control-label");
+			element_div.appendChild(label);
+			input.labelText = 'Min';
+			element_div.appendChild(input);
+			element_div.mininput = input;
+		
+			input = document.createElement("input");
+			input.setAttribute("type", "number");
+			input.classList.add("form-control", "form-control-sm");
+			input.id = inputid+'max';
+			input.min = this.realStats[1][1][k-2];
+			input.max = this.realStats[1][2][k-2];
+			input.step = (this.realStats[1][2][k-2] - this.realStats[1][1][k-2])/100.0;
+			input.value = this.realStats[1][3][k-2];
+			var label = document.createElement('label');
+			label.setAttribute("for", input.id);
+			label.textContent = 'Max';
+			label.classList.add("control-label");
+			element_div.appendChild(label);
+			input.labelText = 'Max';
+			element_div.appendChild(input);
+			element_div.maxinput = input;
+
+			element_div.dataNumber = k;
+			element_div.sceneObject = this;
+			element_div.submitfunction = function(color){
+				var determFunction=function(sphere, parameters){
+					return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]<=parameters[2]);
+				}
+				var group = this.sceneObject.getSphereGroup(determFunction, [this.dataNumber, this.mininput.value, this.maxinput.value]);
+				this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+			}
+			form.appendChild(element_div);
+            element_div.classList.add('hide');
+		}
+	}
     
     //#endregion
     //#region User interaction
