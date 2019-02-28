@@ -192,6 +192,9 @@
                 {% elif type == "datavisualization" %}
                   var temp=scene.createNewGroupElement();
                   document.getElementById('color_changer').appendChild(temp);
+                  var history_form = document.createElement("form");
+		          history_form.setAttribute('id','history');
+                  document.getElementById('color_changer').appendChild(history_form);
                   temp.ready();
                 {% if cluster_ready %}
                     document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
