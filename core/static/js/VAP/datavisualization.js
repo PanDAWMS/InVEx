@@ -559,7 +559,7 @@ class DataVisualization extends Scene{
 		main_select_element.elements = [];
 		this.createNewGroupElementAuxElements(form, main_select_element, 0);
 		this.createNewGroupElementNumericalElements(form, main_select_element, this.auxNames.length);
-		
+
 		main_select_element.onchange = function() {
 			for( var i = 0; i < this.elements.length; i++ ){
 				this.elements[i].classList.add('hide');
@@ -593,34 +593,35 @@ class DataVisualization extends Scene{
 		changeColorBtn.selectObject = main_select_element;
         var self = this;
 		changeColorBtn.onclick = function(event) {
-            var featureID = parseInt(event.target.form[0].value);
-            var selected_feature = event.target.form[0][event.target.form[0].value].innerText;
-            var history_dict = {};
-            history_dict['selected_feature'] = selected_feature;
-			for (var i=0; i<event.target.form.length; i++) {
-				if (event.target.form[i].nodeName === 'SELECT') {
-					if (event.target.form[i].id === 'inpformgroupelements'+featureID) {
-						history_dict['value'] = event.target.form[i].value;
-						history_dict['type'] = 'aux';
-						break;
+			if (self.constructor.name != 'MeshVisualization') {
+				var featureID = parseInt(event.target.form[0].value);
+				var selected_feature = event.target.form[0][event.target.form[0].value].innerText;
+				var history_dict = {};
+				history_dict['selected_feature'] = selected_feature;
+				for (var i=0; i<event.target.form.length; i++) {
+					if (event.target.form[i].nodeName === 'SELECT') {
+						if (event.target.form[i].id === 'inpformgroupelements'+featureID) {
+							history_dict['value'] = event.target.form[i].value;
+							history_dict['type'] = 'aux';
+							break;
+						}
+					}
+					if (event.target.form[i].nodeName === 'INPUT') {
+						if (event.target.form[i].id === 'inpformgroupelements'+featureID+'min')
+							history_dict['min'] = event.target.form[i].valueAsNumber;
+						if (event.target.form[i].id === 'inpformgroupelements'+featureID+'max')
+							history_dict['max'] = event.target.form[i].valueAsNumber;
+						history_dict['type'] = 'numeric';
 					}
 				}
-				if (event.target.form[i].nodeName === 'INPUT') {
-					if (event.target.form[i].id === 'inpformgroupelements'+featureID+'min')
-						history_dict['min'] = event.target.form[i].valueAsNumber;
-					if (event.target.form[i].id === 'inpformgroupelements'+featureID+'max')
-						history_dict['max'] = event.target.form[i].valueAsNumber;
-					history_dict['type'] = 'numeric';
-				}
+				var color = this.colorinput.value;
+
+				history_dict['color'] = color;
+				history_dict['active'] = true;
+				self.selectionsHistory.push(history_dict);
+
+				self.updateHistoryPanel();
 			}
-            var color = this.colorinput.value;
-
-            history_dict['color'] = color;
-			history_dict['active'] = true;
-            self.selectionsHistory.push(history_dict);
-
-			self.updateHistoryPanel();
-
 			this.selectObject.selectedOptions[0].div.submitfunction(this.colorinput.value);
 			this.undoButton.classList.remove('hide');
 			return false;
@@ -630,12 +631,13 @@ class DataVisualization extends Scene{
 		var undoColorBtn = document.createElement('button');
 		undoColorBtn.id = 'undoButton' + newGroupID;
 		undoColorBtn.classList.add('button', 'small', 'hide');
-		undoColorBtn.innerText = 'Undo color';
+		undoColorBtn.innerText = 'Undo Color';
 		undoColorBtn.setAttribute('type', 'button');
 		undoColorBtn.sceneObject = this;
 		undoColorBtn.onclick = function(event) {
 			event.preventDefault();
-			self.cleanElement("history");
+			if (self.constructor.name != 'MeshVisualization')
+				self.cleanElement("history");
 			if (this.sceneObject.undoColorGroup()){
 				this.classList.add('hide');
 				return false;
