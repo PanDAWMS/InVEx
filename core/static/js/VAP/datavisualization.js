@@ -330,11 +330,12 @@ class DataVisualization extends Scene{
 				var self = this;
 				var id = i;
 				input.onchange=function(event){
-					if(this.checked)
+					if(this.checked) {
 						self.selectionsHistory[this.historyID]['active'] = false;
-					else
+					}
+					else {
 						self.selectionsHistory[this.historyID]['active'] = true;
-					console.log(self.selectionsHistory);
+					}
 				};
 			}
 			var updateBtn = document.createElement('button');
@@ -344,6 +345,7 @@ class DataVisualization extends Scene{
 				updateBtn.setAttribute('type', 'button');
 				updateBtn.onclick = function(event) {
 					event.preventDefault();
+					self.resetAllColors();
 					for (var i = 0; i < self.selectionsHistory.length; i++) {
 						var selected_spheres = [];
 						var feature_name = self.selectionsHistory[i]['selected_feature'];
@@ -364,11 +366,8 @@ class DataVisualization extends Scene{
 								[self.selectionsHistory[i]['value']],
 								self.selectionsHistory[i]['type']);
 						}
-						if (self.selectionsHistory[i]['active'] == true) {
+						if (self.selectionsHistory[i]['active'] == true)
 							self.changeColorGroup(selected_spheres, new THREE.Color(color));
-						} else {
-							self.changeColorGroup(selected_spheres, new THREE.Color('white'));
-						}
 					}
 				}
 			var clearHistoryBtn = document.createElement('button');
@@ -380,7 +379,7 @@ class DataVisualization extends Scene{
 					event.preventDefault();
 					self.selectionsHistory = [];
 					self.cleanElement('history');
-					self.resetSpheresColors();
+					self.resetAllColors();
 				}
 
 			form.appendChild(updateBtn);
@@ -388,11 +387,9 @@ class DataVisualization extends Scene{
 		}
 	}
 
-	resetAllSphereGroups() {
-		for (var i = 0; i < this.groupOfSpheres.children.length; i++) {
-			var groupID = this.groupOfSpheres.children[i][2];
-			resetSphereGroupColor(groupID);
-		}
+	resetAllColors() {
+		for (var i = 0; i < this.groupOfSpheres.children.length; i++)
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[0];
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
@@ -594,7 +591,6 @@ class DataVisualization extends Scene{
             var selected_feature = event.target.form[0][event.target.form[0].value].innerText;
             var history_dict = {};
             history_dict['selected_feature'] = selected_feature;
-			console.log(event);
 			for (var i=0; i<event.target.form.length; i++) {
 				if (event.target.form[i].nodeName === 'SELECT') {
 					if (event.target.form[i].id === 'inpgroupelements'+featureID) {
@@ -612,12 +608,10 @@ class DataVisualization extends Scene{
 				}
 			}
             var color = this.colorinput.value;
-            // console.log(event);
 
             history_dict['color'] = color;
 			history_dict['active'] = true;
             self.selectionsHistory.push(history_dict);
-            // console.log(self.selectionsHistory);
 
 			self.updateHistoryPanel();
 
@@ -635,7 +629,6 @@ class DataVisualization extends Scene{
 		undoColorBtn.sceneObject = this;
 		undoColorBtn.onclick = function(event) {
 			event.preventDefault();
-			//self.selectionsHistory.splice(0, self.selectionsHistory.length);
 			self.cleanElement("history");
 			if (this.sceneObject.undoColorGroup()){
 				this.classList.add('hide');
@@ -819,19 +812,6 @@ class DataVisualization extends Scene{
 		for(var i = 0; i< group.length; ++i){
 			group[i].dataObject[2].unshift(newgroup);
 			group[i].material.color = this.customColors[newgroup].clone();
-		}
-	}
-
-	resetGroup(groupID) {
-		delete this.customColors[groupID];
-		delete this.clusters_color_scheme[groupID];
-		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
-			this.groupOfSpheres.children[i].dataObject[2].shift();
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]];
-		}
-		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
-			this.selectedObject.children[i].dataObject[2].shift();
-			this.selectedObject.children[i].material.color = this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]];
 		}
 	}
 
