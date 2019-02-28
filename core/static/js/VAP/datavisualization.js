@@ -284,12 +284,152 @@ class DataVisualization extends Scene{
 		
 		return form;
 	}
+
+	updateHistoryPanel() {
+		var form = document.getElementById("history");
+		this.cleanElement("history");
+		if (this.selectionsHistory.length > 0) {
+			for (var i = 0; i < this.selectionsHistory.length; i++) {
+				var p = document.createElement('p');
+				if (this.selectionsHistory[i]['value'])
+					p.innerText = this.selectionsHistory[i]['selected_feature'] + " = " + this.selectionsHistory[i]['value'];
+				else if (this.selectionsHistory[i]['min'])
+					p.innerText = this.selectionsHistory[i]['selected_feature'] + " : " + this.selectionsHistory[i]['min'] + ' - ' + this.selectionsHistory[i]['max'];
+				form.appendChild(p);
+				var div = document.createElement('div');
+				div.classList.add('switch', 'tiny');
+				var input = document.createElement('input');
+				input.classList.add('switch-input');
+				input.setAttribute('id','on-off-'+i);
+				input.historyID = i;
+				input.type = 'checkbox';
+				input.name = 'exampleSwitch';
+				var label = document.createElement('label');
+				label.classList.add('switch-paddle');
+				label.setAttribute('for','on-off-'+i);
+				label.style.backgroundColor = this.selectionsHistory[i]['color'];
+				var span = document.createElement('span');
+				span.classList.add('show-for-sr');
+				span.innerText = p.innerText;
+				var on = document.createElement('span');
+				on.classList.add('switch-active');
+				on.setAttribute('aria-hidden', 'true');
+				on.innerText = 'on';
+				var off = document.createElement('span');
+				off.classList.add('switch-inactive');
+				off.setAttribute('aria-hidden', 'true');
+				off.innerText = 'off';
+				label.appendChild(span);
+				label.appendChild(on);
+				label.appendChild(off);
+				div.appendChild(input);
+				div.appendChild(label);
+				form.appendChild(p);
+				form.appendChild(div);
+
+				var self = this;
+				var id = i;
+				input.onchange=function(event){
+					if(this.checked)
+						self.selectionsHistory[this.historyID]['active'] = false;
+					else
+						self.selectionsHistory[this.historyID]['active'] = true;
+					console.log(self.selectionsHistory);
+				};
+			}
+			var updateBtn = document.createElement('button');
+				updateBtn.id = 'updateBtn';
+				updateBtn.classList.add('button', 'small');
+				updateBtn.innerText = 'Update Colors';
+				updateBtn.setAttribute('type', 'button');
+				updateBtn.onclick = function(event) {
+					event.preventDefault();
+					for (var i = 0; i < self.selectionsHistory.length; i++) {
+						var selected_spheres = [];
+						var feature_name = self.selectionsHistory[i]['selected_feature'];
+						var color = self.selectionsHistory[i]['color'];
+						// get IDs of selected features from history
+						var numericFeatureID = self.dimNames.indexOf(feature_name);
+						var auxFeatureID = self.auxNames.indexOf(feature_name);
+						if (numericFeatureID > -1) {
+							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
+								numericFeatureID,
+								[self.selectionsHistory[i]['min'],
+								self.selectionsHistory[i]['max']],
+								self.selectionsHistory[i]['type']);
+						}
+						else if (auxFeatureID > -1) {
+							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
+								auxFeatureID,
+								[self.selectionsHistory[i]['value']],
+								self.selectionsHistory[i]['type']);
+						}
+						if (self.selectionsHistory[i]['active'] == true) {
+							self.changeColorGroup(selected_spheres, new THREE.Color(color));
+						} else {
+							self.changeColorGroup(selected_spheres, new THREE.Color('white'));
+						}
+					}
+				}
+			var clearHistoryBtn = document.createElement('button');
+				clearHistoryBtn.id = 'clearHistBtn';
+				clearHistoryBtn.classList.add('button', 'small');
+				clearHistoryBtn.innerText = 'Clear Color History';
+				clearHistoryBtn.setAttribute('type', 'button');
+				clearHistoryBtn.onclick = function(event) {
+					event.preventDefault();
+					self.selectionsHistory = [];
+					self.cleanElement('history');
+					self.resetSpheresColors();
+				}
+
+			form.appendChild(updateBtn);
+			form.appendChild(clearHistoryBtn);
+		}
+	}
+
+	resetAllSphereGroups() {
+		for (var i = 0; i < this.groupOfSpheres.children.length; i++) {
+			var groupID = this.groupOfSpheres.children[i][2];
+			resetSphereGroupColor(groupID);
+		}
+	}
+
+	chosenSpheres(spheres, featureID, featureValues, featureType) {
+		var chosenSpheres = [];
+		if (featureType == 'aux') {
+			var value = featureValues[0];
+			for ( var i = 0; i < spheres.length; i++ ) {
+				if (spheres[ i ].auxData[ 1 ][ featureID ] == value) {
+					chosenSpheres.push(spheres[ i ]);
+				}
+			}
+		} else if (featureType == 'numeric') {
+			var min = featureValues[0];
+			var max = featureValues[1];
+			for ( var i = 0; i < spheres.length; i++ ) {
+				if (spheres[ i ].realData[ 1 ][ featureID ] >= min &&
+					spheres[ i ].realData[ 1 ][ featureID ]< max) {
+					chosenSpheres.push(spheres[ i ]);
+				}
+			}
+		}
+		return chosenSpheres;
+	}
+
+	cleanElement(id) {
+		var div = document.getElementById(id);
+		while (div.firstChild) {
+			div.removeChild(div.firstChild);
+		}
+	}
+
 	
 	createNewGroupElement(){
 		var newGroupID = 'groupelements';
 		while(document.getElementById(newGroupID)!==null)
 			newGroupID += (Math.random()*10).toString().slice(-1);
-		
+
 		var form = createControlBasics('form' + newGroupID);
 		
 		var main_select_element = document.createElement('select');
@@ -297,7 +437,6 @@ class DataVisualization extends Scene{
 		main_select_element.id = 'select' + newGroupID;
 		main_select_element.name = 'algorithm';
 		form.appendChild(main_select_element);
-
 
 		var uniquedata = prepareUniqueData(this.auxData);
 		//Adding Aux data
@@ -451,34 +590,37 @@ class DataVisualization extends Scene{
 		changeColorBtn.selectObject = main_select_element;
         var self = this;
 		changeColorBtn.onclick = function(event) {
-            var featureID = event.target.form[0].value;
-            console.log(featureID);
+            var featureID = parseInt(event.target.form[0].value);
             var selected_feature = event.target.form[0][event.target.form[0].value].innerText;
             var history_dict = {};
             history_dict['selected_feature'] = selected_feature;
-            console.log(event.target.form[featureID+1]);
-            if (event.target.ownerDocument.getElementById('ingroupelements'+featureID) != undefined) {
-                history_dict['value'] = event.target.ownerDocument.getElementById('ingroupelements'+featureID).innerText;
-            } else {
-                if (event.target.ownerDocument.getElementById('ingroupelements'+featureID+'min') != undefined) {
-                    history_dict['min'] = event.target.ownerDocument.getElementById('ingroupelements'+featureID+'min').value;
-                    history_dict['max'] = event.target.ownerDocument.getElementById('ingroupelements'+featureID+'max').value;
-                }
-            }
-            //var selected_value = event.target.form[1].value;
+			console.log(event);
+			for (var i=0; i<event.target.form.length; i++) {
+				if (event.target.form[i].nodeName === 'SELECT') {
+					if (event.target.form[i].id === 'inpgroupelements'+featureID) {
+						history_dict['value'] = event.target.form[i].value;
+						history_dict['type'] = 'aux';
+						break;
+					}
+				}
+				if (event.target.form[i].nodeName === 'INPUT') {
+					if (event.target.form[i].id === 'inpgroupelements'+featureID+'min')
+						history_dict['min'] = event.target.form[i].valueAsNumber;
+					if (event.target.form[i].id === 'inpgroupelements'+featureID+'max')
+						history_dict['max'] = event.target.form[i].valueAsNumber;
+					history_dict['type'] = 'numeric';
+				}
+			}
             var color = this.colorinput.value;
-            console.log(event);
+            // console.log(event);
 
             history_dict['color'] = color;
+			history_dict['active'] = true;
             self.selectionsHistory.push(history_dict);
-            console.log(self.selectionsHistory);
-            var div = document.createElement("div");
-            if (history_dict['value'])
-                div.innerText = selected_feature + " = " + history_dict['value'];
-            else if (history_dict['min'])
-                div.innerText = selected_feature + " : " + history_dict['min'] + ' - ' + history_dict['max'];
-            div.style.color = color;
-            event.target.form.appendChild(div);
+            // console.log(self.selectionsHistory);
+
+			self.updateHistoryPanel();
+
 			this.selectObject.selectedOptions[0].div.submitfunction(this.colorinput.value);
 			this.undoButton.classList.remove('hide');
 			return false;
@@ -493,6 +635,8 @@ class DataVisualization extends Scene{
 		undoColorBtn.sceneObject = this;
 		undoColorBtn.onclick = function(event) {
 			event.preventDefault();
+			//self.selectionsHistory.splice(0, self.selectionsHistory.length);
+			self.cleanElement("history");
 			if (this.sceneObject.undoColorGroup()){
 				this.classList.add('hide');
 				return false;
@@ -508,6 +652,7 @@ class DataVisualization extends Scene{
 				showInitial: true,
 				preferredFormat: "hex",});
 		}
+
 		return form;
 	}
 
@@ -663,6 +808,7 @@ class DataVisualization extends Scene{
 
 	// Color group of spheres
 	changeColorGroup(group, color){
+		console.log(group);
 		var groupnumber=0;
 		while(('group'+groupnumber) in this.customColors){
 			++groupnumber;
@@ -676,7 +822,20 @@ class DataVisualization extends Scene{
 		}
 	}
 
-	undoColorGroup(){
+	resetGroup(groupID) {
+		delete this.customColors[groupID];
+		delete this.clusters_color_scheme[groupID];
+		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
+			this.groupOfSpheres.children[i].dataObject[2].shift();
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]];
+		}
+		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
+			this.selectedObject.children[i].dataObject[2].shift();
+			this.selectedObject.children[i].material.color = this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]];
+		}
+	}
+
+	undoColorGroup() {
 		var groupnumber=0;
 		while(('group'+groupnumber) in this.customColors){
 			++groupnumber;
