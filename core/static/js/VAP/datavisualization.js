@@ -559,122 +559,7 @@ class DataVisualization extends Scene{
 		main_select_element.elements = [];
 		this.createNewGroupElementAuxElements(form, main_select_element, 0);
 		this.createNewGroupElementNumericalElements(form, main_select_element, this.auxNames.length);
-		// for ( var k = 0; k < this.auxNames.length; k++ ) {
-		// 	//Create the option element and the div element assosiated with it.
-		// 	var option_element = document.createElement('option');
-		// 	option_element.innerText = this.auxNames[k];
-		// 	option_element.value = k;
-		// 	main_select_element.appendChild(option_element);
-		// 	var element_div = document.createElement('div');
-		// 	element_div.classList.add("form-group");
-		// 	option_element.div = element_div;
-		// 	elements.push(element_div);
-			
-        //     var inputid = 'inp'+newGroupID+k;
-		// 	while(document.getElementById(inputid)!==null)
-		// 		inputid += (Math.random()*10).toString().slice(-1);
-			
-		// 	var input = document.createElement("select");
-		// 	input.classList.add("form-control", "form-control-sm");
-		// 	input.id = inputid;
-			
-		// 	//Create options for the select
-		// 	for(var i=0; i<uniquedata[k].length; ++i){
-		// 		var option = document.createElement('option');
-		// 		option.innerText = uniquedata[k][i];
-		// 		option.value = uniquedata[k][i];
-		// 		input.appendChild(option);
-		// 		if (i==0){
-		// 			option.selected=true;
-		// 		}
-		// 	}
-		// 	element_div.appendChild(input);
-
-		// 	element_div.input = input;
-		// 	element_div.auxNumber = k;
-		// 	element_div.sceneObject = this;
-		// 	element_div.submitfunction = function(color){
-		// 		var determFunction=function(sphere, parameters){
-		// 			return sphere.auxData[1][parameters[0]]==parameters[1];
-		// 		}
-		// 		var group = this.sceneObject.getSphereGroup(determFunction, [this.auxNumber, this.input.value]);
-		// 		this.sceneObject.changeColorGroup(group, new THREE.Color(color));
-		// 	}
-		// 	form.appendChild(element_div);
-		// 	if (k!=0){
-		// 		element_div.classList.add('hide');
-		// 	}
-		// 	else
-		// 		element_div.classList.remove('hide');
-		// }
-
-		// for ( var k = 0; k < this.dimNames.length; k++ ) {
-		// 	//Create the option element and the div element assosiated with it.
-		// 	var option_element = document.createElement('option');
-		// 	option_element.innerText = this.dimNames[k];
-		// 	option_element.value = this.auxNames.length+k;
-		// 	main_select_element.appendChild(option_element);
-		// 	var element_div = document.createElement('div');
-		// 	element_div.classList.add("form-group");
-		// 	option_element.div = element_div;
-		// 	elements.push(element_div);
-			
-        //     var inputid = 'inp'+newGroupID+option_element.value;
-		// 	while(document.getElementById(inputid)!==null)
-		// 		inputid += (Math.random()*10).toString().slice(-1);
-			
-		// 	var input = document.createElement("input");
-		// 	input.setAttribute("type", "number");
-		// 	input.classList.add("form-control", "form-control-sm");
-		// 	input.id = inputid+'min';
-		// 	input.min = this.realStats[1][1][k];
-		// 	input.max = this.realStats[1][2][k];
-		// 	input.step = (this.realStats[1][2][k] - this.realStats[1][1][k])/100;
-		// 	input.value = this.realStats[1][3][k];
-		// 	var label = document.createElement('label');
-		// 	label.setAttribute("for", input.id);
-		// 	label.textContent = 'Min';
-		// 	label.classList.add("control-label");
-		// 	element_div.appendChild(label);
-		// 	input.labelText = 'Min';
-		// 	element_div.appendChild(input);
-		// 	element_div.mininput = input;
 		
-		// 	input = document.createElement("input");
-		// 	input.setAttribute("type", "number");
-		// 	input.classList.add("form-control", "form-control-sm");
-		// 	input.id = inputid+'max';
-		// 	input.min = this.realStats[1][1][k];
-		// 	input.max = this.realStats[1][2][k];
-		// 	input.step = (this.realStats[1][2][k] - this.realStats[1][1][k])/100.0;
-		// 	input.value = this.realStats[1][3][k];
-		// 	var label = document.createElement('label');
-		// 	label.setAttribute("for", input.id);
-		// 	label.textContent = 'Max';
-		// 	label.classList.add("control-label");
-		// 	element_div.appendChild(label);
-		// 	input.labelText = 'Max';
-		// 	element_div.appendChild(input);
-		// 	element_div.maxinput = input;
-
-		// 	element_div.dataNumber = k;
-		// 	element_div.sceneObject = this;
-		// 	element_div.submitfunction = function(color){
-		// 		var determFunction=function(sphere, parameters){
-		// 			return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]<=parameters[2]);
-		// 		}
-		// 		var group = this.sceneObject.getSphereGroup(determFunction, [this.dataNumber, this.mininput.value, this.maxinput.value]);
-		// 		this.sceneObject.changeColorGroup(group, new THREE.Color(color));
-		// 	}
-		// 	form.appendChild(element_div);
-		// 	if ((this.auxNames.length!=0)||(k!=0)){
-		// 		element_div.classList.add('hide');
-		// 	}
-		// 	else
-		// 		element_div.classList.remove('hide');
-		// }
-
-		//main_select_element.elements = elements;
 		main_select_element.onchange = function() {
 			for( var i = 0; i < this.elements.length; i++ ){
 				this.elements[i].classList.add('hide');
@@ -714,16 +599,16 @@ class DataVisualization extends Scene{
             history_dict['selected_feature'] = selected_feature;
 			for (var i=0; i<event.target.form.length; i++) {
 				if (event.target.form[i].nodeName === 'SELECT') {
-					if (event.target.form[i].id === 'inpgroupelements'+featureID) {
+					if (event.target.form[i].id === 'inpformgroupelements'+featureID) {
 						history_dict['value'] = event.target.form[i].value;
 						history_dict['type'] = 'aux';
 						break;
 					}
 				}
 				if (event.target.form[i].nodeName === 'INPUT') {
-					if (event.target.form[i].id === 'inpgroupelements'+featureID+'min')
+					if (event.target.form[i].id === 'inpformgroupelements'+featureID+'min')
 						history_dict['min'] = event.target.form[i].valueAsNumber;
-					if (event.target.form[i].id === 'inpgroupelements'+featureID+'max')
+					if (event.target.form[i].id === 'inpformgroupelements'+featureID+'max')
 						history_dict['max'] = event.target.form[i].valueAsNumber;
 					history_dict['type'] = 'numeric';
 				}
