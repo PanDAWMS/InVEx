@@ -8,7 +8,6 @@ function sendAjaxPredictRequest(selectedObject, otherData, sceneObj){
 				data : allData,
 				success : function(results_dict) {
 					scene.changeCluster(selectedObject, results_dict['results'][0]);
-					console.log(results_dict['clustertype']);
 				},
 				failure: function(data) {
 					alert('There was an error. Sorry');
@@ -811,7 +810,6 @@ class DataVisualization extends Scene{
 
 	// Color group of spheres
 	changeColorGroup(group, color){
-		console.log(group);
 		var groupnumber=0;
 		while(('group'+groupnumber) in this.customColors){
 			++groupnumber;

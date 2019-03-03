@@ -3,7 +3,6 @@
  */
 function createLOD(id, activated, lod_value) {
             var top_element = document.getElementById(id);
-            console.log(top_element);
             var input = document.createElement("input");
             input.type = "checkbox";
             input.setAttribute("name", "activated");
