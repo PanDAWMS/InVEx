@@ -47,4 +47,42 @@
         <div class="accordion-content" data-tab-content  id="visualizationSettings">
         </div>
     </li>
+    {% if startedat %}      
+    <li class="accordion-item text-center" data-accordion-item>
+        <a href="#" class="accordion-title">Benchmark</a>
+        <div class="accordion-content" data-tab-content id="color_changer">
+                <p><b>Server started working:</b> {{ startedat| date:'Y-m-d G:i:s'}}</p>
+                <p><b>Server ended working:</b> {{ built| date:'Y-m-d G:i:s'}}</p>
+                <p><b>Rendering started:</b> <script>
+                    function dateTimePad(n) {
+                        return n<10 ? '0'+n : n;
+                    }
+                    function printDateTime(now){
+                        return now.getFullYear() +
+                        "-" +
+                        dateTimePad(now.getMonth()+1) +
+                        "-" +
+                        dateTimePad(now.getDate()) +
+                        " " +
+                        dateTimePad(now.getHours()) +
+                        ":" +
+                        dateTimePad(now.getMinutes()) +
+                        ":" +
+                        dateTimePad(now.getSeconds());
+                    }
+                    var curdate = new Date();
+                    document.write(printDateTime(curdate));
+                    document.addEventListener('readystatechange', event => {
+                    
+                        if (event.target.readyState === "complete") {
+                            document.getElementById('timerenderingended').innerText = printDateTime(new Date());
+                        }
+                    
+                    });
+                </script></p>
+                <p><b>Rendering ended:</b> <span id='timerenderingended'></span></p>
+
+        </div>
+    </li>
+    {% endif %}
 </ul>

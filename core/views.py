@@ -86,6 +86,9 @@ def main(request):
     if not valid:
         return response
     data = {}
+    if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
+        startedat = datetime.now()
+
     if request.method == 'POST' and 'formt' in request.POST:
         if request.POST['formt'] == 'newfile':
             try:
@@ -132,7 +135,11 @@ def main(request):
     else:
         data = EMPTY_DATA
         data['type'] = 'datavisualization'
-    data['built'] = datetime.now().strftime("%H:%M:%S")
+    data['built'] = datetime.now()
+    if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
+        data['startedat'] = startedat
+    else:
+        data['startedat'] = False
     data['PAGE_TITLE'] = "InVEx"
     try:
         data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.DATASET_FILES_PATH)
@@ -152,6 +159,8 @@ def site_to_site(request):
     if not valid:
         return response
     data = {}
+    if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
+        startedat = datetime.now()
     if request.method == 'POST' and 'formt' in request.POST:
         if request.POST['formt'] == 'newfile':
             try:
@@ -169,7 +178,12 @@ def site_to_site(request):
     else:
         data = EMPTY_DATA
         data['type'] = 'site2site'
-    data['built'] = datetime.now().strftime("%H:%M:%S")
+    data['built'] = datetime.now()
+    data['PAGE_TITLE'] = "InVEx"
+    if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
+        data['startedat'] = startedat
+    else:
+        data['startedat'] = False
     try:
         data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.SITE_SITE_DATASET_FILES_PATH)
     except:
@@ -235,7 +249,7 @@ def performance_test_frame(request):
             'aux_dataset': [],
             'aux_names': []
         }
-    data['built'] = datetime.now().strftime("%H:%M:%S")
+    data['built'] = datetime.now()
     try:
         data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.TEST_DATASET_FILES_PATH)
     except:
@@ -246,8 +260,14 @@ def performance_test_frame(request):
 
 def visualize_group(request):
     if request.method == 'GET' and 'group_id' in request.GET:
+        if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
+            startedat = datetime.now()
         group = form_reactions.get_group_data(request)
         data = form_reactions.data_preparation(calc.data_converters.table_to_df(group['group_data_df']), request)
         data['group_vis'] = True
-        data['built'] = datetime.now().strftime("%H:%M:%S")
+        if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
+            data['startedat'] = startedat
+        else:
+            data['startedat'] = False
+        data['built'] = datetime.now()
     return render(request, 'main.html', data, content_type="text/html")
