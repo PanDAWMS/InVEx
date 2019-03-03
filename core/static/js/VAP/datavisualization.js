@@ -389,7 +389,7 @@ class DataVisualization extends Scene{
 
 	resetAllColors() {
 		for (var i = 0; i < this.groupOfSpheres.children.length; i++)
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[0];
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[0].clone();
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
@@ -731,7 +731,7 @@ class DataVisualization extends Scene{
 	// #region User interaction
 	//Creates a sphere on the scene, adds the data to the sphere and the sphere to the data.
     createSphere(normData, realData, cluster, auxData, lodData) {
-		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster]} );
+		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster].clone()} );
 		if (lodData != undefined) {
 			var newSphereRadius = this.defaultSpRad + ((this.defaultSpRad * lodData[3]));
 			this.sphereGeometry = new THREE.SphereGeometry( newSphereRadius, this.numberOfSegements, this.numberOfSegements );
@@ -782,7 +782,7 @@ class DataVisualization extends Scene{
 	changeCluster(sphere, newCluster){
 		scene.unSelectObject(sphere);
 		sphere.dataObject[2].unshift(newCluster);
-		sphere.material.color = this.clusters_color_scheme[newCluster];
+		sphere.material.color = this.clusters_color_scheme[newCluster].clone();
 		scene.selectObject(sphere);
 	}
 

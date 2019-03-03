@@ -315,7 +315,7 @@ class MeshVisualization extends DataVisualization{
             normData[2] = cluster;
         else
             normData[2] = [this.checkState(realData)];
-		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[normData[2][0]]} );
+		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[normData[2][0]].clone()} );
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = this.meshCoordinates[0][i][1];
 		sphere.position.y = normData[1][this.proectionSubSpace[1]];
@@ -389,10 +389,10 @@ class MeshVisualization extends DataVisualization{
                             this.objectsOnMesh[i][j][k].selectedCircut.position.x = this.objectsOnMesh[i][j][k].position.x;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.y = this.objectsOnMesh[i][j][k].position.y;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.z = this.objectsOnMesh[i][j][k].position.z;
-                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]]); 
+                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]].clone()); 
                         }
                         else
-                            this.objectsOnMesh[i][j][k].material.color = this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]]; 
+                            this.objectsOnMesh[i][j][k].material.color = this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]].clone(); 
                     }
     }
     
