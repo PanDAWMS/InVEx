@@ -390,6 +390,8 @@ class DataVisualization extends Scene{
 	resetAllColors() {
 		for (var i = 0; i < this.groupOfSpheres.children.length; i++)
 			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[0].clone();
+		for ( var i = 0; i < this.selectedObject.children.length; i++ )
+			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[0].clone());
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
