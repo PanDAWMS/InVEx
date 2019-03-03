@@ -2,8 +2,8 @@ import pandas as pd
 import linecache
 from . import data_converters
 
-class GroupedData:
 
+class GroupedData:
     def __init__(self):
         pass
 
@@ -32,10 +32,11 @@ class GroupedData:
     def load_from_file(self, group_id, fname):
         """
         To search the group in file by the group ID the exact line is extracted. 
+        :param fname: 
         :param group_id: 
         :return: 
         """
-        line = linecache.getline(fname, group_id+1)
+        line = linecache.getline(fname, group_id + 1)
         return data_converters.table_to_df(line)
 
     def set_fname(self, fname):
@@ -44,9 +45,9 @@ class GroupedData:
     def get_fname(self):
         return self.fname
 
-# dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
-# groups_meta = [[0, [1,2,3,4,5,6,7]], [1, [9,10,11]]]
-#
-# gr = GroupedData(dataset, groups_meta)
-# gr.save_to_file("test.txt")
-# print(gr.load_from_file("test.txt", 0))
+        # dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
+        # groups_meta = [[0, [1,2,3,4,5,6,7]], [1, [9,10,11]]]
+        #
+        # gr = GroupedData(dataset, groups_meta)
+        # gr.save_to_file("test.txt")
+        # print(gr.load_from_file("test.txt", 0))

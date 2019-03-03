@@ -5,8 +5,7 @@ from calc.tests import operationexample_test
 from calc.tests import operationhistory_test
 from calc.tests import KMeansClustering_test
 
-
-#importcsv_test.run()
+# importcsv_test.run()
 basicstatistics_test.run()
 operationexample_test.run()
 operationhistory_test.run()

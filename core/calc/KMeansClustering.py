@@ -12,6 +12,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
     _type_of_operation = 'cluster'
 
     def __init__(self):
+        super().__init__()
         self.clust_numbers = CLUST_NUM
         self.model = None
         self.results = None
@@ -45,8 +46,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {}
-        result['numberofcl'] = self.clust_numbers
+        result = {'numberofcl': self.clust_numbers}
         return result
 
     def process_data(self, dataset):

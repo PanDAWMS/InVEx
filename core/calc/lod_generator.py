@@ -1,6 +1,5 @@
 from sklearn.cluster import MiniBatchKMeans
-import pandas as pd
-import numpy as np
+
 
 class LoDGenerator:
     """
@@ -8,7 +7,7 @@ class LoDGenerator:
     of the initial data sample into a number of clusters. 
     """
 
-    def __init__(self, dataset, n = 200):
+    def __init__(self, dataset, n=200):
         self.dataset = dataset.copy()
         self.initialLength = self.dataset.shape[0]
         self.n = n
@@ -38,7 +37,6 @@ class LoDGenerator:
 
     def get_groups_mean(self):
         return self.dataset.groupby('group').mean()
-
 
 # dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
 # print(dataset)

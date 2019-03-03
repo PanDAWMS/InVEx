@@ -27,14 +27,14 @@ function validate_float(input){
 function validate_field(input){
     switch (input.typeOfField){
         case 'integer':
-            result=validate_integer(input);
+            var result=validate_integer(input);
             if (result === true)
                 return true;
             console.log(result);
             alert(result);
             return false;
         case 'float':
-            result=validate_float(input);
+            var result=validate_float(input);
             if (result === true)
                 return true;
             console.log(result);
@@ -178,7 +178,7 @@ function createSwitch(ID, name, label, size, state, texton, textoff){
     var par = document.createElement('label');
     par.id=ID+'label';
     par.innerText=label;
-    switchElement=document.createElement('div');
+    var switchElement=document.createElement('div');
     switchElement.classList.add('switch', size);
     switchElement.id=ID+'switchdiv';
 
@@ -258,8 +258,7 @@ function addElementToDataTable(table, data, id, numberOfHead=1, checkUnique=true
     if (checkUnique)
         for(var i=0; i<table.bodyElement.rows.length; ++i){
             if(table.bodyElement.rows[i].uniqueID==id){
-                var row=table.bodyElement.rows[i];
-                return row;
+                return table.bodyElement.rows[i];
             }
         }
     var row = document.createElement("tr");
@@ -312,7 +311,7 @@ function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_
     table.appendChild(tbody);
     table.bodyElement = tbody;
     parentElement.appendChild(table);
-    columndef=[{ className: "datatableboldcolumn", "targets": [...Array(numofheadrows).keys()] },
+    var columndef=[{ className: "datatableboldcolumn", "targets": [...Array(numofheadrows).keys()] },
         { "render": function ( data, type, row ) {
           if(typeof data == 'number')
               return data.toLocaleString(undefined, { maximumSignificantDigits: 3 });
@@ -320,7 +319,7 @@ function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_
               return data.toString();
       },"targets": "_all"}];
     if (cust_col_def!==null){
-        columndef=columndef.concat(cust_col_def);
+        var columndef=columndef.concat(cust_col_def);
     }
     table.dataTableObj = $('#'+table.id).DataTable({
         "columnDefs": columndef,
@@ -331,8 +330,7 @@ function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_
 
 //Adds a row to a dynamic table
 function addElementToDataTableDynamic(table, data){
-    var row = table.dataTableObj.row.add(data).draw();
-    return row;
+    return table.dataTableObj.row.add(data).draw();
 }
 
 //Removes a row from dynamic table
@@ -575,8 +573,7 @@ function fix_array(data) {
     for (var i = 0; i < data.length; i++) {
         var values = [];
         for (var j = 0; j < data[i][1][0].length; j++) {
-            var current_item = data[i][1][0][j];
-            values[j] = current_item
+            values[j] = data[i][1][0][j];
         }
         new_array[i] = [data[i][0].toString(), values];
     }

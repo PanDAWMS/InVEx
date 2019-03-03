@@ -1,9 +1,7 @@
-import os
 import pandas as pd
 
 
 def import_csv_file(path_to_file, index=False, column_names=False):
-
     if index:
         index = 0
     else:
@@ -24,9 +22,10 @@ def dropNA(df):
     df.dropna(axis=1, how='any', inplace=True)
     df.dropna(axis=0, how='any', inplace=True)
 
+
 def numeric_columns(df):
     aux = []
     for item in df:
-        if df[item].dtypes in ['int64','float'] :
+        if df[item].dtypes in ['int64', 'float']:
             aux.append(item)
     return aux

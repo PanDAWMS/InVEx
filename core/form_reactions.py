@@ -42,6 +42,7 @@ def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod
     4th line - auxiliary data (not numeric values)
     5th line - value of Level-of-Detail Generator
     6th line - groups metadata
+    :param lod_metadata: 
     :param original_dataset: 
     :param norm_dataset: 
     :param auxiliary_dataset: 
@@ -50,7 +51,7 @@ def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod
     :param filename: 
     :return: 
     """
-    if (filename is None):
+    if filename is None:
         filename = str(datetime.now().timestamp())
         while os.path.isfile(SAVED_FILES_PATH + filename):
             filename = filename + 't'
@@ -177,7 +178,6 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
             'data_is_ready': True,
             'cluster_ready': False,
             'lod_activated': False,
-            'algorithm': False,
             'visualparameters': False,
             'lod_data': False,
             'algorithm': False,
@@ -218,7 +218,7 @@ def data_preparation(dataset, request):
     columns = norm_dataset.columns.tolist()
     numeric_dataset = numeric_dataset[columns]
     auxiliary_dataset = dataset.drop(numeric_columns, 1)
-    if ('activated' in request.POST and request.POST['lod_value'] != ''):
+    if 'activated' in request.POST and request.POST['lod_value'] != '':
         lod = int(request.POST['lod_value'])
         lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
         norm_lod_dataset = calc.importcsv.normalization(lod_data.grouped_dataset, columns)
@@ -500,7 +500,7 @@ def predict_cluster(request):
         return {}
     data = {}
     operation = op_history.get_previous_step()[0]
-    if (operation._type_of_operation != 'cluster'):
+    if operation._type_of_operation != 'cluster':
         logger.error(
             '!form_reactions.predict_cluster!: Previous operation was not a clusterization method. \nRequest parameters: '
             + json.dumps(request.POST))
@@ -649,9 +649,9 @@ def load_json_site_to_site(request):
 
 def get_group_data(request):
     group = calc.grouped.GroupedData()
-    if (request.method == 'POST'):
+    if request.method == 'POST':
         request_dict = dict(request.POST.items())
-    elif (request.method == 'GET'):
+    elif request.method == 'GET':
         request_dict = dict(request.GET.items())
     result = group.load_from_file(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid']+'_group')
     data = {}

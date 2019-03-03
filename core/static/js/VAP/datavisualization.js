@@ -1,7 +1,7 @@
 // Sends Ajax 
 function sendAjaxPredictRequest(selectedObject, otherData, sceneObj){
-	data = { formt: 'rebuild', data: JSON.stringify(selectedObject.dataObject[1])};
-	allData = Object.assign.apply({}, [data, otherData]);
+	var data = { formt: 'rebuild', data: JSON.stringify(selectedObject.dataObject[1])};
+	var allData = Object.assign.apply({}, [data, otherData]);
 	$.ajax({
 				type:"POST",
 				url: "",
@@ -615,9 +615,8 @@ class DataVisualization extends Scene{
 						history_dict['type'] = 'numeric';
 					}
 				}
-				var color = this.colorinput.value;
 
-				history_dict['color'] = color;
+				history_dict['color'] = this.colorinput.value;
 				history_dict['active'] = true;
 				self.selectionsHistory.push(history_dict);
 
@@ -715,8 +714,7 @@ class DataVisualization extends Scene{
 	}
 
 	createMultipleChoiceTable(parentElement) {
-		var table = createDataTableDynamic(parentElement, parentElement.id+"-table", [this.index.toString()].concat(this.dimNames));
-		return table;
+		return createDataTableDynamic(parentElement, parentElement.id+"-table", [this.index.toString()].concat(this.dimNames));
 	}
 
 	addElementToTable(table, element){
@@ -1077,8 +1075,7 @@ class DataVisualization extends Scene{
                         var currDimNum = this.dimNames.indexOf(currDimName);
                         var min = this.realStats[1][1][currDimNum];
                         var max = this.realStats[1][2][currDimNum];
-                        var newNormValue = (( value - min ) / ( max - min )) * 100;
-                        this.selectedObject.dataObject[1][currDimNum] = newNormValue;
+                        this.selectedObject.dataObject[1][currDimNum] = (( value - min ) / ( max - min )) * 100;
                         var sphere = this.selectedObject;
                         sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
                                             sphere.dataObject[1][this.subSpace[1]],

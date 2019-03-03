@@ -1,18 +1,20 @@
-from . import baseoperationclass
-from sklearn.cluster import DBSCAN
-import numpy as np
 import pickle
-from sklearn import metrics
+
+import numpy as np
+from sklearn.cluster import DBSCAN
+
+from . import baseoperationclass
 
 MIN_SAMPLES = 5
 EPS = 0.5
 
-class DBScanClustering(baseoperationclass.BaseOperationClass):
 
+class DBScanClustering(baseoperationclass.BaseOperationClass):
     _operation_name = 'DBSCAN Clustering'
     _type_of_operation = 'cluster'
 
     def __init__(self):
+        super().__init__()
         self.min_samples = MIN_SAMPLES
         self.eps = EPS
         self.model = None
@@ -43,11 +45,8 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {}
-        result['eps'] = self.eps
-        result['min_samples'] = self.min_samples
+        result = {'eps': self.eps, 'min_samples': self.min_samples}
         return result
-
 
     def save_results(self):
         # Number of clusters in labels, ignoring noise if present.
@@ -68,12 +67,13 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def process_data(self, dataset):
-        self.model = DBSCAN(eps = self.eps, min_samples = self.min_samples).fit(dataset)
+        self.model = DBSCAN(eps=self.eps, min_samples=self.min_samples).fit(dataset)
         self.results = self.model.labels_
         return self.results
 
     def predict(self, dataset):
         return self.model.fit_predict(dataset)
+
 
 try:
     baseoperationclass.register(DBScanClustering)
