@@ -770,11 +770,11 @@ class DataVisualization extends Scene{
 		this.clusters_color_scheme = this.createColorScheme();
 		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
 			this.groupOfSpheres.children[i].dataObject[2][this.groupOfSpheres.children[i].dataObject[2].length-1]=0;
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]];
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
 		}
 		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {	
 			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
-			this.selectedObject.children[i].material.color = this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]];
+			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
 		}
 		
 	}
