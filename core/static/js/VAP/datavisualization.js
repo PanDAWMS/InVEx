@@ -344,29 +344,35 @@ class DataVisualization extends Scene{
 				updateBtn.setAttribute('type', 'button');
 				updateBtn.onclick = function(event) {
 					event.preventDefault();
-					self.resetAllColors();
+					self.resetAllColorGroups();
 					for (var i = 0; i < self.selectionsHistory.length; i++) {
 						var selected_spheres = [];
 						var feature_name = self.selectionsHistory[i]['selected_feature'];
 						var color = self.selectionsHistory[i]['color'];
+						var feature_id = self.selectionsHistory[i]['feature_id'];
+						var type = self.selectionsHistory[i]['type'];
+						var group = self.selectionsHistory[i]['group'];
 						// get IDs of selected features from history
-						var numericFeatureID = self.dimNames.indexOf(feature_name);
-						var auxFeatureID = self.auxNames.indexOf(feature_name);
-						if (numericFeatureID > -1) {
+						if (type == 'range') {
 							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
-								numericFeatureID,
+								feature_id,
 								[self.selectionsHistory[i]['min'],
 								self.selectionsHistory[i]['max']],
 								self.selectionsHistory[i]['type']);
 						}
-						else if (auxFeatureID > -1) {
+						else if (type == 'categorical') {
 							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
-								auxFeatureID,
+								feature_id,
 								[self.selectionsHistory[i]['value']],
 								self.selectionsHistory[i]['type']);
 						}
-						if (self.selectionsHistory[i]['active'] == true)
-							self.changeColorGroup(selected_spheres, new THREE.Color(color));
+						if (self.selectionsHistory[i]['active'] == true) {
+							for (var i = 0; i < selected_spheres.length; ++i) {
+								if (selected_spheres[i].dataObject[2].includes(group))
+									selected_spheres[i].material.color = new THREE.Color(color);
+							}
+						}
+							//self.changeColorGroup(selected_spheres, new THREE.Color(color));
 					}
 				}
 			var clearHistoryBtn = document.createElement('button');
@@ -376,9 +382,9 @@ class DataVisualization extends Scene{
 				clearHistoryBtn.setAttribute('type', 'button');
 				clearHistoryBtn.onclick = function(event) {
 					event.preventDefault();
-					self.selectionsHistory = [];
 					self.cleanElement('history');
-					self.resetAllColors();
+					self.resetAllColorGroups();
+					self.selectionsHistory = [];
 				}
 
 			form.appendChild(updateBtn);
@@ -386,23 +392,49 @@ class DataVisualization extends Scene{
 		}
 	}
 
-	resetAllColors() {
-		for (var i = 0; i < this.groupOfSpheres.children.length; i++)
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[0].clone();
-		for ( var i = 0; i < this.selectedObject.children.length; i++ )
-			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[0].clone());
+	remove(array, element) {
+	  const index = array.indexOf(element);
+
+	  if (index !== -1) {
+		array.splice(index, 1);
+	  }
+	}
+
+	resetAllColorGroups() {
+		for (var i = 0; i < this.selectionsHistory.length; i++) {
+			var group_name = this.selectionsHistory[i]['group'];
+			console.log(group_name);
+			delete this.clusters_color_scheme[group_name];
+
+			for (var j = 0; j < this.groupOfSpheres.children.length; j++ ) {
+				this.remove(this.groupOfSpheres.children[j].dataObject[2], group_name);
+			}
+		}
+		console.log(this.clusters_color_scheme);
+		console.log(this.groupOfSpheres.children);
+		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
+			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
+		}
+		// for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
+		// 	this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
+		// 	this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
+		// }
+		// for (var i = 0; i < this.groupOfSpheres.children.length; i++)
+		// 	this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[0].clone();
+		// for ( var i = 0; i < this.selectedObject.children.length; i++ )
+		// 	this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[0].clone());
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
 		var chosenSpheres = [];
-		if (featureType == 'aux') {
+		if (featureType == 'categorical') {
 			var value = featureValues[0];
 			for ( var i = 0; i < spheres.length; i++ ) {
 				if (spheres[ i ].auxData[ 1 ][ featureID ] == value) {
 					chosenSpheres.push(spheres[ i ]);
 				}
 			}
-		} else if (featureType == 'numeric') {
+		} else if (featureType == 'range') {
 			var min = featureValues[0];
 			var max = featureValues[1];
 			for ( var i = 0; i < spheres.length; i++ ) {
@@ -420,6 +452,23 @@ class DataVisualization extends Scene{
 		while (div.firstChild) {
 			div.removeChild(div.firstChild);
 		}
+	}
+
+	addSelectionsHistory(feature_id, feature_name, feature_value, color, group, type) {
+		var history_dict = {};
+		history_dict['selected_feature'] = feature_name;
+		history_dict['feature_id'] = feature_id;
+		history_dict['type'] = type;
+		history_dict['color'] = color;
+		history_dict['active'] = true;
+		history_dict['group'] = group;
+		if (type == 'categorical')
+			history_dict['value'] = feature_value[0];
+		else if (type == 'range') {
+			history_dict['min'] = feature_value[0];
+			history_dict['max'] = feature_value[1];
+		}
+		this.selectionsHistory.push(history_dict);
 	}
 
 	createNewGroupElementAuxElements(form, selectelement, startvalueindex){
@@ -457,13 +506,21 @@ class DataVisualization extends Scene{
 
 			element_div.input = input;
 			element_div.auxNumber = k;
+			element_div.feature_name = this.auxNames[k];
 			element_div.sceneObject = this;
 			element_div.submitfunction = function(color){
 				var determFunction=function(sphere, parameters){
 					return sphere.auxData[1][parameters[0]]==parameters[1];
 				}
 				var group = this.sceneObject.getSphereGroup(determFunction, [this.auxNumber, this.input.value]);
-				this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.group_id = this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.sceneObject.addSelectionsHistory(this.auxNumber,
+									  this.feature_name,
+									  [this.input.value],
+									  color,
+									  this.group_id,
+									  'categorical');
+				this.sceneObject.updateHistoryPanel();
 			}
 			form.appendChild(element_div);
 			if (k!=0){
@@ -526,12 +583,20 @@ class DataVisualization extends Scene{
 
 			element_div.dataNumber = k;
 			element_div.sceneObject = this;
+			element_div.feature_name = this.dimNames[k];
 			element_div.submitfunction = function(color){
 				var determFunction=function(sphere, parameters){
 					return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]<=parameters[2]);
 				}
 				var group = this.sceneObject.getSphereGroup(determFunction, [this.dataNumber, this.mininput.value, this.maxinput.value]);
-				this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.group_id = this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.sceneObject.addSelectionsHistory(this.dataNumber,
+					   								  this.feature_name,
+												      [this.mininput.value, this.maxinput.value],
+													  color,
+													  this.group_id,
+													  'range');
+				this.sceneObject.updateHistoryPanel();
 			}
 			form.appendChild(element_div);
 			if ((this.auxNames.length!=0)||(k!=0)){
@@ -594,34 +659,6 @@ class DataVisualization extends Scene{
 		changeColorBtn.selectObject = main_select_element;
         var self = this;
 		changeColorBtn.onclick = function(event) {
-			if (self.constructor.name != 'MeshVisualization') {
-				var featureID = parseInt(event.target.form[0].value);
-				var selected_feature = event.target.form[0][event.target.form[0].value].innerText;
-				var history_dict = {};
-				history_dict['selected_feature'] = selected_feature;
-				for (var i=0; i<event.target.form.length; i++) {
-					if (event.target.form[i].nodeName === 'SELECT') {
-						if (event.target.form[i].id === 'inpformgroupelements'+featureID) {
-							history_dict['value'] = event.target.form[i].value;
-							history_dict['type'] = 'aux';
-							break;
-						}
-					}
-					if (event.target.form[i].nodeName === 'INPUT') {
-						if (event.target.form[i].id === 'inpformgroupelements'+featureID+'min')
-							history_dict['min'] = event.target.form[i].valueAsNumber;
-						if (event.target.form[i].id === 'inpformgroupelements'+featureID+'max')
-							history_dict['max'] = event.target.form[i].valueAsNumber;
-						history_dict['type'] = 'numeric';
-					}
-				}
-
-				history_dict['color'] = this.colorinput.value;
-				history_dict['active'] = true;
-				self.selectionsHistory.push(history_dict);
-
-				self.updateHistoryPanel();
-			}
 			this.selectObject.selectedOptions[0].div.submitfunction(this.colorinput.value);
 			this.undoButton.classList.remove('hide');
 			return false;
@@ -771,11 +808,10 @@ class DataVisualization extends Scene{
 			this.groupOfSpheres.children[i].dataObject[2][this.groupOfSpheres.children[i].dataObject[2].length-1]=0;
 			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
 		}
-		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {	
+		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
 			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
 		}
-		
 	}
 
 	changeCluster(sphere, newCluster){
@@ -823,6 +859,7 @@ class DataVisualization extends Scene{
 			else
 				group[i].material.color = this.customColors[newgroup].clone();
 		}
+		return newgroup;
 	}
 
 	undoColorGroup() {

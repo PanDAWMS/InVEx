@@ -176,6 +176,9 @@
                 {% endif %}
                 var temp=scene.createNewGroupElement();
                 document.getElementById('color_changer').appendChild(temp);
+                var history_form = document.createElement("form");
+		        history_form.setAttribute('id','history');
+                document.getElementById('color_changer').appendChild(history_form);
                 temp.ready();
 			scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
             {% else %}
