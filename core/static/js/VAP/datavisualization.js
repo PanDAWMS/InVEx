@@ -329,12 +329,7 @@ class DataVisualization extends Scene{
 				var self = this;
 				var id = i;
 				input.onchange=function(event){
-					if(this.checked) {
-						self.selectionsHistory[this.historyID]['active'] = false;
-					}
-					else {
-						self.selectionsHistory[this.historyID]['active'] = true;
-					}
+                    self.selectionsHistory[this.historyID]['active'] = !this.checked;
 				};
 			}
 			var updateBtn = document.createElement('button');
@@ -344,14 +339,22 @@ class DataVisualization extends Scene{
 				updateBtn.setAttribute('type', 'button');
 				updateBtn.onclick = function(event) {
 					event.preventDefault();
-					self.resetAllColorGroups();
+                    for (var i = 0; i<self.groupOfSpheres.children.length; i++) {
+                        var groups_number = self.groupOfSpheres.children[i].dataObject[2].length;
+                        var initial_group = self.groupOfSpheres.children[i].dataObject[2][groups_number - 1];
+                        self.groupOfSpheres.children[i].material.color = self.clusters_color_scheme[initial_group].clone();
+                    }
+                    for (var i = 0; i < self.selectedObject.children.length; i++ ) {
+                        var groups_number = self.selectedObject.children[i].dataObject[2].length;
+                        var initial_group = self.selectedObject.children[i].dataObject[2][groups_number - 1];
+                        self.selectedObject.children[i].material.color = invertColor(self.clusters_color_scheme[initial_group].clone());
+                    }
 					for (var i = 0; i < self.selectionsHistory.length; i++) {
 						var selected_spheres = [];
-						var feature_name = self.selectionsHistory[i]['selected_feature'];
-						var color = self.selectionsHistory[i]['color'];
 						var feature_id = self.selectionsHistory[i]['feature_id'];
 						var type = self.selectionsHistory[i]['type'];
 						var group = self.selectionsHistory[i]['group'];
+
 						// get IDs of selected features from history
 						if (type == 'range') {
 							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
@@ -366,13 +369,12 @@ class DataVisualization extends Scene{
 								[self.selectionsHistory[i]['value']],
 								self.selectionsHistory[i]['type']);
 						}
-						if (self.selectionsHistory[i]['active'] == true) {
-							for (var i = 0; i < selected_spheres.length; ++i) {
-								if (selected_spheres[i].dataObject[2].includes(group))
-									selected_spheres[i].material.color = new THREE.Color(color);
-							}
+                        if (self.selectionsHistory[i]['active'] == true) {
+							for (var x = 0; x < selected_spheres.length; x++)
+                                selected_spheres[x].material.color = self.clusters_color_scheme[group].clone();
+                            for (var x = 0; x < self.selectedObject.children.length; x++ )
+                                self.selectedObject.children[x].material.color = invertColor(self.clusters_color_scheme[group].clone());
 						}
-							//self.changeColorGroup(selected_spheres, new THREE.Color(color));
 					}
 				}
 			var clearHistoryBtn = document.createElement('button');
@@ -403,26 +405,18 @@ class DataVisualization extends Scene{
 	resetAllColorGroups() {
 		for (var i = 0; i < this.selectionsHistory.length; i++) {
 			var group_name = this.selectionsHistory[i]['group'];
-			console.log(group_name);
 			delete this.clusters_color_scheme[group_name];
-
 			for (var j = 0; j < this.groupOfSpheres.children.length; j++ ) {
-				this.remove(this.groupOfSpheres.children[j].dataObject[2], group_name);
-			}
+                this.remove(this.groupOfSpheres.children[j].dataObject[2], group_name);
+                var groups_number = this.groupOfSpheres.children[j].dataObject[2].length;
+                var initial_group = this.groupOfSpheres.children[j].dataObject[2][groups_number-1];
+                this.groupOfSpheres.children[j].material.color = this.clusters_color_scheme[initial_group].clone();
+            }
 		}
-		console.log(this.clusters_color_scheme);
-		console.log(this.groupOfSpheres.children);
-		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
+		for (var i = 0; i < this.selectedObject.children.length; i++ ) {
+			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
+			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
 		}
-		// for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
-		// 	this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
-		// 	this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
-		// }
-		// for (var i = 0; i < this.groupOfSpheres.children.length; i++)
-		// 	this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[0].clone();
-		// for ( var i = 0; i < this.selectedObject.children.length; i++ )
-		// 	this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[0].clone());
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
