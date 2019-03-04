@@ -55,6 +55,7 @@
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 <script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
 <script src="{% static "js/spectrum.js" %}"></script>
+<script src="{% static "js/plotly-latest.min.js" %}"></script>
 {% endblock %}
 	<script>
 
@@ -173,6 +174,8 @@
             scene.clusters_color_scheme = scene.createColorScheme();
             {% if cluster_ready %}
                 cluster_selector(scene.clusters_color_scheme, "cluster_stat");
+                drawSingleRadarCharts("radar_chart_single", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
+                drawMultipleRadarChart("radar_chart_all", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
             {% endif %}
             
 			{% if norm_dataset %}
