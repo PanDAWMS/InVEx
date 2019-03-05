@@ -1,6 +1,7 @@
 import pandas as pd
 import linecache
 from . import data_converters
+from core.utils.cache import setCacheEntry, getCacheEntry
 
 
 class GroupedData:
@@ -29,6 +30,23 @@ class GroupedData:
             file.write('\n')
         file.close()
 
+    def save_to_cache(self):
+        """
+        Each data group, generated after k-means clustering, has unique cluster ID.
+        If the number of clusters is 200, then the IDs of groups will be in range of 0 - 199.
+        All groups are saved, sorted by group ID.
+        Save groups to cache
+        :return:
+        """
+        try:
+            cache_key = self.fname.split('/')[-1]
+            group_id = 0
+            for group in self.groups:
+                setCacheEntry(cache_key + '_'+ str(group_id), group, 15 * 60)
+                group_id = group_id + 1
+        except Exception as ex:
+            print(ex)
+
     def load_from_file(self, group_id, fname):
         """
         To search the group in file by the group ID the exact line is extracted. 
@@ -38,6 +56,21 @@ class GroupedData:
         """
         line = linecache.getline(fname, group_id + 1)
         return data_converters.table_to_df(line)
+
+    def load_from_cache(self, group_id, fname):
+        """
+        Read data frame from cache
+        :param fname:
+        :param group_id:
+        :return:
+        """
+        try:
+            cache_key = fname.split('/')[-1]
+            cache_key = cache_key + '_' + str(group_id)
+            data_frame = getCacheEntry(cache_key)
+            return data_frame
+        except Exception as ex:
+            print(ex)
 
     def set_fname(self, fname):
         self.fname = fname

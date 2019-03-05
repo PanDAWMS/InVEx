@@ -235,7 +235,8 @@ def data_preparation(dataset, request):
         groupedData.get_groups(dataset, lod_data.groups_metadata)
         data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history, str(lod), lod_data.groups_metadata)
         groupedData.set_fname(SAVED_FILES_PATH + data['saveid'] + '_group')
-        groupedData.save_to_file()
+        #groupedData.save_to_file()
+        groupedData.save_to_cache()
     else:
         op_history = calc.operationshistory.OperationHistory()
         metrics = calc.basicstatistics.BasicStatistics()
@@ -653,7 +654,8 @@ def get_group_data(request):
         request_dict = dict(request.POST.items())
     elif request.method == 'GET':
         request_dict = dict(request.GET.items())
-    result = group.load_from_file(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid']+'_group')
+    #result = group.load_from_file(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid']+'_group')
+    result = group.load_from_cache(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid'] + '_group')
     data = {}
     data['group_data'] = calc.data_converters.pandas_to_js_list(result)
     data['group_data_df'] = result.to_json(orient='table')
