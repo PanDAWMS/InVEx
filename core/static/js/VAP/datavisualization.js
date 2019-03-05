@@ -394,6 +394,28 @@ class DataVisualization extends Scene{
 		}
 	}
 
+	getGroupsMeans(group) {
+        for (var i=0; i<group.length; i++) {
+            var id = group[i].dataObject[0];
+            var norm_data = group[i].dataObject[1];
+            var real_data = [];
+            for (var j = 0; j<this.realData.length;j++) {
+                if (this.realData[j][0] == id)
+                    real_data.push(this.realData[j][1]);
+            }
+        }
+        // transpose array
+        var result = Array.from({ length: data_cluster[0].length }, function(x, row) {
+          return Array.from({ length: data_cluster.length }, function(x, col) {
+            return data_cluster[col][row];
+          });
+        });
+        var mean_values = [];
+        for (var i = 0; i < result.length; i++)
+            mean_values.push(ss.mean(result[i]));
+        return mean_values;
+    }
+
 	remove(array, element) {
 	  const index = array.indexOf(element);
 
