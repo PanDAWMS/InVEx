@@ -207,7 +207,7 @@ class MeshVisualization extends DataVisualization{
         parentElement.appendChild(redSwitch);
     }
 
-    createNewGroupElementNumericalElements(form, selectelement, startvalueindex){
+    createRangeGroup(form, selectelement, startvalueindex){
 		for ( var k = 2; k < this.dimNames.length; k++ ) {
 			//Create the option element and the div element assosiated with it.
 			var option_element = document.createElement('option');
@@ -259,12 +259,20 @@ class MeshVisualization extends DataVisualization{
 
 			element_div.dataNumber = k;
 			element_div.sceneObject = this;
+            element_div.feature_name = this.dimNames[k];
 			element_div.submitfunction = function(color){
-				var determFunction=function(sphere, parameters){
+                var determFunction=function(sphere, parameters){
 					return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]<=parameters[2]);
 				}
 				var group = this.sceneObject.getSphereGroup(determFunction, [this.dataNumber, this.mininput.value, this.maxinput.value]);
-				this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.group_id = this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.sceneObject.addSelectionsHistory(this.dataNumber,
+					   								  this.feature_name,
+												      [this.mininput.value, this.maxinput.value],
+													  color,
+													  this.group_id,
+													  'range');
+				this.sceneObject.updateHistoryPanel();
 			}
 			form.appendChild(element_div);
             element_div.classList.add('hide');

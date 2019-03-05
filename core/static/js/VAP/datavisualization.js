@@ -465,7 +465,7 @@ class DataVisualization extends Scene{
 		this.selectionsHistory.push(history_dict);
 	}
 
-	createNewGroupElementAuxElements(form, selectelement, startvalueindex){
+	createCategoricalGroup(form, selectelement, startvalueindex){
 		var uniquedata = prepareUniqueData(this.auxData);
 		for ( var k = 0; k < this.auxNames.length; k++ ) {
 			//Create the option element and the div element assosiated with it.
@@ -525,7 +525,7 @@ class DataVisualization extends Scene{
 		}
 	}
 
-	createNewGroupElementNumericalElements(form, selectelement, startvalueindex){
+	createRangeGroup(form, selectelement, startvalueindex){
 		for ( var k = 0; k < this.dimNames.length; k++ ) {
 			//Create the option element and the div element assosiated with it.
 			var option_element = document.createElement('option');
@@ -617,8 +617,9 @@ class DataVisualization extends Scene{
 		//Adding Aux data
 		var elements = [];
 		main_select_element.elements = [];
-		this.createNewGroupElementAuxElements(form, main_select_element, 0);
-		this.createNewGroupElementNumericalElements(form, main_select_element, this.auxNames.length);
+
+		this.createCategoricalGroup(form, main_select_element, 0);
+		this.createRangeGroup(form, main_select_element, this.auxNames.length);
 
 		main_select_element.onchange = function() {
 			for( var i = 0; i < this.elements.length; i++ ){
