@@ -2,6 +2,7 @@ import pandas as pd
 import linecache
 from . import data_converters
 
+
 class GroupedData:
 
     def __init__(self):
@@ -18,10 +19,10 @@ class GroupedData:
     def save_to_file(self):
         """
         Each data group, generated after k-means clustering, has unique cluster ID.
-        If the number of clusters is 200, then the IDs of groups will be in range of 0 - 199. 
-        All groups are saved, sorted by group ID. 
-        Each group is saved in file line by line, in accordance with group ID. 
-        :return: 
+        If the number of clusters is 200, then the IDs of groups will be in range of 0 - 199.
+        All groups are saved, sorted by group ID.
+        Each group is saved in file line by line, in accordance with group ID.
+        :return:
         """
         file = open(self.fname, "w")
         for group in self.groups:
@@ -31,11 +32,11 @@ class GroupedData:
 
     def load_from_file(self, group_id, fname):
         """
-        To search the group in file by the group ID the exact line is extracted. 
-        :param group_id: 
-        :return: 
+        To search the group in file by the group ID the exact line is extracted.
+        :param group_id:
+        :return:
         """
-        line = linecache.getline(fname, group_id+1)
+        line = linecache.getline(fname, group_id + 1)
         return data_converters.table_to_df(line)
 
     def set_fname(self, fname):

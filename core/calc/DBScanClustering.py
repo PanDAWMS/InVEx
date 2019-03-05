@@ -2,10 +2,10 @@ from . import baseoperationclass
 from sklearn.cluster import DBSCAN
 import numpy as np
 import pickle
-from sklearn import metrics
 
 MIN_SAMPLES = 5
 EPS = 0.5
+
 
 class DBScanClustering(baseoperationclass.BaseOperationClass):
 
@@ -48,7 +48,6 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
         result['min_samples'] = self.min_samples
         return result
 
-
     def save_results(self):
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(self.results)) - (1 if -1 in self.results else 0)
@@ -68,12 +67,13 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def process_data(self, dataset):
-        self.model = DBSCAN(eps = self.eps, min_samples = self.min_samples).fit(dataset)
+        self.model = DBSCAN(eps=self.eps, min_samples=self.min_samples).fit(dataset)
         self.results = self.model.labels_
         return self.results
 
     def predict(self, dataset):
         return self.model.fit_predict(dataset)
+
 
 try:
     baseoperationclass.register(DBScanClustering)

@@ -1,14 +1,13 @@
 from sklearn.cluster import KMeans
-import pandas as pd
-import numpy as np
+
 
 class LoDGenerator:
     """
-    Level-of-Detail Generator class provides k-means clusterization 
-    of the initial data sample into a number of clusters. 
+    Level-of-Detail Generator class provides k-means clusterization
+    of the initial data sample into a number of clusters.
     """
 
-    def __init__(self, dataset, n = 200):
+    def __init__(self, dataset, n=200):
         self.dataset = dataset.copy()
         self.initialLength = self.dataset.shape[0]
         self.n = n

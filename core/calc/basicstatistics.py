@@ -2,7 +2,7 @@ from . import baseoperationclass
 import pandas as pd
 
 
-DESCRIPTION = ['Count','Min', 'Max', 'Mean', 'Std', '25%', '50%', '75%', 'Sum', 'Skew', 'Median']
+DESCRIPTION = ['Count', 'Min', 'Max', 'Mean', 'Std', '25%', '50%', '75%', 'Sum', 'Skew', 'Median']
 
 
 class BasicStatistics(baseoperationclass.BaseOperationClass):
@@ -34,7 +34,7 @@ class BasicStatistics(baseoperationclass.BaseOperationClass):
                                 pd.read_json(results_dict['results'][4], typ='series'),
                                 pd.read_json(results_dict['results'][5], typ='series'),
                                 pd.read_json(results_dict['results'][6], typ='series')]
-            except:
+            except Exception:
                 self.results = [pd.read_json(results_dict['results']['0'], typ='series'),
                                 pd.read_json(results_dict['results']['1'], typ='series'),
                                 pd.read_json(results_dict['results']['2'], typ='series'),

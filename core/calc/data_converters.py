@@ -1,12 +1,12 @@
 import pandas as pd
 import json
-import os
+
 
 def pandas_to_js_list(dataset):
     """
     Convert pandas DataFrame to JavaScript-like array.
-    :param dataset: 
-    :return: 
+    :param dataset:
+    :return:
     """
     if dataset is None:
         return []
@@ -21,8 +21,8 @@ def pandas_to_js_list(dataset):
 def table_to_df(data):
     """
     Convert JSON data to pandas DataFrame.
-    :param data: 
-    :return: 
+    :param data:
+    :return:
     """
     json_obj = json.loads(data)
     df = pd.DataFrame(json_obj['data'],

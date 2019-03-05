@@ -59,6 +59,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
     def predict(self, dataset):
         return self.model.predict(dataset)
 
+
 try:
     baseoperationclass.register(KMeansClustering)
 except ValueError as error:
