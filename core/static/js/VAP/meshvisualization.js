@@ -289,7 +289,7 @@ class MeshVisualization extends DataVisualization{
     }
 
     changeState(sphere){
-        sphere.normData[2][sphere.normData[2].length - 1] = this.checkState(sphere);
+        sphere.dataObject[2][sphere.dataObject[2].length - 1] = this.checkState(sphere.realData);
     }
 
     changeVisibilitySphere(sphere){
@@ -389,10 +389,10 @@ class MeshVisualization extends DataVisualization{
                             this.objectsOnMesh[i][j][k].selectedCircut.position.x = this.objectsOnMesh[i][j][k].position.x;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.y = this.objectsOnMesh[i][j][k].position.y;
                             this.objectsOnMesh[i][j][k].selectedCircut.position.z = this.objectsOnMesh[i][j][k].position.z;
-                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]].clone()); 
+                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.clusters_color_scheme[this.objectsOnMesh[i][j][k].dataObject[2][0]].clone()); 
                         }
                         else
-                            this.objectsOnMesh[i][j][k].material.color = this.clusters_color_scheme[this.objectsOnMesh[i][j][k].normData[2][0]].clone(); 
+                            this.objectsOnMesh[i][j][k].material.color = this.clusters_color_scheme[this.objectsOnMesh[i][j][k].dataObject[2][0]].clone(); 
                     }
     }
     
