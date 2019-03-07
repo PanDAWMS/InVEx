@@ -176,7 +176,9 @@
             {% if cluster_ready %}
                     cluster_selector(scene.clusters_color_scheme, "cluster_stat");
                     //drawSingleRadarCharts("radar_chart_single", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
-                    drawMultipleRadarChart("radar_chart_all", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
+                    drawMultipleClusterRadarChart("radar_chart_all",
+                            scene.normData, scene.realData,
+                            scene.clusters, scene.clusters_color_scheme, scene.dimNames, 100);
             {% endif %}
             
 			{% if norm_dataset %}

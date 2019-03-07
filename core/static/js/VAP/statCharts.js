@@ -27,7 +27,25 @@ function getClusterMeans(data, clusters_list, cluster_number) {
     return mean_values;
 }
 
-function generateDataForRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
+function dataGroupRadarChart(groups_data, selections_history, dimNames) {
+    var data = [];
+    for (var i=0; i<selections_history.length; i++) {
+        var group = selections_history[i]['group'];
+        var group_dict = {};
+        group_dict['type'] = 'scatterpolargl';
+        group_dict['r'] = groups_data[group][0];
+        group_dict['text'] = groups_data[group][1];
+        group_dict['theta'] = dimNames;
+        group_dict['fill'] = 'toself';
+        group_dict['fillcolor'] = rgbToHex(selections_history[i]['color']);
+        group_dict['opacity'] = 0.5;
+        group_dict['name'] = 'Group ' + group;
+        data.push(group_dict);
+    }
+    return data;
+}
+
+function dataClustersRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
     var data = [];
     for (var cluster in clusters_color_scheme) {
         var cluster_dict = {};
@@ -44,9 +62,25 @@ function generateDataForRadarChart(norm_data, real_data, clusters_list, clusters
     return data;
 }
 
-function drawMultipleRadarChart(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
+function drawMultipleGroupRadarChart(element_id, groups_data, selections_history, dimNames, scale) {
 
-    var data = generateDataForRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
+    var data = dataGroupRadarChart(groups_data, selections_history, dimNames);
+
+    layout = {
+      polar: {
+        radialaxis: {
+          visible: true,
+          range: [0, scale]
+        }
+      }
+    };
+
+    Plotly.newPlot(element_id, data, layout);
+}
+
+function drawMultipleClusterRadarChart(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
+
+    var data = dataClustersRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
 
     layout = {
       polar: {
@@ -60,9 +94,9 @@ function drawMultipleRadarChart(element_id, norm_data, real_data, clusters_list,
     Plotly.plot(element_id, data, layout);
 }
 
-function drawSingleRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
+function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
     var parent_element = document.getElementById(element_id);
-    var data = generateDataForRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
+    var data = dataClustersRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
 
     layout = {
       polar: {

@@ -339,6 +339,7 @@ class DataVisualization extends Scene{
 				updateBtn.setAttribute('type', 'button');
 				updateBtn.onclick = function(event) {
 					event.preventDefault();
+                    var group_data = [];
                     for (var i = 0; i<self.groupOfSpheres.children.length; i++) {
                         var groups_number = self.groupOfSpheres.children[i].dataObject[2].length;
                         var initial_group = self.groupOfSpheres.children[i].dataObject[2][groups_number - 1];
@@ -374,8 +375,11 @@ class DataVisualization extends Scene{
                                 selected_spheres[x].material.color = self.clusters_color_scheme[group].clone();
                             for (var x = 0; x < self.selectedObject.children.length; x++ )
                                 self.selectedObject.children[x].material.color = invertColor(self.clusters_color_scheme[group].clone());
+							if (selected_spheres.length > 0)
+								group_data[group] = self.getGroupsMeans(selected_spheres);
 						}
 					}
+					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames)
 				}
 			var clearHistoryBtn = document.createElement('button');
 				clearHistoryBtn.id = 'clearHistBtn';
@@ -395,25 +399,35 @@ class DataVisualization extends Scene{
 	}
 
 	getGroupsMeans(group) {
+        var norm_data = [];
+        var real_data = [];
         for (var i=0; i<group.length; i++) {
             var id = group[i].dataObject[0];
-            var norm_data = group[i].dataObject[1];
-            var real_data = [];
+            norm_data.push(group[i].dataObject[1]);
             for (var j = 0; j<this.realData.length;j++) {
                 if (this.realData[j][0] == id)
                     real_data.push(this.realData[j][1]);
             }
         }
         // transpose array
-        var result = Array.from({ length: data_cluster[0].length }, function(x, row) {
-          return Array.from({ length: data_cluster.length }, function(x, col) {
-            return data_cluster[col][row];
+        var norm_result = Array.from({ length: norm_data[0].length }, function(x, row) {
+          return Array.from({ length: norm_data.length }, function(x, col) {
+            return norm_data[col][row];
           });
         });
-        var mean_values = [];
-        for (var i = 0; i < result.length; i++)
-            mean_values.push(ss.mean(result[i]));
-        return mean_values;
+        var real_result = Array.from({ length: real_data[0].length }, function(x, row) {
+          return Array.from({ length: real_data.length }, function(x, col) {
+            return real_data[col][row];
+          });
+        });
+        var norm_mean_values = [];
+        for (var i = 0; i < norm_result.length; i++)
+            norm_mean_values.push(ss.mean(norm_result[i]));
+        var real_mean_values = [];
+        for (var i = 0; i < real_result.length; i++)
+            real_mean_values.push(ss.mean(real_result[i]));
+
+        return [norm_mean_values, real_mean_values];
     }
 
 	remove(array, element) {
@@ -677,30 +691,30 @@ class DataVisualization extends Scene{
         var self = this;
 		changeColorBtn.onclick = function(event) {
 			this.selectObject.selectedOptions[0].div.submitfunction(this.colorinput.value);
-			this.undoButton.classList.remove('hide');
+			//this.undoButton.classList.remove('hide');
 			return false;
 		};
 		form.appendChild(changeColorBtn);
 
-		var undoColorBtn = document.createElement('button');
-		undoColorBtn.id = 'undoButton' + newGroupID;
-		undoColorBtn.classList.add('button', 'small', 'hide');
-		undoColorBtn.innerText = 'Undo Color';
-		undoColorBtn.setAttribute('type', 'button');
-		undoColorBtn.sceneObject = this;
-		undoColorBtn.onclick = function(event) {
-			event.preventDefault();
-			if (self.constructor.name != 'MeshVisualization')
-				self.cleanElement("history");
-			if (this.sceneObject.undoColorGroup()){
-				this.classList.add('hide');
-				return false;
-			}
-			return false;
-		};
-		form.appendChild(document.createElement('br'));
-		form.appendChild(undoColorBtn);
-		changeColorBtn.undoButton=undoColorBtn;
+		// var undoColorBtn = document.createElement('button');
+		// undoColorBtn.id = 'undoButton' + newGroupID;
+		// undoColorBtn.classList.add('button', 'small', 'hide');
+		// undoColorBtn.innerText = 'Undo Color';
+		// undoColorBtn.setAttribute('type', 'button');
+		// undoColorBtn.sceneObject = this;
+		// undoColorBtn.onclick = function(event) {
+		// 	event.preventDefault();
+		// 	if (self.constructor.name != 'MeshVisualization')
+		// 		self.cleanElement("history");
+		// 	if (this.sceneObject.undoColorGroup()){
+		// 		this.classList.add('hide');
+		// 		return false;
+		// 	}
+		// 	return false;
+		// };
+		// form.appendChild(document.createElement('br'));
+		// form.appendChild(undoColorBtn);
+		// changeColorBtn.undoButton=undoColorBtn;
 		form.ready=function(){
 			$('#'+this.color_picker.id).spectrum({showPalette: true,
 				palette: ["red", "green", "blue", "orange", "yellow", "violet" ],
@@ -879,24 +893,24 @@ class DataVisualization extends Scene{
 		return newgroup;
 	}
 
-	undoColorGroup() {
-		var groupnumber=0;
-		while(('group'+groupnumber) in this.customColors){
-			++groupnumber;
-		}
-		var oldgroup = 'group'+--groupnumber;
-		delete this.customColors[oldgroup];
-		delete this.clusters_color_scheme[oldgroup];
-		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
-			this.groupOfSpheres.children[i].dataObject[2].shift();
-			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
-		}
-		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {			
-			this.selectedObject.children[i].dataObject[2].shift();
-			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
-		}
-		return groupnumber==0;
-	}
+	// undoColorGroup() {
+	// 	var groupnumber=0;
+	// 	while(('group'+groupnumber) in this.customColors){
+	// 		++groupnumber;
+	// 	}
+	// 	var oldgroup = 'group'+--groupnumber;
+	// 	delete this.customColors[oldgroup];
+	// 	delete this.clusters_color_scheme[oldgroup];
+	// 	for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
+	// 		this.groupOfSpheres.children[i].dataObject[2].shift();
+	// 		this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
+	// 	}
+	// 	for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
+	// 		this.selectedObject.children[i].dataObject[2].shift();
+	// 		this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
+	// 	}
+	// 	return groupnumber==0;
+	// }
 
 	// Changes the quality of the picture. 
 	changeQuality(quality){
