@@ -14,6 +14,7 @@
 {% if cluster_ready %}
     <li class="tabs-title"><a href="#clusters">Clusters</a></li>
 {% endif %}
+    <li class="tabs-title"><a href="#groups">Groups</a></li>
     <li class="tabs-title hide" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
     <li class="tabs-title" style="display:none" id="selected_group_link"><a href="#selected_group">Selected Group</a></li>
 {% endif %}
@@ -80,6 +81,9 @@
         <button type="button" class="button small" id="printBtn">Print Results</button>
     </div>
     {% endif %}
+    <div class="tabs-panel" id="groups">
+        <div id="radar_chart_groups"></div>
+    </div>
     <div class="tabs-panel" id="multichoice"></div>
     <div class="tabs-panel" id="selected_group"></div>
 {% endif %}

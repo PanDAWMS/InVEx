@@ -207,7 +207,7 @@ class MeshVisualization extends DataVisualization{
         parentElement.appendChild(redSwitch);
     }
 
-    createNewGroupElementNumericalElements(form, selectelement, startvalueindex){
+    createRangeGroup(form, selectelement, startvalueindex){
 		for ( var k = 2; k < this.dimNames.length; k++ ) {
 			//Create the option element and the div element assosiated with it.
 			var option_element = document.createElement('option');
@@ -259,12 +259,20 @@ class MeshVisualization extends DataVisualization{
 
 			element_div.dataNumber = k;
 			element_div.sceneObject = this;
+            element_div.feature_name = this.dimNames[k];
 			element_div.submitfunction = function(color){
-				var determFunction=function(sphere, parameters){
+                var determFunction=function(sphere, parameters){
 					return (sphere.realData[1][parameters[0]]>=parameters[1]) && (sphere.realData[1][parameters[0]]<=parameters[2]);
 				}
 				var group = this.sceneObject.getSphereGroup(determFunction, [this.dataNumber, this.mininput.value, this.maxinput.value]);
-				this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.group_id = this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				this.sceneObject.addSelectionsHistory(this.dataNumber,
+					   								  this.feature_name,
+												      [this.mininput.value, this.maxinput.value],
+													  color,
+													  this.group_id,
+													  'range');
+				this.sceneObject.updateHistoryPanel();
 			}
 			form.appendChild(element_div);
             element_div.classList.add('hide');
@@ -400,5 +408,151 @@ class MeshVisualization extends DataVisualization{
         super.setNewSubSpace(0, x2, 1);
 		this.moveSpheres();
     }
+
+    updateHistoryPanel() {
+		var form = document.getElementById("history");
+		this.cleanElement("history");
+		if (this.selectionsHistory.length > 0) {
+			for (var i = 0; i < this.selectionsHistory.length; i++) {
+				var p = document.createElement('p');
+				if (this.selectionsHistory[i]['value'])
+					p.innerText = this.selectionsHistory[i]['selected_feature'] + " = " + this.selectionsHistory[i]['value'];
+				else if (this.selectionsHistory[i]['min'])
+					p.innerText = this.selectionsHistory[i]['selected_feature'] + " : " + this.selectionsHistory[i]['min'] + ' - ' + this.selectionsHistory[i]['max'];
+				form.appendChild(p);
+				var div = document.createElement('div');
+				div.classList.add('switch', 'tiny');
+				var input = document.createElement('input');
+				input.classList.add('switch-input');
+				input.setAttribute('id','on-off-'+i);
+				input.historyID = i;
+				input.type = 'checkbox';
+				input.name = 'exampleSwitch';
+				var label = document.createElement('label');
+				label.classList.add('switch-paddle');
+				label.setAttribute('for','on-off-'+i);
+				label.style.backgroundColor = this.selectionsHistory[i]['color'];
+				var span = document.createElement('span');
+				span.classList.add('show-for-sr');
+				span.innerText = p.innerText;
+				var on = document.createElement('span');
+				on.classList.add('switch-active');
+				on.setAttribute('aria-hidden', 'true');
+				on.innerText = 'on';
+				var off = document.createElement('span');
+				off.classList.add('switch-inactive');
+				off.setAttribute('aria-hidden', 'true');
+				off.innerText = 'off';
+				label.appendChild(span);
+				label.appendChild(on);
+				label.appendChild(off);
+				div.appendChild(input);
+				div.appendChild(label);
+				form.appendChild(p);
+				form.appendChild(div);
+
+				var self = this;
+				var id = i;
+				input.onchange=function(event){
+                    self.selectionsHistory[this.historyID]['active'] = !this.checked;
+				};
+			}
+			var updateBtn = document.createElement('button');
+				updateBtn.id = 'updateBtn';
+				updateBtn.classList.add('button', 'small');
+				updateBtn.innerText = 'Update Colors';
+				updateBtn.setAttribute('type', 'button');
+				updateBtn.onclick = function(event) {
+					event.preventDefault();
+                    var group_data = [];
+                    for (var i = 0; i<self.groupOfSpheres.children.length; i++) {
+                        var groups_number = self.groupOfSpheres.children[i].dataObject[2].length;
+                        var initial_group = self.groupOfSpheres.children[i].dataObject[2][groups_number - 1];
+                        self.groupOfSpheres.children[i].material.color = self.clusters_color_scheme[initial_group].clone();
+                    }
+                    for (var i = 0; i < self.selectedObject.children.length; i++ ) {
+                        var groups_number = self.selectedObject.children[i].dataObject[2].length;
+                        var initial_group = self.selectedObject.children[i].dataObject[2][groups_number - 1];
+                        self.selectedObject.children[i].material.color = invertColor(self.clusters_color_scheme[initial_group].clone());
+                    }
+					for (var i = 0; i < self.selectionsHistory.length; i++) {
+						var selected_spheres = [];
+						var feature_id = self.selectionsHistory[i]['feature_id'];
+						var type = self.selectionsHistory[i]['type'];
+						var group = self.selectionsHistory[i]['group'];
+
+						// get IDs of selected features from history
+						if (type == 'range') {
+							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
+								feature_id,
+								[self.selectionsHistory[i]['min'],
+								self.selectionsHistory[i]['max']],
+								self.selectionsHistory[i]['type']);
+						}
+						else if (type == 'categorical') {
+							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
+								feature_id,
+								[self.selectionsHistory[i]['value']],
+								self.selectionsHistory[i]['type']);
+						}
+                        if (self.selectionsHistory[i]['active'] == true) {
+							for (var x = 0; x < selected_spheres.length; x++)
+                                selected_spheres[x].material.color = self.clusters_color_scheme[group].clone();
+                            for (var x = 0; x < self.selectedObject.children.length; x++ )
+                                self.selectedObject.children[x].material.color = invertColor(self.clusters_color_scheme[group].clone());
+							group_data[group] = self.getGroupsMeans(selected_spheres);
+						}
+					}
+					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames.slice(2), 100);
+				}
+			var clearHistoryBtn = document.createElement('button');
+				clearHistoryBtn.id = 'clearHistBtn';
+				clearHistoryBtn.classList.add('button', 'small');
+				clearHistoryBtn.innerText = 'Clear Color History';
+				clearHistoryBtn.setAttribute('type', 'button');
+				clearHistoryBtn.onclick = function(event) {
+					event.preventDefault();
+					self.cleanElement('history');
+					self.resetAllColorGroups();
+					self.selectionsHistory = [];
+				}
+
+			form.appendChild(updateBtn);
+			form.appendChild(clearHistoryBtn);
+		}
+	}
+
+    getGroupsMeans(group) {
+        var norm_data = [];
+        var real_data = [];
+        for (var i=0; i<group.length; i++) {
+            var id = group[i].dataObject[0];
+            norm_data.push(group[i].dataObject[1].slice(2));
+            for (var j = 0; j<this.realData.length;j++) {
+                if (this.realData[j][0] == id)
+                    real_data.push(this.realData[j][1].slice(2));
+            }
+        }
+        // transpose array
+        var norm_result = Array.from({ length: norm_data[0].length }, function(x, row) {
+          return Array.from({ length: norm_data.length }, function(x, col) {
+            return norm_data[col][row];
+          });
+        });
+        var real_result = Array.from({ length: real_data[0].length }, function(x, row) {
+          return Array.from({ length: real_data.length }, function(x, col) {
+            return real_data[col][row];
+          });
+        });
+        var norm_mean_values = [];
+        for (var i = 0; i < norm_result.length; i++)
+            norm_mean_values.push(ss.mean(norm_result[i]));
+        var real_mean_values = [];
+        for (var i = 0; i < real_result.length; i++)
+            real_mean_values.push(ss.mean(real_result[i]));
+
+        return [norm_mean_values, real_mean_values];
+    }
+
     //#endregion
 }
