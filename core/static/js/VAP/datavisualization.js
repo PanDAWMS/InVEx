@@ -439,8 +439,10 @@ class DataVisualization extends Scene{
 	}
 
 	resetAllColorGroups() {
+		var group_names = [];
 		for (var i = 0; i < this.selectionsHistory.length; i++) {
 			var group_name = this.selectionsHistory[i]['group'];
+			group_names.push(group_name);
 			delete this.clusters_color_scheme[group_name];
 			for (var j = 0; j < this.groupOfSpheres.children.length; j++ ) {
                 this.remove(this.groupOfSpheres.children[j].dataObject[2], group_name);
@@ -450,8 +452,11 @@ class DataVisualization extends Scene{
             }
 		}
 		for (var i = 0; i < this.selectedObject.children.length; i++ ) {
-			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
-			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
+			for (var g=0; g<group_names.length; g++)
+				this.remove(this.selectedObject.children[i].dataObject[2], group_names[g]);
+			var groups_number = this.selectedObject.children[i].dataObject[2].length;
+			var initial_group = this.selectedObject.children[i].dataObject[2][groups_number-1];
+			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[initial_group].clone());
 		}
 	}
 
