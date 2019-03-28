@@ -11,6 +11,8 @@ function Matrix(options) {
         startColor = options.start_color,
         endColor = options.end_color;
 
+    console.log(options.data);
+
     var widthLegend = 100;
 
     if(!data){

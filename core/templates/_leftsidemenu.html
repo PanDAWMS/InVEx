@@ -73,11 +73,11 @@
                     var curdate = new Date();
                     document.write(printDateTime(curdate));
                     document.addEventListener('readystatechange', event => {
-                    
+
                         if (event.target.readyState === "complete") {
                             document.getElementById('timerenderingended').innerText = printDateTime(new Date());
                         }
-                    
+
                     });
                 </script></p>
                 <p><b>Rendering ended:</b> <span id='timerenderingended'></span></p>

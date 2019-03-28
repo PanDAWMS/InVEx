@@ -79,7 +79,7 @@ class DataVisualization extends Scene{
         this.auxNames = [];
         this.lodData = [];
         this.selectionsHistory = [];
-        this.interactiveMode = 'single';			
+        this.interactiveMode = 'single';
         
         //Set up the quality ranges and parameters for each quality.
         this.__qualityRange = [{'value':'exlow', 'text':'Extra low', 'segs':5}, 
@@ -222,10 +222,10 @@ class DataVisualization extends Scene{
 		var buttonDiv = document.createElement('div');
 		buttonDiv.setAttribute("align", "center");
 
-		var changeRadiusBtn = document.createElement('button');
+		var changeRadiusBtn = document.createElement('input');
 		changeRadiusBtn.id = 'button' + radChangeID;
 		changeRadiusBtn.classList.add('button', 'small');
-		changeRadiusBtn.innerText = 'Change Radius';
+		changeRadiusBtn.value = 'Change Radius';
 		changeRadiusBtn.setAttribute('type', 'button');
 		buttonDiv.appendChild(changeRadiusBtn);
 
@@ -266,10 +266,10 @@ class DataVisualization extends Scene{
 		
 		var form = createControlBasics('form' + resetClustersID);
 
-		var resetClustersBtn = document.createElement('button');
+		var resetClustersBtn = document.createElement('input');
 		resetClustersBtn.id = 'button' + resetClustersID;
 		resetClustersBtn.classList.add('button', 'small');
-		resetClustersBtn.innerText = 'Reset clusters';
+		resetClustersBtn.value = 'Reset clusters';
 		resetClustersBtn.setAttribute('type', 'button');
 		resetClustersBtn.sceneObject = this;
 		resetClustersBtn.onclick = function(event) {
@@ -332,10 +332,10 @@ class DataVisualization extends Scene{
                     self.selectionsHistory[this.historyID]['active'] = !this.checked;
 				};
 			}
-			var updateBtn = document.createElement('button');
+			var updateBtn = document.createElement('input');
 				updateBtn.id = 'updateBtn';
 				updateBtn.classList.add('button', 'small');
-				updateBtn.innerText = 'Update Colors';
+				updateBtn.value = 'Update Colors';
 				updateBtn.setAttribute('type', 'button');
 				updateBtn.onclick = function(event) {
 					event.preventDefault();
@@ -381,10 +381,10 @@ class DataVisualization extends Scene{
 					}
 					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames)
 				}
-			var clearHistoryBtn = document.createElement('button');
+			var clearHistoryBtn = document.createElement('input');
 				clearHistoryBtn.id = 'clearHistBtn';
 				clearHistoryBtn.classList.add('button', 'small');
-				clearHistoryBtn.innerText = 'Clear Color History';
+				clearHistoryBtn.value = 'Clear Color History';
 				clearHistoryBtn.setAttribute('type', 'button');
 				clearHistoryBtn.onclick = function(event) {
 					event.preventDefault();
@@ -681,10 +681,10 @@ class DataVisualization extends Scene{
 		form.appendChild(document.createElement('br'));
 		form.color_picker = color_picker;
 
-		var changeColorBtn = document.createElement('button');
+		var changeColorBtn = document.createElement('input');
 		changeColorBtn.id = 'colorButton' + newGroupID;
 		changeColorBtn.classList.add('button', 'small');
-		changeColorBtn.innerText = 'Change Color';
+		changeColorBtn.value = 'Change Color';
 		changeColorBtn.setAttribute('type', 'button');
 		changeColorBtn.colorinput = color_picker;
 		changeColorBtn.selectObject = main_select_element;
@@ -1242,11 +1242,11 @@ class DataVisualization extends Scene{
 					h5.innerText = "Selected group: " + data['group_id'];
 					var p = document.createElement("p");
 					p.innerText = "Group size: " + data['group_data'].length;
-					var groupBtn = document.createElement("button");
+					var groupBtn = document.createElement("input");
 					groupBtn.classList.add("button");
 					groupBtn.classList.add("small");
 					groupBtn.setAttribute("id", "groupVisualize");
-					groupBtn.innerHTML = "Visualize Group";
+					groupBtn.value = "Visualize Group";
 					var get_url = "?group_id="+data["group_id"]+"&fdid="+data['fdid']
 					groupBtn.addEventListener('click', function() {
 						window.open("vis_group"+get_url, "_blank");

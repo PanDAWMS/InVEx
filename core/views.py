@@ -102,6 +102,11 @@ def main(request):
             except Exception as exc:
                 logger.error(
                     '!views.performance_test_frame!: Couldn\'t load the a CSV file from the server. \n' + str(exc))
+        elif request.POST['formt'] == 'visualize':
+            try:
+                data = form_reactions.update_dataset(request)
+            except Exception as exc:
+                logger.error('!views.performance_test_frame!: Couldn\'t perform an update. \n' + str(exc))
         elif request.POST['formt'] == 'cluster':
             try:
                 data = form_reactions.clusterize(request)
@@ -147,11 +152,6 @@ def main(request):
         data['dataset_files'] = False
         logger.error('Could not read the list of datasets file')
     return render(request, 'main.html', data, content_type='text/html')
-
-
-
-
-
 
 
 def site_to_site(request):
@@ -271,3 +271,4 @@ def visualize_group(request):
             data['startedat'] = False
         data['built'] = datetime.now()
     return render(request, 'main.html', data, content_type="text/html")
+

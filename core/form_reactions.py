@@ -9,6 +9,8 @@ import pandas as pd
 import json
 from core.settings.base import BASE_DIR
 import logging
+from django.conf import settings
+from django.http import HttpResponse, Http404
 
 SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
 DATASET_FILES_PATH = BASE_DIR + '/datasets/'
@@ -168,6 +170,8 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
             real_dataset_stats.append(real_dataset_stats_or[i].tolist())
 
         corr_matrix = real_dataset.corr()
+        corr_matrix.dropna(axis=0, how='all', inplace=True)
+        corr_matrix.dropna(axis=1, how='all', inplace=True)
 
         aux_columns = auxiliary_dataset.columns.tolist()
 
@@ -213,8 +217,9 @@ def data_preparation(dataset, request):
     calc.importcsv.dropNA(dataset)
     numeric_columns = calc.importcsv.numeric_columns(dataset)
     numeric_dataset = dataset[numeric_columns]
-    norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
-    calc.importcsv.dropNA(norm_dataset)
+    norm_dataset = calc.importcsv.scaler(numeric_dataset)
+    # norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
+    # calc.importcsv.dropNA(norm_dataset)
     columns = norm_dataset.columns.tolist()
     numeric_dataset = numeric_dataset[columns]
     auxiliary_dataset = dataset.drop(numeric_columns, 1)
@@ -246,6 +251,15 @@ def data_preparation(dataset, request):
     data['request'] = request
     return data
 
+def file_upload(request):
+    source_file = request.FILES['customFile']
+    dest_path = os.path.join(settings.MEDIA_ROOT, source_file.name)
+    with open(dest_path, 'wb+') as destination:
+        for chunk in source_file.chunks():
+            destination.write(chunk)
+        destination.close()
+    return source_file.name
+
 def new_csv_file_upload(request):
     """
     Donwload CSV file from the remote location.
@@ -254,27 +268,12 @@ def new_csv_file_upload(request):
     """
     if 'customFile' in request.FILES:
         try:
-            dataset = calc.importcsv.import_csv_file(io.StringIO(request.FILES['customFile'].read().decode('utf-8')),
-                                                     True, True)
+            return csv_file_from_server(request, file_upload(request))
         except Exception as exc:
-            logger.error(
-                '!form_reactions.new_csv_file_upload!: Failed to load data from the uploaded csv file. \n' + str(exc))
+            logger.error('File upload error')
             raise
-    else:
-        logger.error('!form_reactions.new_csv_file_upload!: Failed to load data. There is no file to read.\nRequest: '
-                     + json.dumps(request.POST))
-        return {}
-    try:
-        data = data_preparation(dataset, request)
-        data['filename'] = request.FILES['customFile']
-        return data
-    except Exception as exc:
-        logger.error(
-            '!form_reactions.new_csv_file_upload!: Failed to prepare data after uploading from file. \n' + str(exc))
-        raise
 
-
-def csv_file_from_server(request):
+def csv_file_from_server(request, filename=False):
     """
     Download CSV file from server.
     :param request: 
@@ -282,15 +281,20 @@ def csv_file_from_server(request):
     """
     list_of_files = list_csv_data_files(DATASET_FILES_PATH)
     dataset = None
+    filepath = ''
     if ('filename' in request.POST) and (list_of_files is not None):
         for file in list_of_files:
             if request.POST['filename'] == file['value']:
                 if os.path.isfile(DATASET_FILES_PATH + file['filename']):
-                    dataset = calc.importcsv.import_csv_file(DATASET_FILES_PATH + file['filename'], True, True)
+                    dataset = calc.importcsv.import_csv_file(DATASET_FILES_PATH + file['filename'], True, True, False)
+                    filepath = DATASET_FILES_PATH + file['filename']
                 else:
                     logger.error('!form_reactions.csv_file_from_server!: Failed to read file.\nFilename: ' +
                                  DATASET_FILES_PATH + file['filename'])
                     return {}
+    elif filename:
+        filepath = os.path.join(settings.MEDIA_ROOT, filename)
+        dataset = calc.importcsv.import_csv_file(filepath, True, True, False)
     else:
         logger.error(
             '!form_reactions.csv_file_from_server!: Wrong request.\nRequest parameters: ' + json.dumps(request.POST))
@@ -301,13 +305,36 @@ def csv_file_from_server(request):
                 request.POST))
         return {}
     try:
-        data = data_preparation(dataset, request)
-        data['filename'] = request.POST['filename']
+        fname = ''
+        if ('filename' in request.POST):
+            fname = request.POST['filename']
+        else:
+            fname = filename
+        data = {}
+        data['data_uploaded'] = True
+        data['features'] = []
+        dataset_stat = calc.dataset.DatasetInfo()
+        dataset_stat.get_info_from_dataset(dataset, ds_id=1,
+                                                ds_name=fname,
+                                                filepath=filepath)
+        for i in range(len(dataset_stat.features)):
+            data['features'].append(dataset_stat.features[i].__dict__)
+        data['ds_id'] = dataset_stat.ds_id
+        data['ds_name'] = dataset_stat.ds_name
+        data['filepath'] = dataset_stat.filepath
+        data['num_records'] = dataset_stat.num_records
+        data['index_name'] = dataset_stat.index_name
+        data['filename'] = fname
+        if 'activated' in request.POST and request.POST['lod_value'] != '':
+            data['lod_value'] = int(request.POST['lod_value'])
+            data['lod_activated'] = True
+        # data = data_preparation(dataset, request)
+        # data['filename'] = request.POST['filename']
         return data
     except Exception as exc:
         logger.error(
             '!form_reactions.csv_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
-            + json.dumps(request.POST['filename']) + '\n' + str(exc))
+            + json.dumps(fname) + '\n' + str(exc))
         raise
 
 
@@ -324,7 +351,7 @@ def csv_test_file_from_server(request):
             if request.POST['filename'] == file['value']:
                 if os.path.isfile(TEST_DATASET_FILES_PATH + file['filename']):
                     filename = file['filename']
-                    dataset = calc.importcsv.import_csv_file(TEST_DATASET_FILES_PATH + file['filename'], True, True)
+                    dataset = calc.importcsv.import_csv_file(TEST_DATASET_FILES_PATH + file['filename'], True, True, False)
                 else:
                     logger.error('!form_reactions.csv_test_file_from_server!: Could not read file.\n' +
                                  TEST_DATASET_FILES_PATH + file['filename'])
@@ -347,6 +374,36 @@ def csv_test_file_from_server(request):
             '!form_reactions.csv_test_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
             + json.dumps(request.POST['filename']) + '\n' + str(exc))
         raise
+
+
+def update_dataset(request):
+    # get data from client POST request
+    logger.error(request.POST)
+    dataset_stat = calc.dataset.DatasetInfo()
+    dataset_stat.update_dataset_info(ds_id=request.POST['ds_id'],
+                                     filepath=request.POST['filepath'],
+                                     ds_name=request.POST['ds_name'],
+                                     index_name=request.POST['index_name'],
+                                     features=json.loads(request.POST['features']),
+                                     num_records=request.POST['num_records'])
+
+    use_col = []
+    for item in dataset_stat.features:
+        if item['enabled'] == 'true':
+            use_col.append(item['feature_name'])
+    use_col.append(dataset_stat.index_name)
+
+    dataset = calc.importcsv.import_csv_file(dataset_stat.filepath, True, True, use_col)
+    data = data_preparation(dataset, request)
+    data['filename'] = dataset_stat.ds_name
+    data['data_uploaded'] = True
+    data['features'] = dataset_stat.features
+    data['ds_id'] = dataset_stat.ds_id
+    data['ds_name'] = dataset_stat.ds_name
+    data['filepath'] = dataset_stat.filepath
+    data['num_records'] = dataset_stat.num_records
+    data['index_name'] = dataset_stat.index_name
+    return data
 
 
 def get_jobs_from_panda(request):

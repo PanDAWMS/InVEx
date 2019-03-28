@@ -3,6 +3,9 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
 {% endblock %}
 
 {% block body %}
@@ -49,14 +52,17 @@
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="{% static "js/VAP/correlation_matrix.js" %}"></script>
 <script src="{% static "js/VAP/level_of_detail.js" %}"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 <script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
-<script src="https://d3js.org/d3.v5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 <script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
 <script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/plotly-latest.min.js" %}"></script>
+    <script src="{% static "js/VAP/dataset_stat.js" %}"></script>
 {% endblock %}
 	<script>
 
@@ -69,6 +75,22 @@
 
         } );
 		var scene = new DataVisualization(document.getElementById("picture"), 0.75);
+
+        // Datasample Features Statistics
+        {%  if data_uploaded is True %}
+
+            var ds_id = '{{ ds_id }}';
+            var ds_name = '{{ ds_name }}';
+            var filepath = '{{ filepath }}';
+            var num_records = {{ num_records }};
+            var index_name = '{{ index_name }}';
+            var features = {{ features|safe }};
+
+            var features_stat = new DatasetStats(ds_id,ds_name,filepath,num_records,index_name,features);
+            features_stat.display_features_panel("features_panel");
+
+        {% endif %}
+
 		animate();
 		init();
 
@@ -76,145 +98,147 @@
 
 		function init() {
 
-            {% if group_vis == False or not group_vis %}
-                var lod_value = 0;
-                var activated = false;
-                {%  if lod_activated %}
-                    lod_value = {{ lod_value }};
-                    activated = true;
-                {% endif %}
-                createLOD("serverfileLOD", activated, lod_value);
-                createLOD("newfileLOD", activated, lod_value);
-            {% endif %}
+{#                    {% if group_vis is False or not group_vis %}#}
+{#                        var lod_value = 0;#}
+{#                        var activated = false;#}
+{#                        {%  if lod_activated %}#}
+{#                            lod_value = {{ lod_value }};#}
+{#                            activated = true;#}
+{#                        {% endif %}#}
+{#                        createLOD("serverfileLOD", activated, lod_value);#}
+{#                        createLOD("newfileLOD", activated, lod_value);#}
+{#                    {% endif %}#}
 
-            {% if type == "datavisualization" %}
-            {%  if data_is_ready %}
+                    {% if type == "datavisualization" %}
+                    {%  if data_is_ready %}
 
-                var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
-                                    ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
-                                                         {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
-                                                         ]]
+                        var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
+                                            ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
+                                                                 {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
+                                                                 ]]
 
-            var curr_algorithm;
-            var curr_parameters;
+                    var curr_algorithm;
+                    var curr_parameters;
 
-            {%  if algorithm %}
-                curr_algorithm = "{{ algorithm }}";
-                curr_parameters = {{ parameters|safe }};
-            {% endif %}
-                {% if group_vis == False %}
-            createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
+                    {%  if algorithm %}
+                        curr_algorithm = "{{ algorithm }}";
+                        curr_parameters = {{ parameters|safe }};
                     {% endif %}
-                {% endif %}
-            {% endif %}
+                        {% if group_vis is False %}
+                    createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
 
-            {% if dim_names %}
-                var dimNames = {{ dim_names|safe }};
-                scene.setDimNames(dimNames);
-            {% endif %}
+                    {% if dim_names %}
+                        var dimNames = {{ dim_names|safe }};
+                        scene.setDimNames(dimNames);
+                    {% endif %}
 
-            {% if index %}
-                var index = {{ index|safe }};
-                scene.setIndex(index);
-            {% endif %}
+                    {% if index %}
+                        var index = {{ index|safe }};
+                        scene.setIndex(index);
+                    {% endif %}
 
-            {% if norm_dataset %}
-                var dataArray = {{ norm_dataset|safe }};
-                var new_dataArray = fix_array(dataArray);
-                scene.setDataArray(new_dataArray);
-            {% endif %}
+                    {% if norm_dataset %}
+                        var dataArray = {{ norm_dataset|safe }};
+                        var new_dataArray = fix_array(dataArray);
+                        scene.setDataArray(new_dataArray);
+                    {% endif %}
 
-            {% if real_dataset %}
-                var realData = {{ real_dataset|safe }};
-                var new_realData = fix_array(realData);
-                scene.setRealData(new_realData);
-                printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
-            {% endif %}
+                    {% if real_dataset %}
+                        var realData = {{ real_dataset|safe }};
+                        var new_realData = fix_array(realData);
+                        scene.setRealData(new_realData);
+                        printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
+                    {% endif %}
 
-            {% if real_metrics %}
-                var statistics_real = {{ real_metrics|safe }};
-                printStats(statistics_real, dimNames, "stats");
-                scene.setRealStats(statistics_real);
-            {% endif %}
+                    {% if real_metrics %}
+                        var statistics_real = {{ real_metrics|safe }};
+                        printStats(statistics_real, dimNames, "stats");
+                        scene.setRealStats(statistics_real);
+                    {% endif %}
 
-            {% if corr_matrix %}
-                var corr_matrix = {{ corr_matrix|safe }};
-                Matrix({
-                    container : '#corr-matrix',
-                    data      : corr_matrix,
-                    labels    : dimNames,
-                    start_color : '#ffffff',
-                    end_color : '#3498db'
-                });
-            {% endif %}
+                    {% if corr_matrix %}
+                        var corr_matrix = {{ corr_matrix|safe }};
+                        Matrix({
+                            container : '#corr-matrix',
+                            data      : corr_matrix,
+                            labels    : dimNames,
+                            start_color : '#ffffff',
+                            end_color : '#3498db'
+                        });
+                    {% endif %}
 
-            {% if visualparameters %}
-                scene.loadParameters({{ visualparameters|safe }});
-            {% endif %}
+                    {% if visualparameters %}
+                        scene.loadParameters({{ visualparameters|safe }});
+                    {% endif %}
 
-            {% if aux_dataset %}
-                var auxData = {{ aux_dataset|safe }};
-                var new_auxData = fix_array(auxData);
-                scene.setAuxiliaryData(new_auxData);
-                var auxNames = {{ aux_names|safe }};
-                scene.setAuxiliaryColumns(auxNames);
-            {% endif %}
+                    {% if aux_dataset %}
+                        var auxData = {{ aux_dataset|safe }};
+                        var new_auxData = fix_array(auxData);
+                        scene.setAuxiliaryData(new_auxData);
+                        var auxNames = {{ aux_names|safe }};
+                        scene.setAuxiliaryColumns(auxNames);
+                    {% endif %}
 
-            var lodData = [];
-            {% if lod_data %}
-                lodData = {{ lod_data|safe }};
-                scene.setLOD(lodData);
-            {% endif %}
+                    var lodData = [];
+                    {% if lod_data %}
+                        lodData = {{ lod_data|safe }};
+                        scene.setLOD(lodData);
+                    {% endif %}
 
-            {% if cluster_ready %}
-                var clusters = {{ clusters|safe }};
-                scene.setClusters(clusters);
-            {% else %}
-                scene.setClusters([0]);
-            {% endif %}
-            scene.clusters_color_scheme = scene.createColorScheme();
-            {% if cluster_ready %}
-                    cluster_selector(scene.clusters_color_scheme, "cluster_stat");
-                    //drawSingleRadarCharts("radar_chart_single", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
-                    drawMultipleClusterRadarChart("radar_chart_all",
-                            scene.normData, scene.realData,
-                            scene.clusters, scene.clusters_color_scheme, scene.dimNames, 100);
-            {% endif %}
-            
-			{% if norm_dataset %}
-                var objects = [];
-                for ( var i = 0; i < new_dataArray.length; i++ ){
                     {% if cluster_ready %}
-                        objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ], lodData[ i ] ));
+                        var clusters = {{ clusters|safe }};
+                        scene.setClusters(clusters);
                     {% else %}
-                        objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ], lodData[ i ] ));
+                        scene.setClusters([0]);
                     {% endif %}
-                }
-			{% endif %}
-        
-            {%  if data_is_ready %}
-                {% if type == "site2site" %}
-                    scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
-                {% elif type == "datavisualization" %}
-                  var temp=scene.createNewGroupElement();
-                  document.getElementById('color_changer').appendChild(temp);
-                  var history_form = document.createElement("form");
-		          history_form.setAttribute('id','history');
-                  document.getElementById('color_changer').appendChild(history_form);
-                  temp.ready();
-                {% if cluster_ready %}
-                    document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
-                {% endif %}
-                {% endif %}
-                scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+                    scene.clusters_color_scheme = scene.createColorScheme();
+                    {% if cluster_ready %}
+                            cluster_selector(scene.clusters_color_scheme, "cluster_stat");
+                            //drawSingleRadarCharts("radar_chart_single", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
+                            drawMultipleClusterRadarChart("radar_chart_all",
+                                    scene.normData, scene.realData,
+                                    scene.clusters, scene.clusters_color_scheme, scene.dimNames, 100);
+                    {% endif %}
 
-            {% else %}
-                scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
-            {% endif %}
-            
-            {% if saveid %}
-                scene.setSource('{{ saveid|safe }}');
-            {% endif %}
+                    {% if norm_dataset %}
+                        var objects = [];
+                        for ( var i = 0; i < new_dataArray.length; i++ ){
+                            {% if cluster_ready %}
+                                objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], clusters[ i ], new_auxData[ i ], lodData[ i ] ));
+                            {% else %}
+                                objects.push(scene.createSphere( new_dataArray[ i ], new_realData[ i ], 0, new_auxData[ i ], lodData[ i ] ));
+                            {% endif %}
+                        }
+                    {% endif %}
+
+                    {%  if data_is_ready %}
+                        {% if type == "site2site" %}
+                            scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                        {% elif type == "datavisualization" %}
+                          var temp=scene.createNewGroupElement();
+                          document.getElementById('color_changer').appendChild(temp);
+                          var history_form = document.createElement("form");
+                          history_form.setAttribute('id','history');
+                          document.getElementById('color_changer').appendChild(history_form);
+                          temp.ready();
+                        {% if cluster_ready %}
+                            document.getElementById('clusterrelated').appendChild(scene.createResetClustersButton());
+                        {% endif %}
+                        {% endif %}
+                        scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), true);
+
+                    {% else %}
+                        scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
+                    {% endif %}
+
+                    {% if saveid %}
+                        scene.setSource('{{ saveid|safe }}');
+                    {% endif %}
+
+{#            {% endif %}#}
 
 		}
 

@@ -127,3 +127,7 @@ STATICFILES_DIRS = (
     join(dirname(core.__file__), 'static'),
     # "/data/vap/core/static"
 )
+
+MEDIA_ROOT = join(dirname(core.__file__), 'uploaded')
+
+MEDIA_URL = '/uploaded/'

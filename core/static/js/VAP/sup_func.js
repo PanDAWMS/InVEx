@@ -233,7 +233,7 @@ function createDataTable(parentElement, ID, headers){
 
     var table = document.createElement("table");
     table.id = ID;
-    table.classList.add("table", "table-sm", "table-hover");
+    table.classList.add("table", "table-sm", "table-hover", "display","compact");
 
     var thead = document.createElement("thead");
     table.appendChild(thead);
@@ -294,7 +294,7 @@ function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_
 
     var table = document.createElement("table");
     table.id = ID;
-    table.classList.add("table", "table-sm", "table-hover");
+    table.classList.add("table", "table-sm", "table-hover", "display","compact");
 
     var thead = document.createElement("thead");
     table.appendChild(thead);
@@ -436,7 +436,7 @@ function printStats(stats, dimensions, parent){
     var initial_dataset = document.getElementById(parent);
     var table = document.createElement("table");
     table.setAttribute("id", "stats-table");
-    table.classList.add("hover");
+    table.classList.add("hover","display","compact");
     var thead = document.createElement("thead");
     var row, th, td;
 

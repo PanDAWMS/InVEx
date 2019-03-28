@@ -172,10 +172,10 @@ class Scene {
             }
 		}
 		
-        var changeDimBtn = document.createElement('button'); //Create button to change the dimension
+        var changeDimBtn = document.createElement('input'); //Create button to change the dimension
 		changeDimBtn.id = 'button' + dimensionControlID;
 		changeDimBtn.setAttribute('type', 'button');
-		changeDimBtn.innerText = 'Change Dimensions';
+		changeDimBtn.value = 'Change Dimensions';
 		changeDimBtn.title = 'This may take some time';
 		changeDimBtn.classList.add('button', 'small');
         changeDimBtn.sceneObject = this;
@@ -198,11 +198,11 @@ class Scene {
 
 		var form = createControlBasics('form' + resetID);
 		
-		var resetCameraBtn = document.createElement('button');
+		var resetCameraBtn = document.createElement('input');
 		resetCameraBtn.id = resetID;
 		resetCameraBtn.classList.add('button', 'small');
 		resetCameraBtn.setAttribute('type', 'button');
-		resetCameraBtn.innerText = 'Reset Camera'
+		resetCameraBtn.value = 'Reset Camera';
 		resetCameraBtn.sceneObject = this;
 		resetCameraBtn.onclick = function() {
 			this.sceneObject.resetCamera();
@@ -242,10 +242,10 @@ class Scene {
 		form.groupDiv.appendChild(selectbox);
 		form.createNewLine();
 		//Button to change the quality.
-		var button = document.createElement('button');
+		var button = document.createElement('input');
 		button.id = 'button' + changeQualityID;
 		button.setAttribute('type', 'button');
-		button.innerText = 'Change Quality';
+		button.value = 'Change Quality';
 		button.title = 'This may take some time';
 		button.qualitybox = selectbox;
 		button.classList.add('button', 'small');
