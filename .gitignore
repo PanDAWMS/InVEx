@@ -103,6 +103,8 @@ core/settings/config.py
 core/settings/local.py
 core/datafiles/*
 !core/datafiles/.keep
+core/uploaded
+!core/uploaded/.keep
 core/logs/*
 !core/logs/.keep
 private/*
