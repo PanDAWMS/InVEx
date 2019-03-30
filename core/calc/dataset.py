@@ -42,6 +42,16 @@ class DatasetInfo():
     # def save_to_redis(self):
     #     pass
 
+    def drop_nan_column(self, df, column):
+        """
+        Drop column if the number of NaNs exceeds 50%
+        :param df:
+        :param column:
+        :return:
+        """
+        if (df[column].isna().sum() / df[column].count()) > 0.5:
+            df.drop(column, 1, inplace=True)
+
     def get_dataset_stats(self, df):
         """
         Gathering initial statistics from pandas.DataFrame object
@@ -140,11 +150,13 @@ class DatasetInfo():
                     _unique_values = [result.min().isoformat(), result.max().isoformat()]
                     _measure_type = 'range'
                 else:
-                    _unique_values = df[column].dropna().unique().tolist()
                     if _is_cat:
+                        _unique_values = df[column].dropna().unique().tolist()
+                    #if _is_cat:
                         _distribution = df[column].value_counts().to_dict()
                     elif not _is_cat:
-                        _unique_values = self.process_strings(_unique_values)
+                        _unique_values = df[column].dropna().unique().tolist()[:10]
+                    #    _unique_values = self.process_strings(_unique_values)
                         _measure_type = 'clustered'
                 features.append(FeatureStatistics(feature_name=_name,
                                                   feature_type=_type,
@@ -176,10 +188,11 @@ class DatasetInfo():
                  converted to datetime datatype
         """
         names = ["time", "date", "datetime", "start", "end"]
-        result = None
         if any(st in column for st in names):
-            result = pd.to_datetime(data.dropna())
-        return result
+            try:
+                return pd.to_datetime(data.dropna())
+            except ValueError as e:
+                return None
 
     def likely_cat(self, data, type):
         """
@@ -194,10 +207,10 @@ class DatasetInfo():
         :return:
         """
         if type == 'object':
-            return 1. * data.nunique() / data.count() < 0.01
+            return 1. * data.nunique() / data.count() < 0.05
         else:
-            if len(data.dropna().unique().tolist()) <= 30:
-                return  1. * data.nunique() / data.count() < 0.01
+            if len(data.dropna().unique().tolist()) <= 50:
+                return  1. * data.nunique() / data.count() < 0.03
             else:
                 return False
             # top_n = 10

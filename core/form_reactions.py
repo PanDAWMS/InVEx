@@ -8,6 +8,7 @@ from datetime import datetime
 import pandas as pd
 import json
 from core.settings.base import BASE_DIR
+from .providers import LocalReader, PandaReader
 import logging
 from django.conf import settings
 from django.http import HttpResponse, Http404
@@ -214,20 +215,15 @@ def data_preparation(dataset, request):
     :param request: 
     :return: 
     """
-    calc.importcsv.dropNA(dataset)
-    numeric_columns = calc.importcsv.numeric_columns(dataset)
-    numeric_dataset = dataset[numeric_columns]
-    norm_dataset = calc.importcsv.scaler(numeric_dataset)
-    # norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
-    # calc.importcsv.dropNA(norm_dataset)
-    columns = norm_dataset.columns.tolist()
-    numeric_dataset = numeric_dataset[columns]
-    auxiliary_dataset = dataset.drop(numeric_columns, 1)
-    if 'activated' in request.POST and request.POST['lod_value'] != '':
+    LocalReader().drop_na(dataset)
+    numeric_dataset = LocalReader().get_numeric_data(dataset)
+    norm_dataset = LocalReader().scaler(numeric_dataset)
+    auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
+    if request.POST['lod_activated'] == 'true':
         lod = int(request.POST['lod_value'])
         lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
-        norm_lod_dataset = calc.importcsv.normalization(lod_data.grouped_dataset, columns)
-        aux_lod_dataset = lod_data.grouped_dataset.drop(columns, 1)
+        norm_lod_dataset = LocalReader().scaler(lod_data.grouped_dataset)
+        aux_lod_dataset = lod_data.grouped_dataset.drop(lod_data.grouped_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
         metrics = calc.basicstatistics.BasicStatistics()
         metrics.process_data(norm_lod_dataset)
@@ -251,14 +247,28 @@ def data_preparation(dataset, request):
     data['request'] = request
     return data
 
-def file_upload(request):
-    source_file = request.FILES['customFile']
-    dest_path = os.path.join(settings.MEDIA_ROOT, source_file.name)
-    with open(dest_path, 'wb+') as destination:
-        for chunk in source_file.chunks():
-            destination.write(chunk)
-        destination.close()
-    return source_file.name
+def file_upload(request, source, source_file=False, remote_data=False):
+    """
+    Upload file to server
+    :param request:
+    :param source: file | remote
+    :return:
+    """
+    if source == 'file' and source_file:
+        dest_path = os.path.join(settings.MEDIA_ROOT, source_file.name)
+        with open(dest_path, 'wb+') as destination:
+            for chunk in source_file.chunks():
+                destination.write(chunk)
+            destination.close()
+        return source_file.name
+    elif source == 'remote' and remote_data:
+        fname = request.GET['remotesrc'] + '_' + request.GET['taskid'] + '.json'
+        dest_path = os.path.join(settings.MEDIA_ROOT, fname)
+        with open(dest_path, 'w') as destination:
+            json.dump(remote_data, destination)
+            destination.close()
+        return fname
+
 
 def new_csv_file_upload(request):
     """
@@ -268,10 +278,46 @@ def new_csv_file_upload(request):
     """
     if 'customFile' in request.FILES:
         try:
-            return csv_file_from_server(request, file_upload(request))
+            return csv_file_from_server(request, file_upload(request=request,
+                                                             source='file',
+                                                             source_file=request.FILES['customFile'],
+                                                             remote_data=False))
         except Exception as exc:
             logger.error('File upload error')
             raise
+
+def json_file_from_server(request, filename=False, index=False):
+    filepath = os.path.join(settings.MEDIA_ROOT, filename)
+    dataset = LocalReader().read_df(file_path=filepath, file_format='json')
+    if index:
+        dataset.set_index(index, inplace=True)
+    try:
+        fname = filename
+        data = {}
+        data['data_uploaded'] = True
+        data['features'] = []
+        dataset_stat = calc.dataset.DatasetInfo()
+        dataset_stat.get_info_from_dataset(dataset, ds_id=1,
+                                           ds_name=fname,
+                                           filepath=filepath)
+        for i in range(len(dataset_stat.features)):
+            data['features'].append(dataset_stat.features[i].__dict__)
+        data['ds_id'] = dataset_stat.ds_id
+        data['ds_name'] = dataset_stat.ds_name
+        data['filepath'] = dataset_stat.filepath
+        data['num_records'] = dataset_stat.num_records
+        data['index_name'] = dataset_stat.index_name
+        data['filename'] = fname
+        if 'activated' in request.POST and request.POST['lod_value'] != '':
+            data['lod_value'] = int(request.POST['lod_value'])
+            data['lod_activated'] = True
+        return data
+    except Exception as exc:
+        logger.error(
+            '!form_reactions.csv_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
+            + json.dumps(fname) + '\n' + str(exc))
+        raise
+
 
 def csv_file_from_server(request, filename=False):
     """
@@ -377,8 +423,6 @@ def csv_test_file_from_server(request):
 
 
 def update_dataset(request):
-    # get data from client POST request
-    logger.error(request.POST)
     dataset_stat = calc.dataset.DatasetInfo()
     dataset_stat.update_dataset_info(ds_id=request.POST['ds_id'],
                                      filepath=request.POST['filepath'],
@@ -392,8 +436,13 @@ def update_dataset(request):
         if item['enabled'] == 'true':
             use_col.append(item['feature_name'])
     use_col.append(dataset_stat.index_name)
-
-    dataset = calc.importcsv.import_csv_file(dataset_stat.filepath, True, True, use_col)
+    filename, file_extension = os.path.splitext(dataset_stat.filepath)
+    reader = LocalReader()
+    dataset = object
+    if (file_extension == '.csv'):
+        dataset = reader.read_df(dataset_stat.filepath, file_format='csv', usecols=use_col)
+    elif (file_extension == '.json'):
+        dataset = reader.read_df(dataset_stat.filepath, file_format='json')
     data = data_preparation(dataset, request)
     data['filename'] = dataset_stat.ds_name
     data['data_uploaded'] = True
@@ -403,6 +452,8 @@ def update_dataset(request):
     data['filepath'] = dataset_stat.filepath
     data['num_records'] = dataset_stat.num_records
     data['index_name'] = dataset_stat.index_name
+    data['lod'] = request.POST['lod_activated']
+    data['lod_value'] = request.POST['lod_value']
     return data
 
 
@@ -415,7 +466,6 @@ def get_jobs_from_panda(request):
     :return: Data for analysis (pre-processed by the preparation method).
     :rtype: dict
     """
-    output = {}
     err_msg_subj = '[get_jobs_from_panda]'
 
     dataset = None
@@ -430,26 +480,26 @@ def get_jobs_from_panda(request):
                 filter_params['days'] = request.GET['days']
             else:
                 filter_params['fulllist'] = 'true'
-
-            dataset = PandaReader().read_jobs_df(task_id=request.GET['taskid'],
-                                                 filter_params=filter_params)
-            if not dataset.empty:
-                dataset.set_index('pandaid', inplace=True)
+            data = PandaReader().get_jobs_data_by_task(task_id=request.GET['taskid'],
+                                                       filter_params=filter_params)
     else:
         logger.error('{0} Request parameters are incorrect: {1}'.
                      format(err_msg_subj, json.dumps(request.GET)))
 
-    if dataset is not None:
+    if data is not None:
         try:
-            output = data_preparation(dataset, request)
-            output['filename'] = "taskid_" + request.GET['taskid']
+            return json_file_from_server(request, file_upload(request=request,
+                                                             source='remote',
+                                                             source_file=False,
+                                                             remote_data=data),
+                                        index='pandaid')
         except Exception as exc:
             logger.error('{0} Failed to prepare data: {1}'.
                          format(err_msg_subj, exc))
             # TODO: check that the raise of the Exception is needed.
             raise
 
-    return output
+    return data
 
 
 def clusterize(request):

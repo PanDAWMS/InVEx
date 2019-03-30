@@ -63,6 +63,7 @@
 <script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/plotly-latest.min.js" %}"></script>
     <script src="{% static "js/VAP/dataset_stat.js" %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
 {% endblock %}
 	<script>
 
@@ -97,17 +98,6 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-
-{#                    {% if group_vis is False or not group_vis %}#}
-{#                        var lod_value = 0;#}
-{#                        var activated = false;#}
-{#                        {%  if lod_activated %}#}
-{#                            lod_value = {{ lod_value }};#}
-{#                            activated = true;#}
-{#                        {% endif %}#}
-{#                        createLOD("serverfileLOD", activated, lod_value);#}
-{#                        createLOD("newfileLOD", activated, lod_value);#}
-{#                    {% endif %}#}
 
                     {% if type == "datavisualization" %}
                     {%  if data_is_ready %}

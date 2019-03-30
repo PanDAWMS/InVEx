@@ -3,7 +3,12 @@ Module with base class to provide essential methods for data reading and
 formatting processes.
 """
 
+from django.conf import settings
+import os.path
+from sklearn import preprocessing
+from sklearn.impute import SimpleImputer
 import pandas as pd
+import numpy as np
 
 
 class BaseReader(object):
@@ -39,6 +44,21 @@ class BaseReader(object):
                 / (data[cols_to_norm].max() - data[cols_to_norm].min())) * 100.
 
     @staticmethod
+    def scaler(df):
+        """
+        Scaling data.
+        :param df: DataFrame
+        :return:
+        """
+        df_numeric = df._get_numeric_data()
+        imputer = SimpleImputer(missing_values=np.nan, strategy='mean')
+        df_imputer = pd.DataFrame(imputer.fit_transform(df_numeric), columns=df_numeric.columns)
+        scaler = preprocessing.MinMaxScaler()
+        scaled_df = scaler.fit_transform(df_imputer)
+        scaled_df = pd.DataFrame(scaled_df, columns=df_imputer.columns).multiply(100)
+        return scaled_df
+
+    @staticmethod
     def drop_na(data):
         """
         Drop all rows and columns that contain NA values.
@@ -46,8 +66,19 @@ class BaseReader(object):
         :param data: Data for analysis.
         :type data: DataFrame
         """
-        data.dropna(axis=1, how='any', inplace=True)
+        # first remove all columns, where the number of NaNs
+        # exceeds 80% (almost empty column)
+        for column in data.columns.tolist():
+            if (data[column].isna().sum() / data[column].count()) > 0.8:
+                data.drop(column, 1, inplace=True)
+        # then remove all rows, where all values are NaN
+        data.dropna(axis=0, how='all', inplace=True)
+        # and remove all rows, where any value is NaN
         data.dropna(axis=0, how='any', inplace=True)
+
+    @staticmethod
+    def get_numeric_data(data):
+        return data._get_numeric_data()
 
     @staticmethod
     def get_numeric_columns(data):
@@ -56,14 +87,7 @@ class BaseReader(object):
 
         :param data: Data for analysis.
         :type data: DataFrame
-        :return: Numeric columns.
-        :rtype: list
+        :return: Numeric dataset
+        :rtype: DataFrame
         """
-
-        output = []
-
-        for item in data:
-            if data[item].dtypes in ['int64', 'float']:
-                output.append(item)
-
-        return output
+        return data._get_numeric_data().columns.tolist()

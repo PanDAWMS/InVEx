@@ -126,7 +126,6 @@ def main(request):
             except Exception as exc:
                 logger.error('!views.performance_test_frame!: Couldn\'t get the group. \n' + str(exc))
                 return JsonResponse({})
-
     elif request.method == 'GET' and 'remotesrc' in request.GET:
         err_msg_subj = '[views/remotesrc=pandajobs]'
 
@@ -136,7 +135,6 @@ def main(request):
             except Exception as exc:
                 logger.error('{0} Remote data are not accessible: {1}'.
                              format(err_msg_subj, exc))
-
     else:
         data = EMPTY_DATA
         data['type'] = 'datavisualization'
@@ -190,9 +188,6 @@ def site_to_site(request):
         data['dataset_files'] = False
         logger.error('Could not read the list of datasets file')
     return render(request, 'mesh.html', data, content_type='text/html')
-
-
-
 
 
 def performance_test(request):

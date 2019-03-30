@@ -18,6 +18,111 @@ class DatasetStats {
                          {'type':'clustered','columns':["feature_name","percentage_missing","unique_values"]}];
     }
 
+    set_lod_value(value) {
+        this.lod_value = value;
+    }
+
+    get_lod_value() {
+        return this.lod_value;
+    }
+
+    activate_lod() {
+        this.lod = true;
+    }
+
+    deactivate_lod() {
+        this.lod = false;
+    }
+
+    createLOD(id, activated, lod_value) {
+        var top_element = document.getElementById(id);
+        var input = document.createElement("input");
+        input.type = "checkbox";
+        input.setAttribute("name", "activated");
+        input.classList.add("lod_activation");
+        input.setAttribute("id", "lod_activation_" + id);
+        input.dataset_info = this;
+
+        var label = document.createElement("label");
+        label.innerText = "Activate Level-of-Detail Generator for large data samples";
+
+        var div = document.createElement("div");
+        div.style.display = "none";
+
+        var div_label = document.createElement("label");
+        div_label.innerText = "Level-of-Detail";
+
+        var div_grid = document.createElement("div");
+        div_grid.classList.add("grid-x")
+        div_grid.classList.add("grid-margin-x");
+        var div_cell_slider = document.createElement("div");
+        div_cell_slider.classList.add("cell");
+        div_cell_slider.classList.add("small-2");
+        var slider = document.createElement("input");
+        slider.type = "range";
+        slider.setAttribute("min", "1");
+        slider.setAttribute("max", "1000");
+        slider.setAttribute("step", "10");
+        slider.setAttribute("id", "lod_slider_" + id);
+        slider.dataset_info = this;
+        div_cell_slider.appendChild(slider);
+
+        var div_cell_value = document.createElement("div");
+        div_cell_value.classList.add("cell");
+        div_cell_value.classList.add("small-2");
+        var slider_value = document.createElement("input");
+        slider_value.type = "number";
+        slider_value.setAttribute("name", "lod_value");
+        slider_value.setAttribute("id", "sliderOutput_" + id);
+        slider_value.dataset_info = this;
+        div_cell_value.appendChild(slider_value);
+
+        div_grid.appendChild(div_cell_slider);
+        div_grid.appendChild(div_cell_value);
+
+        div.appendChild(div_label);
+        div.appendChild(div_grid);
+
+        top_element.appendChild(input);
+        top_element.appendChild(label);
+        top_element.appendChild(div);
+
+        if (slider_value && input) {
+            slider_value.value = slider.value;
+            slider.addEventListener("change", function(event) {
+                slider_value.value = event.srcElement.value;
+                event.target.dataset_info.set_lod_value(event.srcElement.value);
+            });
+            slider_value.addEventListener("change", function(event) {
+                slider.value = event.srcElement.value;
+                event.target.dataset_info.set_lod_value(event.srcElement.value);
+            });
+            input.addEventListener( "click", function(event) {
+                if (event.srcElement.checked) {
+                    if (div.style.display == 'none') {
+                        div.style.display = 'block';
+                        event.target.dataset_info.activate_lod();
+                    }
+                } else {
+                    div.style.display = 'none';
+                    event.target.dataset_info.dataset_info.deactivate_lod();
+                }
+            });
+        }
+
+        if (activated == true) {
+            input.checked = true;
+            div.style.display = 'block';
+            slider.value = lod_value;
+            slider_value.value = lod_value;
+            this.activate_lod();
+            this.set_lod_value(lod_value);
+        } else {
+            this.deactivate_lod();
+        }
+        return top_element;
+    }
+
     display_dataset_info() {
         var dataset_info = [{"row_name":"Dataset Name","value":this.ds_name},
                             {"row_name":"Number of Records","value":this.num_records},
@@ -46,11 +151,44 @@ class DatasetStats {
         return table;
     }
 
+    draw_bar_chart(title, distribution_data, td) {
+
+        var canvas = document.createElement("canvas");
+        canvas.setAttribute("id","bar_chart_"+title);
+        td.appendChild(canvas);
+        var data = {};
+        var _labels = [];
+        var _data = [];
+        var _label = title + " distribution";
+        for (var k in distribution_data) {
+            _labels.push(k);
+            _data.push(distribution_data[k]);
+        }
+        data["labels"] = _labels;
+        var dataset = {};
+        dataset["label"] = _label;
+        dataset["backgroundColor"] = 'rgb(255, 99, 132)';
+        dataset["borderColor"] = 'rgb(255, 99, 132)';
+        dataset["data"] = _data;
+        data["datasets"] = [dataset];
+
+        var ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {}
+        });
+
+        return canvas;
+    }
+
     values_frequency(item) {
         var table = document.createElement("table");
         table.setAttribute("id","frequency_"+item['feature_name']);
+
         if ('distribution' in item) {
             var distribution = item['distribution'];
+            //return this.draw_bar_chart(item['feature_name'], distribution);
             for (var k in distribution) {
                 var row = document.createElement("tr");
                 var key = document.createElement("td");
@@ -70,10 +208,12 @@ class DatasetStats {
     }
 
 
-    measure_headers(type) {
+    _headers(type) {
 
         var thead = document.createElement("thead");
         var tr = document.createElement("tr");
+        // empty column for +/-
+        tr.appendChild(document.createElement("th"));
         var selector = document.createElement("th");
         selector.textContent = "select";
         tr.appendChild(selector);
@@ -84,6 +224,7 @@ class DatasetStats {
         function create_row(value, index, array) {
             var th = document.createElement("th");
             th.textContent = value;
+            // add none class to elements which should be displayed as detailed
             if (['distribution','unique_values'].includes(value))
                 th.classList.add("none");
             tr.appendChild(th);
@@ -92,27 +233,29 @@ class DatasetStats {
         return thead;
     }
 
-    measure_values(type) {
+    _rows(type) {
 
         var tbody = document.createElement("tbody");
 
         var element = this.MEASURES.filter(function(e) {
-          return e['type'] == type;
+            return e['type'] == type;
         });
         var columns = element[0]['columns'];
 
         for (var i=0;i<this.features.length;i++) {
             if (this.features[i]['measure_type'] == type) {
                 var tr = document.createElement("tr");
+                // empty column for +/-
+                tr.appendChild(document.createElement("td"));
                 tr.appendChild(this.print_selector(i));
-                this.type_switch(type, this.features[i], tbody, tr, columns);
+                this.type_switch(type, this.features[i], tr, columns);
                 tbody.appendChild(tr);
             }
         }
         return tbody;
     }
 
-    type_switch(type, feature, tbody, tr, columns) {
+    type_switch(type, feature, tr, columns) {
         switch (type) {
             case 'nominal':
                 for (var j=0;j<columns.length;j++) {
@@ -122,6 +265,7 @@ class DatasetStats {
                         td.textContent = '';
                     else {
                         if (name == "distribution")
+                            //this.draw_bar_chart(name, this.values_frequency(feature), td);
                             td.appendChild(this.values_frequency(feature));
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
@@ -227,6 +371,8 @@ class DatasetStats {
 
         var root = document.getElementById(element_id);
 
+        root.appendChild(this.createLOD("lod",false,0));
+
         root.appendChild(this.display_dataset_info());
 
         $("#dataset_info").DataTable({searching: false, paging: false, info: false});
@@ -239,14 +385,24 @@ class DatasetStats {
                 var table = document.createElement("table");
                 table.classList.add("display","compact");
                 table.setAttribute("id", "features_table_" + type);
-                table.style.width = "100%";
-                table.appendChild(this.measure_headers(type));
-                table.appendChild(this.measure_values(type));
+                // table.style.width = "100%";
+                table.appendChild(this._headers(type));
+                table.appendChild(this._rows(type));
                 root.append(table);
                 $('#features_table_' + type).DataTable({searching: false,
                                                         paging: false,
                                                         info: false,
-                                                        responsive: true
+                                                        //responsive: true,
+                                                        responsive: {
+                                                            details: {
+                                                                type: 'inline'
+                                                            }
+                                                        },
+                                                        columnDefs: [
+                                                            { targets: 1,
+                                                              visible: true,
+                                                              orderable: false}
+                                                        ]
 
                 });
             }
@@ -284,9 +440,11 @@ class DatasetStats {
                 ds_name: event.target.dataset_info.ds_name,
                 filepath: event.target.dataset_info.filepath,
                 csrfmiddlewaretoken: csrftoken,
-                num_records: event.target.dataset_info.num_records,
+                num_records: Number(event.target.dataset_info.num_records),
                 features: JSON.stringify(event.target.dataset_info.features),
-                index_name: event.target.dataset_info.index_name
+                index_name: event.target.dataset_info.index_name,
+                lod_activated: event.target.dataset_info.lod,
+                lod_value: event.target.dataset_info.lod_value
             };
 
             for (var key in data ){
