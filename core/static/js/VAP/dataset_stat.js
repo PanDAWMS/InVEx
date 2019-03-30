@@ -114,7 +114,7 @@ class DatasetStats {
             });
         }
 
-        if (this.lod == true) {
+        if (this.lod == "true") {
             input.checked = true;
             div.style.display = 'block';
             slider.value = this.lod_value;
