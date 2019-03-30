@@ -260,6 +260,7 @@ def visualize_group(request):
         group = form_reactions.get_group_data(request)
         data = form_reactions.data_preparation(calc.data_converters.table_to_df(group['group_data_df']), request)
         data['group_vis'] = True
+        data['lod_activated'] = False
         if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
             data['startedat'] = startedat
         else:

@@ -219,7 +219,7 @@ def data_preparation(dataset, request):
     numeric_dataset = LocalReader().get_numeric_data(dataset)
     norm_dataset = LocalReader().scaler(numeric_dataset)
     auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
-    if request.POST['lod_activated'] == 'true':
+    if 'lod_activated' in request.POST and request.POST['lod_activated'] == 'true':
         lod = int(request.POST['lod_value'])
         lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
         norm_lod_dataset = LocalReader().scaler(lod_data.grouped_dataset)
@@ -308,9 +308,8 @@ def json_file_from_server(request, filename=False, index=False):
         data['num_records'] = dataset_stat.num_records
         data['index_name'] = dataset_stat.index_name
         data['filename'] = fname
-        if 'activated' in request.POST and request.POST['lod_value'] != '':
-            data['lod_value'] = int(request.POST['lod_value'])
-            data['lod_activated'] = True
+        data['lod'] = False
+        data['lod_value'] = 50
         return data
     except Exception as exc:
         logger.error(
@@ -332,15 +331,17 @@ def csv_file_from_server(request, filename=False):
         for file in list_of_files:
             if request.POST['filename'] == file['value']:
                 if os.path.isfile(DATASET_FILES_PATH + file['filename']):
-                    dataset = calc.importcsv.import_csv_file(DATASET_FILES_PATH + file['filename'], True, True, False)
                     filepath = DATASET_FILES_PATH + file['filename']
+                    dataset = LocalReader().read_df(file_path=filepath, file_format='csv',index_col=0, header=0)
+                    # dataset = calc.importcsv.import_csv_file(DATASET_FILES_PATH + file['filename'], True, True, False)
                 else:
                     logger.error('!form_reactions.csv_file_from_server!: Failed to read file.\nFilename: ' +
                                  DATASET_FILES_PATH + file['filename'])
                     return {}
     elif filename:
         filepath = os.path.join(settings.MEDIA_ROOT, filename)
-        dataset = calc.importcsv.import_csv_file(filepath, True, True, False)
+        dataset = LocalReader().read_df(file_path=filepath, file_format='csv',index_col=0, header=0)
+        # dataset = calc.importcsv.import_csv_file(filepath, True, True, False)
     else:
         logger.error(
             '!form_reactions.csv_file_from_server!: Wrong request.\nRequest parameters: ' + json.dumps(request.POST))
@@ -371,11 +372,8 @@ def csv_file_from_server(request, filename=False):
         data['num_records'] = dataset_stat.num_records
         data['index_name'] = dataset_stat.index_name
         data['filename'] = fname
-        if 'activated' in request.POST and request.POST['lod_value'] != '':
-            data['lod_value'] = int(request.POST['lod_value'])
-            data['lod_activated'] = True
-        # data = data_preparation(dataset, request)
-        # data['filename'] = request.POST['filename']
+        data['lod'] = False
+        data['lod_value'] = 50
         return data
     except Exception as exc:
         logger.error(
@@ -440,7 +438,7 @@ def update_dataset(request):
     reader = LocalReader()
     dataset = object
     if (file_extension == '.csv'):
-        dataset = reader.read_df(dataset_stat.filepath, file_format='csv', usecols=use_col)
+        dataset = reader.read_df(dataset_stat.filepath, file_format='csv', index_col=0, header=0,usecols=use_col)
     elif (file_extension == '.json'):
         dataset = reader.read_df(dataset_stat.filepath, file_format='json')
     data = data_preparation(dataset, request)

@@ -4,13 +4,15 @@
 
 class DatasetStats {
     
-    constructor(ds_id,ds_name,filepath,num_records,index_name,features) {
+    constructor(ds_id,ds_name,filepath,num_records,index_name,features,lod,lod_value) {
         this.ds_id = ds_id;
         this.ds_name = ds_name;
         this.filepath = filepath;
         this.num_records = num_records;
         this.index_name = index_name;
         this.features = features;
+        this.lod = lod;
+        this.lod_value = lod_value;
         this.MEASURES = [{'type':'ratio','columns':["feature_name","feature_type","min","mean","max","std","percentage_missing"]},
                          {'type':'ordinal','columns':["feature_name","feature_type","unique_number","percentage_missing","distribution"]},
                          {'type':'nominal','columns':["feature_name","unique_number","percentage_missing","distribution"]},
@@ -34,7 +36,7 @@ class DatasetStats {
         this.lod = false;
     }
 
-    createLOD(id, activated, lod_value) {
+    createLOD(id) {
         var top_element = document.getElementById(id);
         var input = document.createElement("input");
         input.type = "checkbox";
@@ -42,6 +44,7 @@ class DatasetStats {
         input.classList.add("lod_activation");
         input.setAttribute("id", "lod_activation_" + id);
         input.dataset_info = this;
+        input.lod_value = this.lod_value;
 
         var label = document.createElement("label");
         label.innerText = "Activate Level-of-Detail Generator for large data samples";
@@ -102,6 +105,7 @@ class DatasetStats {
                     if (div.style.display == 'none') {
                         div.style.display = 'block';
                         event.target.dataset_info.activate_lod();
+                        event.target.dataset_info.set_lod_value(event.target.lod_value);
                     }
                 } else {
                     div.style.display = 'none';
@@ -110,13 +114,13 @@ class DatasetStats {
             });
         }
 
-        if (activated == true) {
+        if (this.lod == true) {
             input.checked = true;
             div.style.display = 'block';
-            slider.value = lod_value;
-            slider_value.value = lod_value;
+            slider.value = this.lod_value;
+            slider_value.value = this.lod_value;
             this.activate_lod();
-            this.set_lod_value(lod_value);
+            this.set_lod_value(this.lod_value);
         } else {
             this.deactivate_lod();
         }
@@ -371,7 +375,7 @@ class DatasetStats {
 
         var root = document.getElementById(element_id);
 
-        root.appendChild(this.createLOD("lod",false,0));
+        root.appendChild(this.createLOD("lod"));
 
         root.appendChild(this.display_dataset_info());
 

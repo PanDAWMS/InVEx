@@ -70,7 +70,7 @@ class LocalReader(BaseReader):
         :keyword header: 0 (1st row is used as names), None (no column names).
 
         :return: Data for analysis.
-        :rtyphjye: DataFrame
+        :rtype: DataFrame
         """
         return pd.read_csv(file_path, **kwargs)
 

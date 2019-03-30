@@ -50,13 +50,12 @@ class BaseReader(object):
         :param df: DataFrame
         :return:
         """
-        df_numeric = df._get_numeric_data()
         imputer = SimpleImputer(missing_values=np.nan, strategy='mean')
-        df_imputer = pd.DataFrame(imputer.fit_transform(df_numeric), columns=df_numeric.columns)
+        df_imputer = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
         scaler = preprocessing.MinMaxScaler()
         scaled_df = scaler.fit_transform(df_imputer)
         scaled_df = pd.DataFrame(scaled_df, columns=df_imputer.columns).multiply(100)
-        return scaled_df
+        return scaled_df.set_index(df.index)
 
     @staticmethod
     def drop_na(data):

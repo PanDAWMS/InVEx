@@ -51,7 +51,6 @@
 <script src="{% static "js/VAP/statCharts.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="{% static "js/VAP/correlation_matrix.js" %}"></script>
-<script src="{% static "js/VAP/level_of_detail.js" %}"></script>
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 <script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
@@ -86,8 +85,10 @@
             var num_records = {{ num_records }};
             var index_name = '{{ index_name }}';
             var features = {{ features|safe }};
+            var lod = '{{ lod }}';
+            var lod_value = {{ lod_value }};
 
-            var features_stat = new DatasetStats(ds_id,ds_name,filepath,num_records,index_name,features);
+            var features_stat = new DatasetStats(ds_id,ds_name,filepath,num_records,index_name,features,lod,lod_value);
             features_stat.display_features_panel("features_panel");
 
         {% endif %}
