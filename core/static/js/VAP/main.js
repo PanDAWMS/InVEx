@@ -77,11 +77,14 @@ class Scene {
 			this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
 	}
 	
-	saveParameters(){
-		return {'camerapos': this.camera.position, 'camerarot': this.camera.rotation, 'subspace': this.proectionSubSpace, 'sphrad': this.defaultSpRad};
+	saveVisualParameters(){
+		return {'camerapos': this.camera.position,
+			'camerarot': this.camera.rotation,
+			'subspace': this.proectionSubSpace,
+			'sphrad': this.defaultSpRad};
 	}
 	
-	loadParameters(parametersDict){
+	loadVisualParameters(parametersDict){
 		if ('camerapos' in parametersDict){
 			this.camera.position.x = parametersDict['camerapos'].x;
 			this.camera.position.y = parametersDict['camerapos'].y;

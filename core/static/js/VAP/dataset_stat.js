@@ -3,7 +3,7 @@
  */
 
 class DatasetStats {
-    
+
     constructor(ds_id,ds_name,filepath,num_records,index_name,features,lod,lod_value) {
         this.ds_id = ds_id;
         this.ds_name = ds_name;

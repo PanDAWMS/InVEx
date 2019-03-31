@@ -585,6 +585,17 @@ def clusterize(request):
     data['algorithm'] = request.POST['algorithm']
     data['parameters'] = operation.print_parameters()
     data['filename'] = request.POST['fname']
+    data['data_uploaded'] = True
+    dataset_info = json.loads(request.POST['dataset_info'])
+    data['ds_id'] = dataset_info['ds_id']
+    data['ds_name'] = dataset_info['ds_name']
+    data['filepath'] = dataset_info['filepath']
+    data['num_records'] = dataset_info['num_records']
+    data['index_name'] = dataset_info['index_name']
+    data['features'] = dataset_info['features']
+    data['lod'] = dataset_info['lod']
+    data['lod_value'] = dataset_info['lod_value']
+
     return data
 
 

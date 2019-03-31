@@ -561,12 +561,22 @@ function printClusterStats(realdata, clusters, cluster_number, dimNames, parent_
     printStats(stat, dimNames, parent_element);
 }
 
-function add_parameters(submited_form) {
-    var new_input = document.createElement('input');
-    new_input.name = 'visualparameters';
-    new_input.type = 'hidden';
-    new_input.value = JSON.stringify(scene.saveParameters());
-    submited_form.appendChild(new_input);
+function collect_client_data(form) {
+    /*
+    Collecting data from client window:
+    - visual parameters
+    - dataset info
+     */
+    var visual_params = document.createElement('input');
+    visual_params.name = 'visualparameters';
+    visual_params.type = 'hidden';
+    visual_params.value = JSON.stringify(scene.saveVisualParameters());
+    var dataset_info = document.createElement('input');
+    dataset_info.name = 'dataset_info';
+    dataset_info.type = 'hidden';
+    dataset_info.value = JSON.stringify(this.features_stat);
+    form.appendChild(visual_params);
+    form.appendChild(dataset_info);
 }
 
 function fix_array(data) {
