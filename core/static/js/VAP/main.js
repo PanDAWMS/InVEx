@@ -344,6 +344,7 @@ class Scene {
 
 	// Function that is called to render the scene.
 	animate() {
+		requestAnimationFrame( this.renderer.render );
 		this.renderer.render( this.scene, this.camera );
 	}
 
