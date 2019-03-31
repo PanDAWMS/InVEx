@@ -273,7 +273,7 @@ class DatasetStats {
                             td.appendChild(this.values_frequency(feature));
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
-                                td.textContent = this.formatNumber(feature[name].toFixed()) + "%";
+                                td.textContent = this.formatNumber(feature[name].toFixed(2)) + "%";
                             else
                                 td.textContent = feature[name];
                         }
@@ -294,7 +294,7 @@ class DatasetStats {
                             td.appendChild(this.values_frequency(feature));
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
-                                td.textContent = this.formatNumber(feature[name].toFixed()) + "%";
+                                td.textContent = this.formatNumber(feature[name].toFixed(2)) + "%";
                             else
                                 td.textContent = feature[name];
                         }
@@ -315,7 +315,7 @@ class DatasetStats {
                             td.appendChild(this.draw_uniques_fieldset(feature));
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
-                                td.textContent = this.formatNumber(feature[name].toFixed()) + "%";
+                                td.textContent = this.formatNumber(feature[name].toFixed(2)) + "%";
                         }
                         else
                             td.textContent = feature[name];
@@ -351,7 +351,7 @@ class DatasetStats {
                             var value = feature[name];
                             if (this.isNumber(value)) {
                                 if (name == "percentage_missing")
-                                    td.textContent = this.formatNumber(value.toFixed()) + "%";
+                                    td.textContent = this.formatNumber(value.toFixed(2)) + "%";
                                 else
                                     td.textContent = this.formatNumber(value.toFixed(2));
                             }
@@ -389,29 +389,26 @@ class DatasetStats {
                 var table = document.createElement("table");
                 table.classList.add("display","compact");
                 table.setAttribute("id", "features_table_" + type);
-                // table.style.width = "100%";
                 table.appendChild(this._headers(type));
                 table.appendChild(this._rows(type));
-                root.append(table);
+                root.appendChild(table);
                 $('#features_table_' + type).DataTable({searching: false,
-                                                        paging: false,
-                                                        info: false,
-                                                        //responsive: true,
-                                                        responsive: {
-                                                            details: {
-                                                                type: 'inline'
-                                                            }
-                                                        },
-                                                        columnDefs: [
-                                                            { targets: 1,
-                                                              visible: true,
-                                                              orderable: false}
-                                                        ]
+                                        paging: false,
+                                        info: false,
+                                        responsive: {
+                                            details: {
+                                                type: 'inline'
+                                            }
+                                        },
+                                        columnDefs: [
+                                            { targets: 1,
+                                              visible: true,
+                                              orderable: false}
+                                        ]
 
                 });
             }
         }
-
 
         var csrf = document.createElement('input');
         csrf.setAttribute("type","hidden");
@@ -504,11 +501,11 @@ class DatasetStats {
         slider.setAttribute("min", item["min"]);
         slider.setAttribute("max", item["max"]);
         slider.value = item[q];
-        var span = document.createElement("span");
-        span.textContent = this.formatNumber(item[q].toFixed(2));
-        span.style.marginLeft = "10px";
+        var div = document.createElement("div");
+        div.textContent = this.formatNumber(item[q].toFixed(2));
+        div.style.marginLeft = "10px";
         td.appendChild(slider);
-        td.appendChild(span);
+        td.appendChild(div);
     }
 
     

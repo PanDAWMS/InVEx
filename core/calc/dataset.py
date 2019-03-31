@@ -100,7 +100,8 @@ class DatasetInfo():
                                                       unique_values=_unique_values,
                                                       unique_number=len(_unique_values),
                                                       distribution=_distribution,
-                                                      percentage_missing=_percentage_missing))
+                                                      percentage_missing=_percentage_missing,
+                                                      enabled='false'))
                 else:
                     _min = df[column].min()
                     _max = df[column].max()
@@ -133,7 +134,8 @@ class DatasetInfo():
                                                       q50=_q50,
                                                       q75=_q75,
                                                       q90=_q90,
-                                                      percentage_missing=_percentage_missing))
+                                                      percentage_missing=_percentage_missing,
+                                                      enabled='true'))
                                                       # scaled_max=_scaled_max * 100,
                                                       # scaled_min=float(_scaled_min) * 100,
                                                       # scaled_mean=_scaled_mean * 100,
@@ -165,7 +167,8 @@ class DatasetInfo():
                                                   unique_values=_unique_values,
                                                   unique_number=len(_unique_values),
                                                   distribution=_distribution,
-                                                  percentage_missing=_percentage_missing))
+                                                  percentage_missing=_percentage_missing,
+                                                  enabled='false'))
         return features
 
 
@@ -283,42 +286,18 @@ class DatasetInfo():
         :return: float
         """
         return (np.count_nonzero(df[column].isnull()) * 100) / len(df[column])
-        #return (sum(pd.isna(df[column])) / len(df[column])) * 100
-
-    def all_percentage_missing(self, df):
-        """this function will return the percentage of missing values in a dataset """
-        if isinstance(df, pd.DataFrame):
-            adict = {}  # a dictionary conatin keys columns names and values percentage of missin value in the columns
-            for col in df.columns:
-                adict[col] = (np.count_nonzero(df[col].isnull()) * 100) / len(df[col])
-            return pd.DataFrame(adict, index=['% of missing'], columns=adict.keys())
-        else:
-            raise TypeError("can only be used with panda dataframe")
 
 
 class FeatureStatistics():
 
     def __init__(self, **kwargs):
-        if 'min' in kwargs:
-            self.min = kwargs.get('min')
-        for attr in ['feature_name','feature_type','count','max','distribution','measure_type','unique_number',
+        for attr in ['feature_name','feature_type','count','min','max','distribution','measure_type','unique_number',
                      'unique_values','mean','std','q10','q25','q50','q75','q90','percentage_missing',
                      'scaled_min', 'scaled_max', 'scaled_mean', 'scaled_std',
-                     'scaled_q10', 'scaled_q25', 'scaled_q50', 'scaled_q75', 'scaled_q90'
+                     'scaled_q10', 'scaled_q25', 'scaled_q50', 'scaled_q75', 'scaled_q90','enabled'
                      ]:
-            if kwargs.get(attr):
+            if attr in kwargs:
                 self.__setattr__(attr, kwargs.get(attr))
-        self.enabled = 'true'
-        self.removeNaNRows = 'false'
 
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
-
-    def deactivate(self):
-        self.enabled = 'false'
-
-    def activate(self):
-        self.enabled = 'true'
-
-    def set_selected(self, selected_unique):
-        self.selected_uniques = selected_unique
