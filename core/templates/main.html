@@ -93,7 +93,8 @@
 
         {% endif %}
 
-		animate();
+		//animate();
+        scene.renderer.render( scene.scene, scene.camera );
 		init();
 
 		window.addEventListener( "resize", onSceneResize, false );
@@ -229,14 +230,22 @@
                         scene.setSource('{{ saveid|safe }}');
                     {% endif %}
 
+                    render();
+
 {#            {% endif %}#}
 
 		}
 
-		function animate() {
-			scene.animate();
-			requestAnimationFrame( animate );
-		}
+        scene.controls.addEventListener('change', render);
+
+        function render() {
+            scene.renderer.render( scene.scene, scene.camera );
+        }
+
+{#		function animate() {#}
+{#			scene.animate();#}
+{#			requestAnimationFrame( animate );#}
+{#		}#}
 
 	</script>
 {% endblock %}

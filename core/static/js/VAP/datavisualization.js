@@ -249,6 +249,7 @@ class DataVisualization extends Scene{
         radiusRange.value = this.defaultSpRad.toString();
 		changeRadiusBtn.onclick = function() {
 			this.sceneObject.changeRad(parseFloat(this.radiusRange.value));
+			this.sceneObject.renderer.render(this.scene, this.camera);
 			return false;
 		};
 
@@ -379,6 +380,7 @@ class DataVisualization extends Scene{
 								group_data[group] = self.getGroupsMeans(selected_spheres);
 						}
 					}
+					self.renderer.render(self.scene, self.camera);
 					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames)
 				}
 			var clearHistoryBtn = document.createElement('input');
@@ -391,6 +393,7 @@ class DataVisualization extends Scene{
 					self.cleanElement('history');
 					self.resetAllColorGroups();
 					self.selectionsHistory = [];
+					self.renderer.render(self.scene, self.camera);
 				}
 
 			form.appendChild(updateBtn);
@@ -453,6 +456,7 @@ class DataVisualization extends Scene{
 			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
 		}
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
@@ -843,6 +847,7 @@ class DataVisualization extends Scene{
 			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
 		}
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	changeCluster(sphere, newCluster){
@@ -850,6 +855,7 @@ class DataVisualization extends Scene{
 		sphere.dataObject[2].unshift(newCluster);
 		sphere.material.color = this.clusters_color_scheme[newCluster].clone();
 		scene.selectObject(sphere);
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	createColorScheme(){
@@ -871,6 +877,7 @@ class DataVisualization extends Scene{
 		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
 			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
 		}
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	// Color group of spheres
@@ -890,6 +897,7 @@ class DataVisualization extends Scene{
 			else
 				group[i].material.color = this.customColors[newgroup].clone();
 		}
+		this.renderer.render(this.scene, this.camera);
 		return newgroup;
 	}
 
@@ -928,6 +936,7 @@ class DataVisualization extends Scene{
 		this.redrawScene(); //Redraw the sphere with new quality
 		this.quality = quality;
 		setCookie('quality', this.quality, 14);
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	//Redraw the scene. Recreates the sphere and selected sphere groups and recreates all the spheres in it.
@@ -951,6 +960,7 @@ class DataVisualization extends Scene{
 			this.selectObject(newSphere);
 		}
 		this.scene.add(this.selectedObject);
+		this.renderer.render(this.scene, this.camera);
 	}
     
 	// Deactivates all interactions before changing it.
@@ -991,6 +1001,7 @@ class DataVisualization extends Scene{
 			} );
 			this.dragControls.addEventListener( 'dragend', function ( event ) { 
 				event.target.scene.controls.enabled = true;
+				event.target.scene.renderer.render(event.target.scene.scene, event.target.scene.camera);
 			} );
 			this.dragControls.addEventListener( 'drag', this.onSphereMove);
 			this.dragControls.activate();
@@ -1009,6 +1020,7 @@ class DataVisualization extends Scene{
 
 	//Reaction to a movement of a sphere. Checks the boundary, changes the dataobjects of the spheres.
 	onSphereMove(event) {
+
 		var obj = event.object;
 		if (obj.position.x<0)
 			obj.position.x = 0;
@@ -1042,114 +1054,117 @@ class DataVisualization extends Scene{
 		obj.realData[1][y] = obj.position.y * (max[y] - min[y]) / 100 + min[y];
 		obj.realData[1][z] = obj.position.z * (max[z] - min[z]) / 100 + min[z];
 
-		event.target.scene.printDataDialog(obj);
+		var scene = event.currentTarget.sceneObject.scene;
+
+		event.target.scene.printDataDialog(obj, scene);
+		//event.target.scene.renderer.render(event.target.scene.scene, event.target.scene.camera);
 
 	}
 	
 	//prints the sphere data in a nice dialogue box on top of the scene.
-	printDataDialog(sphereToPrint){
+	printDataDialog(sphereToPrint, scene){
 
-				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
-					this.dims_gui.removeFolder(this.dims_folder);
+		if (this.dims_gui.__folders['Multidimensional Coordinates']) {
+			this.dims_gui.removeFolder(this.dims_folder);
+		}
+		if (this.dims_gui.__folders['Auxiliary Data']) {
+			this.dims_gui.removeFolder(this.dims_aux_folder);
+		}
+		// Set DAT.GUI Controllers
+		var gui_data = {};
+		this.gui_data = gui_data;
+		var aux_gui_data = {};
+
+		gui_data[this.index] = sphereToPrint.dataObject[ 0 ];
+
+		// Set GUI fields for all coordinates (real data values)
+		for( var i = 0; i < sphereToPrint.realData[ 1 ].length; i++ ) {
+			gui_data[this.dimNames[ i ]] = sphereToPrint.realData[ 1 ][ i ];
+		}
+
+		for ( var j = 0; j < sphereToPrint.auxData[ 1 ].length; j++ ) {
+			aux_gui_data[this.auxNames[ j ]] = sphereToPrint.auxData[ 1 ][ j ];
+		}
+
+		// Create DAT.GUI object
+		this.createGui();
+
+		// Create new Folder
+		if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
+			this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
+		}
+
+		// Add dataset index field to dat.gui.Controller
+		this.dims_folder.add( gui_data, this.index );
+
+		// Add sliders with real data values
+		var counter = 0;
+		for ( var key in gui_data ) {
+			if ( key != this.index ) {
+				var min = 0;
+				var max = 0;
+				for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
+					if ( this.realStats[0][k] == 'Min' )
+						min = this.realStats[1][k][counter];
+					if ( this.realStats[0][k] == 'Max' )
+						max = this.realStats[1][k][counter];
 				}
-				if (this.dims_gui.__folders['Auxiliary Data']) {
-					this.dims_gui.removeFolder(this.dims_aux_folder);
-				}
-				// Set DAT.GUI Controllers
-                var gui_data = {};
-                this.gui_data = gui_data;
-                var aux_gui_data = {};
+				this.dims_folder.add( gui_data, key, min, max ).listen();
+				counter++;
+			}
+		}
 
-                gui_data[this.index] = sphereToPrint.dataObject[ 0 ];
+		this.dims_folder.open();
 
-                // Set GUI fields for all coordinates (real data values)
-                for( var i = 0; i < sphereToPrint.realData[ 1 ].length; i++ ) {
-                    gui_data[this.dimNames[ i ]] = sphereToPrint.realData[ 1 ][ i ];
-                }
+		// Create Auxiliary Data Folder
+		if (!this.dims_gui.__folders['Auxiliary Data']) {
+			this.dims_aux_folder = this.dims_gui.addFolder('Auxiliary Data');
+		}
 
-                for ( var j = 0; j < sphereToPrint.auxData[ 1 ].length; j++ ) {
-                	aux_gui_data[this.auxNames[ j ]] = sphereToPrint.auxData[ 1 ][ j ];
-				}
+		for ( var key in aux_gui_data ) {
+			this.dims_aux_folder.add( aux_gui_data, key );
+		}
 
-                // Create DAT.GUI object
-                this.createGui();
-
-                // Create new Folder
-                if (!this.dims_gui.__folders['Multidimensional Coordinates']) {
-                    this.dims_folder = this.dims_gui.addFolder('Multidimensional Coordinates');
-                }
-
-                // Add dataset index field to dat.gui.Controller
-                this.dims_folder.add( gui_data, this.index );
-
-                // Add sliders with real data values
-                var counter = 0;
-                for ( var key in gui_data ) {
-                    if ( key != this.index ) {
-                        var min = 0;
-                        var max = 0;
-                        for ( var k = 0; k < this.realStats[ 0 ].length; k++ ) {
-                            if ( this.realStats[0][k] == 'Min' )
-                                min = this.realStats[1][k][counter];
-                            if ( this.realStats[0][k] == 'Max' )
-                                max = this.realStats[1][k][counter];
-                        }
-                        this.dims_folder.add( gui_data, key, min, max ).listen();
-                        counter++;
-                    }
-                }
-				
-                this.dims_folder.open();
-
-                // Create Auxiliary Data Folder
-				if (!this.dims_gui.__folders['Auxiliary Data']) {
-                    this.dims_aux_folder = this.dims_gui.addFolder('Auxiliary Data');
-                }
-
-                for ( var key in aux_gui_data ) {
-					this.dims_aux_folder.add( aux_gui_data, key );
-                }
-
-                this.dims_folder.open();
-				this.dims_aux_folder.open();
+		this.dims_folder.open();
+		this.dims_aux_folder.open();
 
 
-                this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
+		this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
 
-                var obj = {
-                    coordinates: sphereToPrint.dataObject[1],
-					selectedObject: sphereToPrint,
-					scene: this,
-                    Recalculate:function() {
-						sendAjaxPredictRequest(sphereToPrint, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
-                    }
-                };
+		var obj = {
+			coordinates: sphereToPrint.dataObject[1],
+			selectedObject: sphereToPrint,
+			scene: this,
+			Recalculate:function() {
+				sendAjaxPredictRequest(sphereToPrint, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
+			}
+		};
 
-                this.dims_folder.add(obj,'Recalculate');
+		this.dims_folder.add(obj,'Recalculate');
 
 
-                for (var i = 0; i < this.dims_folder.__controllers.length - 1; i++) {
-                    var current_controller = this.dims_folder.__controllers[ i ];
-                    current_controller.selectedObject = sphereToPrint;
-                    current_controller.dimNames = this.dimNames;
-                    current_controller.subSpace = this.proectionSubSpace;
-                    current_controller.realStats = this.realStats;
-
-                    current_controller.onChange(function(value) {
-                    });
-
-                    current_controller.onFinishChange(function(value) {
-                        var currDimName = this.property;
-                        var currDimNum = this.dimNames.indexOf(currDimName);
-                        var min = this.realStats[1][1][currDimNum];
-                        var max = this.realStats[1][2][currDimNum];
-                        this.selectedObject.dataObject[1][currDimNum] = (( value - min ) / ( max - min )) * 100;
-                        var sphere = this.selectedObject;
-                        sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
-                                            sphere.dataObject[1][this.subSpace[1]],
-                                            sphere.dataObject[1][this.subSpace[2]]);
-                    });
-                }
+		for (var i = 0; i < this.dims_folder.__controllers.length - 1; i++) {
+			var current_controller = this.dims_folder.__controllers[ i ];
+			current_controller.selectedObject = sphereToPrint;
+			current_controller.dimNames = this.dimNames;
+			current_controller.subSpace = this.proectionSubSpace;
+			current_controller.realStats = this.realStats;
+			current_controller.sceneObject = scene;
+			current_controller.onChange(function(value) {
+			});
+			current_controller.onFinishChange(function(value) {
+				var currDimName = this.property;
+				var currDimNum = this.dimNames.indexOf(currDimName);
+				var min = this.realStats[1][1][currDimNum];
+				var max = this.realStats[1][2][currDimNum];
+				this.selectedObject.dataObject[1][currDimNum] = (( value - min ) / ( max - min )) * 100;
+				var sphere = this.selectedObject;
+				sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
+									sphere.dataObject[1][this.subSpace[1]],
+									sphere.dataObject[1][this.subSpace[2]]);
+				this.sceneObject.renderer.render(this.sceneObject.scene, this.sceneObject.camera);
+			});
+		}
 	}
 
 	//Reaction to mouse click event. Depends on the interactive mode calls different functions
@@ -1197,6 +1212,7 @@ class DataVisualization extends Scene{
 			}
 			var selected_group_link = document.getElementById("selected_group_link");
 			selected_group_link.style.display = "none";
+			this.renderer.render(this.scene, this.camera);
 			return true;
 		}
 
@@ -1209,10 +1225,11 @@ class DataVisualization extends Scene{
 			if (this.dims_gui.__folders['Auxiliary Data']) {
 				this.dims_gui.removeFolder(this.dims_aux_folder);
 			}
+			this.renderer.render(this.scene, this.camera);
 		}
 		
-		this.selectObject(obj);	
-		this.printDataDialog(obj);
+		this.selectObject(obj);
+		this.printDataDialog(obj, this.scene);
 
 		if (this.lodData.length > 0 ) {
 			var csrftoken = Cookies.get('csrftoken');
@@ -1279,6 +1296,7 @@ class DataVisualization extends Scene{
 			return true;
 		this.selectObject(obj);
 		this.addElementToTable(this.multiChoiceTable, obj);
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	//reaction to an object click in drag mode.
@@ -1295,7 +1313,8 @@ class DataVisualization extends Scene{
 		}
 		
 		this.selectObject(obj);
-		this.printDataDialog(obj);
+		this.printDataDialog(obj, this);
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	//selects the given object
@@ -1313,6 +1332,7 @@ class DataVisualization extends Scene{
 		this.groupOfSelectOutlines.add(lineCube);
 		this.selectedObject.add(obj);
 		lineCube.visible = obj.visible;
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	//Unselects all objects
@@ -1320,6 +1340,7 @@ class DataVisualization extends Scene{
 		while (this.selectedObject.children.length!=0){
 			this.unSelectObject(this.selectedObject.children.pop());
 		}
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	changeVisibilityAll(){
@@ -1352,6 +1373,7 @@ class DataVisualization extends Scene{
 		obj.selectedCircut = undefined;
 		obj.material.color.set( invertColor(obj.material.color) );
 		this.groupOfSpheres.add(obj);
+		this.renderer.render(this.scene, this.camera);
 	}
 
 	//Gets the object that is being on the given two dimensional point

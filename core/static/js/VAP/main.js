@@ -76,7 +76,7 @@ class Scene {
 			this.createGui();
 			this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
 	}
-	
+
 	saveVisualParameters(){
 		return {'camerapos': this.camera.position,
 			'camerarot': this.camera.rotation,
@@ -187,6 +187,8 @@ class Scene {
 			this.sceneObject.setNewSubSpace(parseInt(this.dimsSelectArray[0].value),
 											parseInt(this.dimsSelectArray[1].value),
 											parseInt(this.dimsSelectArray[2].value));
+			this.sceneObject.renderer.render(this.sceneObject.scene,
+											 this.sceneObject.camera);
 		};
 		form.appendChild(changeDimBtn);
 
@@ -343,10 +345,9 @@ class Scene {
 	}
 
 	// Function that is called to render the scene.
-	animate() {
-		requestAnimationFrame( this.renderer.render );
-		this.renderer.render( this.scene, this.camera );
-	}
+	// animate() {
+	// 	this.renderer.render( this.scene, this.camera );
+	// }
 
 	// Recalculates everything needed after window resize.
 	onResize() {
