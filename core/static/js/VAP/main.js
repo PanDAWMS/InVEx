@@ -345,9 +345,9 @@ class Scene {
 	}
 
 	// Function that is called to render the scene.
-	// animate() {
-	// 	this.renderer.render( this.scene, this.camera );
-	// }
+	animate() {
+		this.renderer.render( this.scene, this.camera );
+	}
 
 	// Recalculates everything needed after window resize.
 	onResize() {

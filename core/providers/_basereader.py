@@ -65,14 +65,16 @@ class BaseReader(object):
         :param data: Data for analysis.
         :type data: DataFrame
         """
-        # first remove all columns, where the number of NaNs
+        # first remove all rows and columns, where all values are NaN
+        data.dropna(axis=0, how='all', inplace=True)
+        data.dropna(axis=1, how='all', inplace=True)
+        # then remove all columns, where the number of NaNs
         # exceeds 80% (almost empty column)
         for column in data.columns.tolist():
             if (data[column].isna().sum() / data[column].count()) > 0.8:
                 data.drop(column, 1, inplace=True)
-        # then remove all rows, where all values are NaN
-        data.dropna(axis=0, how='all', inplace=True)
         # and remove all rows, where any value is NaN
+        # to avoid NaN values in clustering algorithms
         data.dropna(axis=0, how='any', inplace=True)
 
     @staticmethod
