@@ -76,12 +76,15 @@ class Scene {
 			this.createGui();
 			this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
 	}
-	
-	saveParameters(){
-		return {'camerapos': this.camera.position, 'camerarot': this.camera.rotation, 'subspace': this.proectionSubSpace, 'sphrad': this.defaultSpRad};
+
+	saveVisualParameters(){
+		return {'camerapos': this.camera.position,
+			'camerarot': this.camera.rotation,
+			'subspace': this.proectionSubSpace,
+			'sphrad': this.defaultSpRad};
 	}
 	
-	loadParameters(parametersDict){
+	loadVisualParameters(parametersDict){
 		if ('camerapos' in parametersDict){
 			this.camera.position.x = parametersDict['camerapos'].x;
 			this.camera.position.y = parametersDict['camerapos'].y;
@@ -172,10 +175,10 @@ class Scene {
             }
 		}
 		
-        var changeDimBtn = document.createElement('button'); //Create button to change the dimension
+        var changeDimBtn = document.createElement('input'); //Create button to change the dimension
 		changeDimBtn.id = 'button' + dimensionControlID;
 		changeDimBtn.setAttribute('type', 'button');
-		changeDimBtn.innerText = 'Change Dimensions';
+		changeDimBtn.value = 'Change Dimensions';
 		changeDimBtn.title = 'This may take some time';
 		changeDimBtn.classList.add('button', 'small');
         changeDimBtn.sceneObject = this;
@@ -184,6 +187,8 @@ class Scene {
 			this.sceneObject.setNewSubSpace(parseInt(this.dimsSelectArray[0].value),
 											parseInt(this.dimsSelectArray[1].value),
 											parseInt(this.dimsSelectArray[2].value));
+			this.sceneObject.renderer.render(this.sceneObject.scene,
+											 this.sceneObject.camera);
 		};
 		form.appendChild(changeDimBtn);
 
@@ -198,11 +203,11 @@ class Scene {
 
 		var form = createControlBasics('form' + resetID);
 		
-		var resetCameraBtn = document.createElement('button');
+		var resetCameraBtn = document.createElement('input');
 		resetCameraBtn.id = resetID;
 		resetCameraBtn.classList.add('button', 'small');
 		resetCameraBtn.setAttribute('type', 'button');
-		resetCameraBtn.innerText = 'Reset Camera'
+		resetCameraBtn.value = 'Reset Camera';
 		resetCameraBtn.sceneObject = this;
 		resetCameraBtn.onclick = function() {
 			this.sceneObject.resetCamera();
@@ -242,10 +247,10 @@ class Scene {
 		form.groupDiv.appendChild(selectbox);
 		form.createNewLine();
 		//Button to change the quality.
-		var button = document.createElement('button');
+		var button = document.createElement('input');
 		button.id = 'button' + changeQualityID;
 		button.setAttribute('type', 'button');
-		button.innerText = 'Change Quality';
+		button.value = 'Change Quality';
 		button.title = 'This may take some time';
 		button.qualitybox = selectbox;
 		button.classList.add('button', 'small');
@@ -340,9 +345,9 @@ class Scene {
 	}
 
 	// Function that is called to render the scene.
-	animate() {
-		this.renderer.render( this.scene, this.camera );
-	}
+	// animate() {
+	// 	this.renderer.render( this.scene, this.camera );
+	// }
 
 	// Recalculates everything needed after window resize.
 	onResize() {

@@ -102,6 +102,11 @@ def main(request):
             except Exception as exc:
                 logger.error(
                     '!views.performance_test_frame!: Couldn\'t load the a CSV file from the server. \n' + str(exc))
+        elif request.POST['formt'] == 'visualize':
+            try:
+                data = form_reactions.update_dataset(request)
+            except Exception as exc:
+                logger.error('!views.performance_test_frame!: Couldn\'t perform an update. \n' + str(exc))
         elif request.POST['formt'] == 'cluster':
             try:
                 data = form_reactions.clusterize(request)
@@ -121,7 +126,6 @@ def main(request):
             except Exception as exc:
                 logger.error('!views.performance_test_frame!: Couldn\'t get the group. \n' + str(exc))
                 return JsonResponse({})
-
     elif request.method == 'GET' and 'remotesrc' in request.GET:
         err_msg_subj = '[views/remotesrc=pandajobs]'
 
@@ -131,7 +135,6 @@ def main(request):
             except Exception as exc:
                 logger.error('{0} Remote data are not accessible: {1}'.
                              format(err_msg_subj, exc))
-
     else:
         data = EMPTY_DATA
         data['type'] = 'datavisualization'
@@ -147,11 +150,6 @@ def main(request):
         data['dataset_files'] = False
         logger.error('Could not read the list of datasets file')
     return render(request, 'main.html', data, content_type='text/html')
-
-
-
-
-
 
 
 def site_to_site(request):
@@ -190,9 +188,6 @@ def site_to_site(request):
         data['dataset_files'] = False
         logger.error('Could not read the list of datasets file')
     return render(request, 'mesh.html', data, content_type='text/html')
-
-
-
 
 
 def performance_test(request):
@@ -265,9 +260,11 @@ def visualize_group(request):
         group = form_reactions.get_group_data(request)
         data = form_reactions.data_preparation(calc.data_converters.table_to_df(group['group_data_df']), request)
         data['group_vis'] = True
+        data['lod_activated'] = False
         if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
             data['startedat'] = startedat
         else:
             data['startedat'] = False
         data['built'] = datetime.now()
     return render(request, 'main.html', data, content_type="text/html")
+

@@ -63,10 +63,10 @@ class MeshVisualization extends DataVisualization{
             selectbox.add(option);
         }
 		
-        var changeDimBtn = document.createElement('button'); //Create button to change the dimension
+        var changeDimBtn = document.createElement('input'); //Create button to change the dimension
 		changeDimBtn.id = 'button' + dimensionControlID;
 		changeDimBtn.setAttribute('type', 'button');
-		changeDimBtn.innerText = 'Change Dimensions';
+		changeDimBtn.value = 'Change Dimensions';
 		changeDimBtn.title = 'This may take some time';
 		changeDimBtn.classList.add('button', 'small');
         changeDimBtn.sceneObject = this;
@@ -87,10 +87,10 @@ class MeshVisualization extends DataVisualization{
         
         var form = createControlBasics('form' + distChangeID);
 
-        var changeDistanceBtn = document.createElement('button');
+        var changeDistanceBtn = document.createElement('input');
         changeDistanceBtn.id = 'button' + distChangeID;
         changeDistanceBtn.classList.add('button', 'small');
-        changeDistanceBtn.innerText = 'Change Distance';
+        changeDistanceBtn.value = 'Change Distance';
         changeDistanceBtn.setAttribute('type', 'button');
 
         var distanceRange = document.createElement('input');
@@ -457,10 +457,10 @@ class MeshVisualization extends DataVisualization{
                     self.selectionsHistory[this.historyID]['active'] = !this.checked;
 				};
 			}
-			var updateBtn = document.createElement('button');
+			var updateBtn = document.createElement('input');
 				updateBtn.id = 'updateBtn';
 				updateBtn.classList.add('button', 'small');
-				updateBtn.innerText = 'Update Colors';
+				updateBtn.value = 'Update Colors';
 				updateBtn.setAttribute('type', 'button');
 				updateBtn.onclick = function(event) {
 					event.preventDefault();
@@ -505,10 +505,10 @@ class MeshVisualization extends DataVisualization{
 					}
 					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames.slice(2), 100);
 				}
-			var clearHistoryBtn = document.createElement('button');
+			var clearHistoryBtn = document.createElement('input');
 				clearHistoryBtn.id = 'clearHistBtn';
 				clearHistoryBtn.classList.add('button', 'small');
-				clearHistoryBtn.innerText = 'Clear Color History';
+				clearHistoryBtn.value = 'Clear Color History';
 				clearHistoryBtn.setAttribute('type', 'button');
 				clearHistoryBtn.onclick = function(event) {
 					event.preventDefault();
