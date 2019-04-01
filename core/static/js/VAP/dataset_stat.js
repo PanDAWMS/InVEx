@@ -13,11 +13,11 @@ class DatasetStats {
         this.features = features;
         this.lod = lod;
         this.lod_value = lod_value;
-        this.MEASURES = [{'type':'ratio','columns':["feature_name","feature_type","min","mean","max","std","percentage_missing"]},
-                         {'type':'ordinal','columns':["feature_name","feature_type","unique_number","percentage_missing","distribution"]},
-                         {'type':'nominal','columns':["feature_name","unique_number","percentage_missing","distribution"]},
-                         {'type':'interval','columns':["feature_name","unique_values","percentage_missing"]},
-                         {'type':'clustered','columns':["feature_name","percentage_missing","unique_values"]}];
+        this.MEASURES = [{'type':'ratio','columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
+                         {'type':'ordinal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
+                         {'type':'nominal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
+                         {'type':'interval','columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
+                         {'type':'clustered','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
     }
 
     set_lod_value(value) {

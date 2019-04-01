@@ -147,6 +147,7 @@ class DatasetInfo():
                                                       # scaled_q90=_scaled_q90 * 100))
             if _is_object:
                 result = self.to_datetime(column, df[column])
+                _unique_number = len(df[column].dropna().unique().tolist())
                 _distribution = {}
                 if result is not None:
                     _unique_values = [result.min().isoformat(), result.max().isoformat()]
@@ -165,7 +166,7 @@ class DatasetInfo():
                                                   measure_type=_measure_type,
                                                   count=_count,
                                                   unique_values=_unique_values,
-                                                  unique_number=len(_unique_values),
+                                                  unique_number=_unique_number,
                                                   distribution=_distribution,
                                                   percentage_missing=_percentage_missing,
                                                   enabled='false'))
@@ -210,12 +211,13 @@ class DatasetInfo():
         :return:
         """
         if type == 'object':
-            return 1. * data.nunique() / data.count() < 0.05
+            return 1. * data.nunique() / data.count() < 0.1
         else:
-            if len(data.dropna().unique().tolist()) <= 50:
-                return  1. * data.nunique() / data.count() < 0.03
-            else:
-                return False
+            return 1. * data.nunique() / data.count() < 0.1
+            # if len(data.dropna().unique().tolist()) <= 50:
+            #     return  1. * data.nunique() / data.count() < 0.03
+            # else:
+            #     return False
             # top_n = 10
             # return 1. * data.value_counts(normalize=True).head(top_n).sum() > 0.8
 
