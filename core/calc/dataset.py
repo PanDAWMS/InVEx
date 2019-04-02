@@ -172,7 +172,6 @@ class DatasetInfo():
                                                   enabled='false'))
         return features
 
-
     def unique_values_distribution(self, data):
         """
         Generating pandas.Series with frequencies of unique column values

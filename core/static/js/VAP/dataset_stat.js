@@ -155,35 +155,21 @@ class DatasetStats {
         return table;
     }
 
-    draw_bar_chart(title, distribution_data, td) {
-
-        var canvas = document.createElement("canvas");
-        canvas.setAttribute("id","bar_chart_"+title);
-        td.appendChild(canvas);
-        var data = {};
+    generate_chart(distribution_data, title) {
+        var domElement = document.createElement("div");
+        domElement.id = "distr_" + title;
         var _labels = [];
         var _data = [];
-        var _label = title + " distribution";
         for (var k in distribution_data) {
             _labels.push(k);
             _data.push(distribution_data[k]);
         }
-        data["labels"] = _labels;
-        var dataset = {};
-        dataset["label"] = _label;
-        dataset["backgroundColor"] = 'rgb(255, 99, 132)';
-        dataset["borderColor"] = 'rgb(255, 99, 132)';
-        dataset["data"] = _data;
-        data["datasets"] = [dataset];
-
-        var ctx = canvas.getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: data,
-            options: {}
-        });
-
-        return canvas;
+        var data = [{x: _labels, y: _data, type: 'bar'}];
+        var layout = {
+           xaxis: { type: 'category' }
+        };
+        Plotly.newPlot(domElement, data, layout, {displayModeBar: false});
+        return domElement;
     }
 
     values_frequency(item) {
@@ -268,9 +254,12 @@ class DatasetStats {
                     if (feature[name] === undefined)
                         td.textContent = '';
                     else {
-                        if (name == "distribution")
-                            //this.draw_bar_chart(name, this.values_frequency(feature), td);
-                            td.appendChild(this.values_frequency(feature));
+                        if (name == "distribution") {
+                            if (feature["unique_number"] == 1)
+                                td.appendChild(this.values_frequency(feature));
+                            else
+                               td.appendChild(this.generate_chart(feature["distribution"], name));
+                        }
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
                                 td.textContent = this.formatNumber(feature[name].toFixed(2)) + "%";
@@ -290,8 +279,12 @@ class DatasetStats {
                     if (feature[name] === undefined)
                         td.textContent = '';
                     else {
-                        if (name == "distribution")
-                            td.appendChild(this.values_frequency(feature));
+                        if (name == "distribution") {
+                            if (feature["unique_number"] == 1)
+                                td.appendChild(this.values_frequency(feature));
+                            else
+                               td.appendChild(this.generate_chart(feature["distribution"], name));
+                        }
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
                                 td.textContent = this.formatNumber(feature[name].toFixed(2)) + "%";
