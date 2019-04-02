@@ -262,12 +262,16 @@ def file_upload(request, source, source_file=False, remote_data=False):
             destination.close()
         return source_file.name
     elif source == 'remote' and remote_data:
-        fname = request.GET['remotesrc'] + '_' + request.GET['taskid'] + '.json'
-        dest_path = os.path.join(settings.MEDIA_ROOT, fname)
-        with open(dest_path, 'w') as destination:
-            json.dump(remote_data, destination)
-            destination.close()
-        return fname
+        if request.GET['remotesrc'] == 'pandajobs':
+            fname = request.GET['remotesrc'] + '_' + request.GET['taskid'] + '.csv'
+            dest_path = os.path.join(settings.MEDIA_ROOT, fname)
+            df = pd.read_json(json.dumps(remote_data))
+            df.set_index('pandaid', inplace=True)
+            df.to_csv(dest_path)
+            # with open(dest_path, 'w') as destination:
+            #     json.dump(remote_data, destination)
+            #     destination.close()
+            return fname
 
 
 def new_csv_file_upload(request):
@@ -286,36 +290,36 @@ def new_csv_file_upload(request):
             logger.error('File upload error')
             raise
 
-def json_file_from_server(request, filename=False, index=False):
-    filepath = os.path.join(settings.MEDIA_ROOT, filename)
-    dataset = LocalReader().read_df(file_path=filepath, file_format='json')
-    if index:
-        dataset.set_index(index, inplace=True)
-    try:
-        fname = filename
-        data = {}
-        data['data_uploaded'] = True
-        data['features'] = []
-        dataset_stat = calc.dataset.DatasetInfo()
-        dataset_stat.get_info_from_dataset(dataset, ds_id=1,
-                                           ds_name=fname,
-                                           filepath=filepath)
-        for i in range(len(dataset_stat.features)):
-            data['features'].append(dataset_stat.features[i].__dict__)
-        data['ds_id'] = dataset_stat.ds_id
-        data['ds_name'] = dataset_stat.ds_name
-        data['filepath'] = dataset_stat.filepath
-        data['num_records'] = dataset_stat.num_records
-        data['index_name'] = dataset_stat.index_name
-        data['filename'] = fname
-        data['lod'] = False
-        data['lod_value'] = 50
-        return data
-    except Exception as exc:
-        logger.error(
-            '!form_reactions.csv_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
-            + json.dumps(fname) + '\n' + str(exc))
-        raise
+# def json_file_from_server(request, filename=False, index=False):
+#     filepath = os.path.join(settings.MEDIA_ROOT, filename)
+#     dataset = LocalReader().read_df(file_path=filepath, file_format='json')
+#     if index:
+#         dataset.set_index(index, inplace=True)
+#     try:
+#         fname = filename
+#         data = {}
+#         data['data_uploaded'] = True
+#         data['features'] = []
+#         dataset_stat = calc.dataset.DatasetInfo()
+#         dataset_stat.get_info_from_dataset(dataset, ds_id=1,
+#                                            ds_name=fname,
+#                                            filepath=filepath)
+#         for i in range(len(dataset_stat.features)):
+#             data['features'].append(dataset_stat.features[i].__dict__)
+#         data['ds_id'] = dataset_stat.ds_id
+#         data['ds_name'] = dataset_stat.ds_name
+#         data['filepath'] = dataset_stat.filepath
+#         data['num_records'] = dataset_stat.num_records
+#         data['index_name'] = dataset_stat.index_name
+#         data['filename'] = fname
+#         data['lod'] = False
+#         data['lod_value'] = 50
+#         return data
+#     except Exception as exc:
+#         logger.error(
+#             '!form_reactions.csv_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
+#             + json.dumps(fname) + '\n' + str(exc))
+#         raise
 
 
 def csv_file_from_server(request, filename=False):
@@ -434,13 +438,8 @@ def update_dataset(request):
         if item['enabled'] == 'true':
             use_col.append(item['feature_name'])
     use_col.append(dataset_stat.index_name)
-    filename, file_extension = os.path.splitext(dataset_stat.filepath)
     reader = LocalReader()
-    dataset = object
-    if (file_extension == '.csv'):
-        dataset = reader.read_df(dataset_stat.filepath, file_format='csv', index_col=0, header=0,usecols=use_col)
-    elif (file_extension == '.json'):
-        dataset = reader.read_df(dataset_stat.filepath, file_format='json')
+    dataset = reader.read_df(dataset_stat.filepath, file_format='csv', index_col=0, header=0,usecols=use_col)
     data = data_preparation(dataset, request)
     data['filename'] = dataset_stat.ds_name
     data['data_uploaded'] = True
@@ -486,11 +485,10 @@ def get_jobs_from_panda(request):
 
     if data is not None:
         try:
-            return json_file_from_server(request, file_upload(request=request,
+            return csv_file_from_server(request, file_upload(request=request,
                                                              source='remote',
                                                              source_file=False,
-                                                             remote_data=data),
-                                        index='pandaid')
+                                                             remote_data=data))
         except Exception as exc:
             logger.error('{0} Failed to prepare data: {1}'.
                          format(err_msg_subj, exc))
