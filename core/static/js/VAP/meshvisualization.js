@@ -12,6 +12,8 @@ class MeshVisualization extends DataVisualization{
         this.meshCoordinates = [[], [], {}, {}];
         this.objectsOnMesh = [];
         this.visibilityState = [true, true, true, true];
+        this.defaultColoring = true;
+        this.clusters_color_scheme = this.createColorScheme();
         for (var i = 0; i<xCoordinates.length; ++i)
         {
             this.meshCoordinates[0][i] = [xCoordinates[i], i*meshDistance];
@@ -205,6 +207,33 @@ class MeshVisualization extends DataVisualization{
         parentElement.appendChild(blueSwitch);
         parentElement.appendChild(yellowSwitch);
         parentElement.appendChild(redSwitch);
+
+        scene.dataonsceneswitches=[greenSwitch, blueSwitch, yellowSwitch, redSwitch]
+    }
+
+    createCancelDefaultColorButton(parentElement){
+        var cancelDefColID = 'cancel_dif_color';
+        while(document.getElementById(cancelDefColID)!==null)
+            cancelDefColID += (Math.random()*10).toString().slice(-1);
+
+        var cancelDefColBtn = document.createElement('input');
+        cancelDefColBtn.id = 'button' + cancelDefColID;
+        cancelDefColBtn.classList.add('button', 'small');
+        cancelDefColBtn.value = 'Cancel Default Colors';
+        cancelDefColBtn.setAttribute('type', 'button');
+        cancelDefColBtn.sceneObj = this;
+        cancelDefColBtn.onclick=function(){
+            if (this.sceneObj.defaultColoring){
+                this.value='Enable Default Colors';
+                this.sceneObj.changeDefaultColorsState(false);
+            }
+            else{
+                this.value='Cancel Default Colors';
+                this.sceneObj.changeDefaultColorsState(true);
+            }
+        }
+        parentElement.appendChild(cancelDefColBtn);
+
     }
 
     createRangeGroup(form, selectelement, startvalueindex){
@@ -282,18 +311,24 @@ class MeshVisualization extends DataVisualization{
     //#endregion
     //#region User interaction
     checkState(realData){
-        if (realData[1][this.proectionSubSpace[1]]<=this.realStats[1][3][this.proectionSubSpace[1]-2])
+        if (this.defaultColoring){
+            if (realData[1][this.proectionSubSpace[1]]<=this.realStats[1][3][this.proectionSubSpace[1]-2])
+                return 0;
+            var per = (realData[1][this.proectionSubSpace[1]]-this.realStats[1][3][this.proectionSubSpace[1]-2])/(this.realStats[1][2][this.proectionSubSpace[1]-2]-this.realStats[1][3][this.proectionSubSpace[1]-2]);
+            if(per>0.8)
+                return 3;
+            if(per>0.5)
+                return 2;
+            return 1;
+        }
+        else
             return 0;
-        var per = (realData[1][this.proectionSubSpace[1]]-this.realStats[1][3][this.proectionSubSpace[1]-2])/(this.realStats[1][2][this.proectionSubSpace[1]-2]-this.realStats[1][3][this.proectionSubSpace[1]-2]);
-        if(per>0.8)
-            return 3;
-        if(per>0.5)
-            return 2;
-        return 1;
     }
 
     createColorScheme(){
-        return Object.assign({}, this.customColors, {0: new THREE.Color(0x00FF00), 1: new THREE.Color(0x0000FF), 2: new THREE.Color(0xFFFF00), 3: new THREE.Color(0xFF0000)});
+        return Object.assign({}, this.customColors, (this.defaultColoring) ? 
+        {0: new THREE.Color(0x00FF00), 1: new THREE.Color(0x0000FF), 2: new THREE.Color(0xFFFF00), 3: new THREE.Color(0xFF0000)}:
+        getColorScheme([0], this.theme));
     }
 
     changeState(sphere){
@@ -373,6 +408,27 @@ class MeshVisualization extends DataVisualization{
         this.moveSpheres()
     }
 
+    changeDefaultColorsState(state){
+        this.defaultColoring = state;
+        this.clusters_color_scheme = this.createColorScheme();
+        if (this.dataonsceneswitches!=undefined){
+            for(var i=0; i<this.dataonsceneswitches.length; ++i){
+                if (state){
+                    this.dataonsceneswitches[i].classList.remove('hide')
+                } else{
+                    this.dataonsceneswitches[i].classList.add('hide')
+                    this.dataonsceneswitches[i].inputElement.checked=true;
+                }
+            }
+            for(var i=0; i<this.visibilityState.length; ++i){
+                this.visibilityState[i] = true;
+
+            }
+        }
+        this.changeStateAll()
+        this.changeVisibilityAll()
+    }
+
     redrawScene(){
         if (this.meshCoordinates != undefined){
             this.objectsOnMesh = [];
@@ -382,6 +438,20 @@ class MeshVisualization extends DataVisualization{
             }
         }
         super.redrawScene()
+    }
+    
+    changeStateAll() {
+        for(var i=0; i<this.objectsOnMesh.length; ++i)
+            for(var j=0; j<this.objectsOnMesh[i].length; ++j)
+                if(this.objectsOnMesh[i][j] != undefined)
+                    for(var k=0; k<this.objectsOnMesh[i][j].length; ++k){
+                        this.changeState(this.objectsOnMesh[i][j][k]);
+                        if (this.objectsOnMesh[i][j][k].selectedCircut != undefined){
+                            this.objectsOnMesh[i][j][k].material.color = invertColor(this.clusters_color_scheme[this.objectsOnMesh[i][j][k].dataObject[2][0]].clone()); 
+                        }
+                        else
+                            this.objectsOnMesh[i][j][k].material.color = this.clusters_color_scheme[this.objectsOnMesh[i][j][k].dataObject[2][0]].clone(); 
+                    }
     }
     
     moveSpheres() {

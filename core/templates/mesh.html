@@ -175,6 +175,7 @@
             
                 {% if type == "site2site" %}
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                scene.createCancelDefaultColorButton(document.getElementById('data_on_scene'));
                 scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
                 {% endif %}
                 var temp=scene.createNewGroupElement();
