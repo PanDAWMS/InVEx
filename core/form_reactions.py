@@ -438,8 +438,13 @@ def update_dataset(request):
         if item['enabled'] == 'true':
             use_col.append(item['feature_name'])
     use_col.append(dataset_stat.index_name)
-    reader = LocalReader()
-    dataset = reader.read_df(dataset_stat.filepath, file_format='csv', index_col=0, header=0,usecols=use_col)
+    dataset = pd.DataFrame()
+    if 'group_id' in request.GET:
+        group = calc.grouped.GroupedData()
+        dataset = group.load_from_file(int(request.GET['group_id']), request.POST['filepath'])
+    else:
+        reader = LocalReader()
+        dataset = reader.read_df(dataset_stat.filepath, file_format='csv', index_col=0, header=0,usecols=use_col)
     data = data_preparation(dataset, request)
     data['filename'] = dataset_stat.ds_name
     data['data_uploaded'] = True
@@ -761,18 +766,32 @@ def load_json_site_to_site(request):
             '!form_reactions.load_json_site_to_site!: Failed to prepare data after uploading from file. \n' + str(exc))
         raise
 
-def get_group_data(request):
+
+def read_group_data(request):
     group = calc.grouped.GroupedData()
     if request.method == 'POST':
         request_dict = dict(request.POST.items())
     elif request.method == 'GET':
         request_dict = dict(request.GET.items())
-    result = group.load_from_file(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid']+'_group')
+    fname = request_dict['fdid']
+    filepath = SAVED_FILES_PATH + request_dict['fdid']+'_group'
+    dataset = group.load_from_file(int(request_dict['group_id']), filepath)
     data = {}
-    data['group_data'] = calc.data_converters.pandas_to_js_list(result)
-    data['group_data_df'] = result.to_json(orient='table')
-    data['headers'] = result.columns.tolist()
-    data['index_name'] = result.index.name
-    data['group_id'] = request_dict['group_id']
-    data['fdid'] = request_dict['fdid']
+    data['data_uploaded'] = True
+    data['features'] = []
+    dataset_stat = calc.dataset.DatasetInfo()
+    dataset_stat.get_info_from_dataset(dataset, ds_id=1,
+                                       ds_name=fname,
+                                       filepath=filepath)
+    for i in range(len(dataset_stat.features)):
+        data['features'].append(dataset_stat.features[i].__dict__)
+    data['ds_id'] = dataset_stat.ds_id
+    data['ds_name'] = dataset_stat.ds_name
+    data['filepath'] = dataset_stat.filepath
+    data['num_records'] = dataset_stat.num_records
+    data['index_name'] = dataset_stat.index_name
+    data['filename'] = fname
+    data['lod'] = False
+    data['lod_value'] = 50
     return data
+

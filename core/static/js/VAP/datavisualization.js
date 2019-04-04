@@ -1236,53 +1236,19 @@ class DataVisualization extends Scene{
 		this.selectObject(obj);
 		this.printDataDialog(obj, this.scene);
 
+		/*
+		--------------------------------------------------------------------
+		LoD Data Objects Click 
+		--------------------------------------------------------------------
+		 */
 		if (this.lodData.length > 0 ) {
-			var csrftoken = Cookies.get('csrftoken');
-			var data = { formt: 'group_data',
-						 group_id: obj.dataObject[0],
-						 fdid: scene.fdid,
-						 csrfmiddlewaretoken: csrftoken
-						};
-			$.ajax({
-				type:"POST",
-				url: "",
-				data : data,
-				success : function(data, status, xhr) {
-					var selected_group_link = document.getElementById("selected_group_link");
-					selected_group_link.style.display = "block";
-					var selected = document.getElementById('selected_group');
-					if (selected.children.length > 0) {
-						while (selected.firstChild) {
-							selected.firstChild.remove();
-						}
-					}
-					var headers = [data['index_name']].concat(data['headers']);
-					var group_info = document.createElement("div");
-					group_info.classList.add('callout');
-					group_info.classList.add('primary');
-					var h5 = document.createElement("h5");
-					h5.innerText = "Selected group: " + data['group_id'];
-					var p = document.createElement("p");
-					p.innerText = "Group size: " + data['group_data'].length;
-					var groupBtn = document.createElement("input");
-					groupBtn.classList.add("button");
-					groupBtn.classList.add("small");
-					groupBtn.setAttribute("id", "groupVisualize");
-					groupBtn.value = "Visualize Group";
-					var get_url = "?group_id="+data["group_id"]+"&fdid="+data['fdid']
-					groupBtn.addEventListener('click', function() {
-						window.open("vis_group"+get_url, "_blank");
-					}, false);
-					group_info.appendChild(h5);
-					group_info.appendChild(p);
-					group_info.appendChild(groupBtn);
-					selected.appendChild(group_info);
-					printDataset(selected, headers, fix_array(data['group_data']));
-				},
-				failure: function(data, status, xhr) {
-					console.log('There was an error. Sorry');
-				}
-			});
+
+			var vis_group_obj = {
+				VisualizeGroup:function() {
+					var get_url = "?group_id="+obj.dataObject[0]+"&fdid="+scene.fdid;
+					window.open('/'+get_url, '_blank');
+				}};
+			this.dims_folder.add(vis_group_obj,'VisualizeGroup');
 		}
 	}
 
