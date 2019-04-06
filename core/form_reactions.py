@@ -234,8 +234,19 @@ def data_preparation(dataset, request):
         data['lod_activated'] = True
         groupedData = calc.grouped.GroupedData()
         groupedData.get_groups(dataset, lod_data.groups_metadata)
-        data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history, str(lod), lod_data.groups_metadata)
-        groupedData.set_fname(SAVED_FILES_PATH + data['saveid'] + '_group')
+        if 'fdid' in request.GET:
+            fname = request.GET['fdid']
+            groups = request.GET.getlist('group_id')
+            for i in groups:
+                fname += '_' + i
+            fname += '_group'
+            data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
+                                       str(lod), lod_data.groups_metadata, fname)
+        else:
+            data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
+                                       str(lod), lod_data.groups_metadata)
+            fname = data['saveid'] + '_group'
+        groupedData.set_fname(fname)
         groupedData.save_to_file()
     else:
         op_history = calc.operationshistory.OperationHistory()
@@ -243,7 +254,15 @@ def data_preparation(dataset, request):
         metrics.process_data(norm_dataset)
         op_history.append(norm_dataset, metrics)
         data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0')
+        if 'fdid' in request.GET:
+            fname = request.GET['fdid']
+            groups = request.GET.getlist('group_id')
+            for i in groups:
+                fname += '_' + i
+            fname += '_group'
+            data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0', fname)
+        else:
+            data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0')
     data['request'] = request
     return data
 
@@ -774,15 +793,18 @@ def read_group_data(request):
     elif request.method == 'GET':
         request_dict = dict(request.GET.items())
     fname = request_dict['fdid']
-    filepath = SAVED_FILES_PATH + request_dict['fdid']+'_group'
-    dataset = group.load_from_file(int(request_dict['group_id']), filepath)
+    groups = request.GET.getlist('group_id')
+    for i in groups[:-1]:
+        fname += '_' + i
+    fname += '_group'
+    dataset = group.load_from_file(int(groups[-1]), fname)
     data = {}
     data['data_uploaded'] = True
     data['features'] = []
     dataset_stat = calc.dataset.DatasetInfo()
     dataset_stat.get_info_from_dataset(dataset, ds_id=1,
                                        ds_name=fname,
-                                       filepath=filepath)
+                                       filepath=fname)
     for i in range(len(dataset_stat.features)):
         data['features'].append(dataset_stat.features[i].__dict__)
     data['ds_id'] = dataset_stat.ds_id

@@ -1245,8 +1245,11 @@ class DataVisualization extends Scene{
 
 			var vis_group_obj = {
 				VisualizeGroup:function() {
-					var get_url = "?group_id="+obj.dataObject[0]+"&fdid="+scene.fdid;
-					window.open('/'+get_url, '_blank');
+					var uri = URI(window.location.search);
+					if (!uri.hasQuery("fdid"))
+						uri.addSearch("fdid", scene.fdid);
+					uri.addSearch("group_id",obj.dataObject[0]);
+					window.open('/'+uri.toString(), '_blank');
 				}};
 			this.dims_folder.add(vis_group_obj,'VisualizeGroup');
 		}
