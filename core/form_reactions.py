@@ -239,14 +239,12 @@ def data_preparation(dataset, request):
             groups = request.GET.getlist('group_id')
             for i in groups:
                 fname += '_' + i
-            fname += '_group'
             data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
                                        str(lod), lod_data.groups_metadata, fname)
         else:
             data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
                                        str(lod), lod_data.groups_metadata)
-            fname = data['saveid'] + '_group'
-        groupedData.set_fname(fname)
+        groupedData.set_fname(data['saveid']+'_group')
         groupedData.save_to_file()
     else:
         op_history = calc.operationshistory.OperationHistory()
@@ -259,7 +257,6 @@ def data_preparation(dataset, request):
             groups = request.GET.getlist('group_id')
             for i in groups:
                 fname += '_' + i
-            fname += '_group'
             data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0', fname)
         else:
             data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0')
