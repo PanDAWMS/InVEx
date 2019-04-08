@@ -31,6 +31,16 @@ class DatasetInfo():
         self.features = self.from_dataframe(df)
 
     def update_dataset_info(self, ds_id, ds_name, index_name, filepath, features, num_records):
+        """
+        Update Dataset Info from clients panel
+        :param ds_id:
+        :param ds_name:
+        :param index_name:
+        :param filepath:
+        :param features:
+        :param num_records:
+        :return:
+        """
         self.ds_id = ds_id
         self.filepath = filepath
         self.ds_name = ds_name
@@ -69,7 +79,6 @@ class DatasetInfo():
         """
         features = []
         # df_scaled = self.df_scaler(df)
-        #missing_values = self.all_percentage_missing(df)
         for column in df:
             _name = column
             _type = df[column].dtype.name

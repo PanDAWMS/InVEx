@@ -784,6 +784,12 @@ def load_json_site_to_site(request):
 
 
 def read_group_data(request):
+    """
+    Reading dataset from grouped file
+    file name pattern: DatasetID_<First_GroupID>_<Second_GroupID>_<...>_group
+    :param request:
+    :return:
+    """
     group = calc.grouped.GroupedData()
     if request.method == 'POST':
         request_dict = dict(request.POST.items())
