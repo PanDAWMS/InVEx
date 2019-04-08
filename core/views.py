@@ -135,6 +135,8 @@ def main(request):
             except Exception as exc:
                 logger.error('{0} Remote data are not accessible: {1}'.
                              format(err_msg_subj, exc))
+    elif request.method == 'GET' and 'group_id' in request.GET:
+        data = form_reactions.read_group_data(request)
     else:
         data = EMPTY_DATA
         data['type'] = 'datavisualization'
@@ -252,19 +254,4 @@ def performance_test_frame(request):
     end_time = datetime.now()
     data['servertime'] = round((end_time - start_time).total_seconds() * 1000)
     return render(request, 'testframe.html', data, content_type='text/html')
-
-def visualize_group(request):
-    if request.method == 'GET' and 'group_id' in request.GET:
-        if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
-            startedat = datetime.now()
-        group = form_reactions.get_group_data(request)
-        data = form_reactions.data_preparation(calc.data_converters.table_to_df(group['group_data_df']), request)
-        data['group_vis'] = True
-        data['lod_activated'] = False
-        if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
-            data['startedat'] = startedat
-        else:
-            data['startedat'] = False
-        data['built'] = datetime.now()
-    return render(request, 'main.html', data, content_type="text/html")
 

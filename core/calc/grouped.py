@@ -1,7 +1,9 @@
 import pandas as pd
 import linecache
 from . import data_converters
+from core.settings.base import BASE_DIR
 
+SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
 
 class GroupedData:
     def __init__(self):
@@ -23,7 +25,8 @@ class GroupedData:
         Each group is saved in file line by line, in accordance with group ID. 
         :return: 
         """
-        file = open(self.fname, "w")
+        fpath = SAVED_FILES_PATH + self.fname
+        file = open(fpath, "w")
         for group in self.groups:
             file.write(group.to_json(orient='table'))
             file.write('\n')
@@ -36,7 +39,7 @@ class GroupedData:
         :param group_id: 
         :return: 
         """
-        line = linecache.getline(fname, group_id + 1)
+        line = linecache.getline(SAVED_FILES_PATH + fname, group_id + 1)
         return data_converters.table_to_df(line)
 
     def set_fname(self, fname):
