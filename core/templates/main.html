@@ -79,21 +79,18 @@
         // Datasample Features Statistics
         {%  if data_uploaded is True %}
 
-            var ds_id = '{{ ds_id }}';
-            var ds_name = '{{ ds_name }}';
-            var filepath = '{{ filepath }}';
+            var dsID = '{{ dsID }}';
             var num_records = {{ num_records }};
             var index_name = '{{ index_name }}';
             var features = {{ features|safe }};
-            var lod = '{{ lod }}';
+            var lod_activated = '{{ lod_activated }}';
             var lod_value = {{ lod_value }};
 
-            var features_stat = new DatasetStats(ds_id,ds_name,filepath,num_records,index_name,features,lod,lod_value);
+            var features_stat = new DatasetStats(dsID,num_records,index_name,features,lod_activated,lod_value);
             features_stat.display_features_panel("features_panel");
 
         {% endif %}
 
-		//animate();
         scene.renderer.render( scene.scene, scene.camera );
 		init();
 
@@ -117,9 +114,13 @@
                         curr_parameters = {{ parameters|safe }};
                     {% endif %}
                         {% if group_vis is False %}
-                    createClusterElements(document.getElementById('clustering'), document.getElementById('cluster_form'), clustering_parameters, curr_algorithm, curr_parameters);
-                            {% endif %}
+                            createClusterElements(document.getElementById('clustering'),
+                                    document.getElementById('cluster_form'),
+                                    clustering_parameters,
+                                    curr_algorithm,
+                                    curr_parameters);
                         {% endif %}
+                    {% endif %}
                     {% endif %}
 
                     {% if dim_names %}
@@ -226,13 +227,11 @@
                         scene.createControlElements(document.getElementById('dimensions_changer'), document.getElementById('visualizationSettings'), document.getElementById('multichoicelink'), document.getElementById('multichoice'), false);
                     {% endif %}
 
-                    {% if saveid %}
-                        scene.setSource('{{ saveid|safe }}');
+                    {% if dsID %}
+                        scene.setSource('{{ dsID|safe }}');
                     {% endif %}
 
                     render();
-
-{#            {% endif %}#}
 
 		}
 
@@ -241,11 +240,6 @@
         function render() {
             scene.renderer.render( scene.scene, scene.camera );
         }
-
-{#		function animate() {#}
-{#			scene.animate();#}
-{#			requestAnimationFrame( animate );#}
-{#		}#}
 
 	</script>
 {% endblock %}

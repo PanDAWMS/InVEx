@@ -17,12 +17,9 @@
         <div class="accordion-content" data-tab-content id='clusterrelated'>
             <form onsubmit="collect_client_data(this);" action="" autocomplete="off" id="cluster_form" method="POST">
             {% csrf_token %}
-            <input type="hidden" name="formt" value="cluster">
-            {% if saveid %}
-            <input type="hidden" name="fdid" value="{{ saveid }}">
-            {% endif %}
-            {% if filename %}
-            <input type="hidden" name="fname" value="{{ filename|safe }}">
+                <input type="hidden" name="formt" value="cluster">
+            {% if dsID %}
+                <input type="hidden" name="dsID" value="{{ dsID }}">
             {% endif %}
             <div class="form-group" id="clustering">
             </div>

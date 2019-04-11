@@ -118,8 +118,8 @@ class Scene {
 		this.dimNames = dims;
 	}
 
-	setSource(fdid){
-		this.fdid = fdid;
+	setSource(dsID){
+		this.dsID = dsID;
 	}
 
 	// #endregion

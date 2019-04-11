@@ -4,14 +4,12 @@
 
 class DatasetStats {
 
-    constructor(ds_id,ds_name,filepath,num_records,index_name,features,lod,lod_value) {
-        this.ds_id = ds_id;
-        this.ds_name = ds_name;
-        this.filepath = filepath;
+    constructor(dsID, num_records, index_name, features, lod_activated, lod_value) {
+        this.dsID = dsID;
         this.num_records = num_records;
         this.index_name = index_name;
         this.features = features;
-        this.lod = lod;
+        this.lod_activated = lod_activated;
         this.lod_value = lod_value;
         this.MEASURES = [{'type':'ratio','columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
                          {'type':'ordinal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
@@ -29,11 +27,11 @@ class DatasetStats {
     }
 
     activate_lod() {
-        this.lod = true;
+        this.lod_activated = true;
     }
 
     deactivate_lod() {
-        this.lod = false;
+        this.lod_activated = false;
     }
 
     createLOD(id) {
@@ -114,7 +112,7 @@ class DatasetStats {
             });
         }
 
-        if (this.lod == "true") {
+        if (this.lod_activated == "true") {
             input.checked = true;
             div.style.display = 'block';
             slider.value = this.lod_value;
@@ -128,7 +126,7 @@ class DatasetStats {
     }
 
     display_dataset_info() {
-        var dataset_info = [{"row_name":"Dataset Name","value":this.ds_name},
+        var dataset_info = [{"row_name":"Dataset Name","value":this.dsID},
                             {"row_name":"Number of Records","value":this.num_records},
                             {"row_name":"Index","value":this.index_name}];
 
@@ -369,7 +367,6 @@ class DatasetStats {
         var root = document.getElementById(element_id);
 
         root.appendChild(this.createLOD("lod"));
-
         root.appendChild(this.display_dataset_info());
 
         $("#dataset_info").DataTable({searching: false, paging: false, info: false});
@@ -430,14 +427,12 @@ class DatasetStats {
             form.appendChild(action);
 
             var data = {
-                ds_id: event.target.dataset_info.ds_id,
-                ds_name: event.target.dataset_info.ds_name,
-                filepath: event.target.dataset_info.filepath,
+                dsID: event.target.dataset_info.dsID,
                 csrfmiddlewaretoken: csrftoken,
                 num_records: Number(event.target.dataset_info.num_records),
                 features: JSON.stringify(event.target.dataset_info.features),
                 index_name: event.target.dataset_info.index_name,
-                lod_activated: event.target.dataset_info.lod,
+                lod_activated: event.target.dataset_info.lod_activated,
                 lod_value: event.target.dataset_info.lod_value
             };
 
