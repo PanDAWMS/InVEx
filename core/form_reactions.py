@@ -13,7 +13,6 @@ import logging
 from django.conf import settings
 from django.http import HttpResponse, Http404
 
-SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
 DATASET_FILES_PATH = BASE_DIR + '/datasets/'
 SITE_SITE_DATASET_FILES_PATH = BASE_DIR + '/site_site_datasets/'
 TEST_DATASET_FILES_PATH = BASE_DIR + '/test_datasets/'
@@ -22,7 +21,6 @@ BACKUP_FILE = '_backup'
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
-
 
 def list_csv_data_files(directory):
     """
@@ -36,7 +34,7 @@ def list_csv_data_files(directory):
     csv_data_files = json.loads(file.read())
     return csv_data_files
 
-def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod, lod_metadata, filename=None):
+def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod, lod_metadata, dsID, filename):
     """
     Saving data to the operations history file.
     1st line - original dataset
@@ -54,34 +52,18 @@ def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod
     :param filename: 
     :return: 
     """
-    if filename is None:
-        filename = str(datetime.now().timestamp())
-        while os.path.isfile(SAVED_FILES_PATH + filename):
-            filename = filename + 't'
-    else:
-        if os.path.isfile(SAVED_FILES_PATH + filename + BACKUP_FILE):
+    dataset_storage = os.path.join(settings.MEDIA_ROOT, dsID)
+    history_file = os.path.join(dataset_storage, filename+'.history')
+    if os.path.isdir(dataset_storage):
+        if os.path.isfile(history_file):
             try:
-                os.remove(SAVED_FILES_PATH + filename + BACKUP_FILE)
+                os.remove(history_file)
             except Exception as exc:
-                logger.error('!form_reactions.save_data!: Failed to remove the backup file. \nFilename:'
-                             + SAVED_FILES_PATH + filename + '\n' + str(exc))
-                raise
-        if os.path.isfile(SAVED_FILES_PATH + filename):
-            try:
-                os.rename(SAVED_FILES_PATH + filename, SAVED_FILES_PATH + filename + BACKUP_FILE)
-            except Exception as exc:
-                logger.error('!form_reactions.save_data!: Failed to rename the backup file. \nFilename:'
-                             + SAVED_FILES_PATH + filename + '\n' + str(exc))
-                raise
-        if os.path.isfile(SAVED_FILES_PATH + filename):
-            try:
-                os.remove(SAVED_FILES_PATH + filename)
-            except Exception as exc:
-                logger.error('!form_reactions.save_data!: Failed to remove the original file. \nFilename:'
-                             + SAVED_FILES_PATH + filename + '\n' + str(exc))
+                logger.error('!form_reactions.save_data!: Failed to remove the history file. \nFilename:'
+                             + history_file + '\n' + str(exc))
                 raise
     try:
-        file = open(SAVED_FILES_PATH + filename, "w")
+        file = open(history_file, "w")
         file.write(original_dataset.to_json(orient='table'))
         file.write('\n')
         file.write(norm_dataset.to_json(orient='table'))
@@ -94,14 +76,13 @@ def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod
         file.write('\n')
         file.write(str(lod_metadata))
         file.close()
-        return filename
     except Exception as exc:
         logger.error('!form_reactions.save_data!: Failed to save the data. \nFilename:'
-                     + SAVED_FILES_PATH + filename + '\n' + str(exc))
+                     + history_file + '\n' + str(exc))
         raise
 
 
-def load_data(filename):
+def load_data(dsID, filename):
     """
     Loading data from the operations history file.
     The file is reading line by line:
@@ -114,12 +95,15 @@ def load_data(filename):
     :param filename: 
     :return: 
     """
-    if not os.path.isfile(SAVED_FILES_PATH + filename):
+    # history_file = get_history_file(dsID)
+    dataset_storage = os.path.join(settings.MEDIA_ROOT, dsID)
+    history_file = os.path.join(dataset_storage, filename+'.history')
+    if not os.path.isfile(history_file):
         logger.error('!form_reactions.load_data!: File is missing. Couldn\'t load the file. \nFilename:'
-                     + SAVED_FILES_PATH + filename)
+                     + history_file)
         return [None, None, None, None]
     try:
-        file = open(SAVED_FILES_PATH + filename, "r")
+        file = open(history_file, "r")
         data = file.readline()
         original_dataset = calc.data_converters.table_to_df(data)
         data = file.readline()
@@ -135,7 +119,7 @@ def load_data(filename):
         return [original_dataset, norm_dataset, op_history, aux_dataset, lod_value, groups_metadata]
     except Exception as exc:
         logger.error('!form_reactions.load_data!: Failed to load the data. \nFilename:'
-                     + SAVED_FILES_PATH + filename + '\n' + str(exc))
+                     + history_file + '\n' + str(exc))
         raise
 
 def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_history):
@@ -219,7 +203,7 @@ def data_preparation(dataset, request):
     numeric_dataset = LocalReader().get_numeric_data(dataset)
     norm_dataset = LocalReader().scaler(numeric_dataset)
     auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
-    if 'lod_activated' in request.POST and request.POST['lod_activated'] == 'true':
+    if request.POST['lod_activated'] == 'true':
         lod = int(request.POST['lod_value'])
         lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
         norm_lod_dataset = LocalReader().scaler(lod_data.grouped_dataset)
@@ -234,17 +218,19 @@ def data_preparation(dataset, request):
         data['lod_activated'] = True
         groupedData = calc.grouped.GroupedData()
         groupedData.get_groups(dataset, lod_data.groups_metadata)
-        if 'fdid' in request.GET:
-            fname = request.GET['fdid']
+        dsID = request.POST['dsID']
+        filename = dsID
+        if 'group_id' in request.GET:
             groups = request.GET.getlist('group_id')
             for i in groups:
-                fname += '_' + i
-            data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
-                                       str(lod), lod_data.groups_metadata, fname)
+                filename += '.group' + i
+            save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
+                                       str(lod), lod_data.groups_metadata, dsID, filename)
         else:
-            data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
-                                       str(lod), lod_data.groups_metadata)
-        groupedData.set_fname(data['saveid']+'_group')
+            save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
+                                       str(lod), lod_data.groups_metadata, dsID, filename)
+        groupedData.set_dsID(dsID)
+        groupedData.set_filename(filename)
         groupedData.save_to_file()
     else:
         op_history = calc.operationshistory.OperationHistory()
@@ -252,14 +238,16 @@ def data_preparation(dataset, request):
         metrics.process_data(norm_dataset)
         op_history.append(norm_dataset, metrics)
         data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        if 'fdid' in request.GET:
-            fname = request.GET['fdid']
+        if 'group_id' in request.GET:
+            dsID = request.GET['dsID']
+            filename = dsID
             groups = request.GET.getlist('group_id')
             for i in groups:
-                fname += '_' + i
-            data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0', fname)
+                filename += '.group' + i
+            save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0', dsID, filename)
         else:
-            data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0')
+            save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0', request.POST['dsID'],
+                      request.POST['dsID'])
     data['request'] = request
     return data
 
@@ -267,28 +255,46 @@ def file_upload(request, source, source_file=False, remote_data=False):
     """
     Upload file to server
     :param request:
-    :param source: file | remote
+    :param source: file | remote | server
     :return:
     """
+    dsID = str(datetime.now().timestamp())
+    dataset_storage = create_dataset_storage(dsID)
+    dest_path = os.path.join(dataset_storage, dsID+'.csv')
     if source == 'file' and source_file:
-        dest_path = os.path.join(settings.MEDIA_ROOT, source_file.name)
         with open(dest_path, 'wb+') as destination:
             for chunk in source_file.chunks():
                 destination.write(chunk)
             destination.close()
-        return source_file.name
     elif source == 'remote' and remote_data:
         if request.GET['remotesrc'] == 'pandajobs':
-            fname = request.GET['remotesrc'] + '_' + request.GET['taskid'] + '.csv'
-            dest_path = os.path.join(settings.MEDIA_ROOT, fname)
             df = pd.read_json(json.dumps(remote_data))
             df.set_index('pandaid', inplace=True)
             df.to_csv(dest_path)
-            # with open(dest_path, 'w') as destination:
-            #     json.dump(remote_data, destination)
-            #     destination.close()
-            return fname
+    elif source == 'server' and remote_data:
+        remote_data.to_csv(dest_path)
+    return dsID
 
+def create_dataset_storage(dsID):
+
+    path = os.path.join(settings.MEDIA_ROOT, dsID)
+    try:
+        os.mkdir(path)
+        return path
+    except OSError:
+        print("Creation of the directory %s failed" % path)
+    else:
+        print("Successfully created the directory %s " % path)
+
+
+def get_dataset_path(dsID):
+    return os.path.join(settings.MEDIA_ROOT, dsID, dsID+'.csv')
+
+def get_history_path(dsID):
+    return os.path.join(settings.MEDIA_ROOT, dsID, dsID + '.history')
+
+def get_groups_path(dsID):
+    return os.path.join(settings.MEDIA_ROOT, dsID, dsID + '.groups')
 
 def new_csv_file_upload(request):
     """
@@ -338,30 +344,29 @@ def new_csv_file_upload(request):
 #         raise
 
 
-def csv_file_from_server(request, filename=False):
+def csv_file_from_server(request, dsID=False):
     """
-    Download CSV file from server.
+    Download CSV file from server as Pandas DataFrame.
+    Collect dataset statistics.
     :param request: 
     :return: 
     """
     list_of_files = list_csv_data_files(DATASET_FILES_PATH)
-    dataset = None
-    filepath = ''
+    dataset = pd.DataFrame()
     if ('filename' in request.POST) and (list_of_files is not None):
         for file in list_of_files:
             if request.POST['filename'] == file['value']:
                 if os.path.isfile(DATASET_FILES_PATH + file['filename']):
                     filepath = DATASET_FILES_PATH + file['filename']
                     dataset = LocalReader().read_df(file_path=filepath, file_format='csv',index_col=0, header=0)
-                    # dataset = calc.importcsv.import_csv_file(DATASET_FILES_PATH + file['filename'], True, True, False)
+                    dsID = file_upload(request, source='server',remote_data=dataset)
                 else:
                     logger.error('!form_reactions.csv_file_from_server!: Failed to read file.\nFilename: ' +
                                  DATASET_FILES_PATH + file['filename'])
                     return {}
-    elif filename:
-        filepath = os.path.join(settings.MEDIA_ROOT, filename)
+    elif dsID:
+        filepath = os.path.join(settings.MEDIA_ROOT, dsID, dsID+'.csv')
         dataset = LocalReader().read_df(file_path=filepath, file_format='csv',index_col=0, header=0)
-        # dataset = calc.importcsv.import_csv_file(filepath, True, True, False)
     else:
         logger.error(
             '!form_reactions.csv_file_from_server!: Wrong request.\nRequest parameters: ' + json.dumps(request.POST))
@@ -372,33 +377,23 @@ def csv_file_from_server(request, filename=False):
                 request.POST))
         return {}
     try:
-        fname = ''
-        if ('filename' in request.POST):
-            fname = request.POST['filename']
-        else:
-            fname = filename
         data = {}
         data['data_uploaded'] = True
         data['features'] = []
         dataset_stat = calc.dataset.DatasetInfo()
-        dataset_stat.get_info_from_dataset(dataset, ds_id=1,
-                                                ds_name=fname,
-                                                filepath=filepath)
+        dataset_stat.get_info_from_dataset(dataset, dsID)
         for i in range(len(dataset_stat.features)):
             data['features'].append(dataset_stat.features[i].__dict__)
-        data['ds_id'] = dataset_stat.ds_id
-        data['ds_name'] = dataset_stat.ds_name
-        data['filepath'] = dataset_stat.filepath
+        data['dsID'] = dataset_stat.dsID
         data['num_records'] = dataset_stat.num_records
         data['index_name'] = dataset_stat.index_name
-        data['filename'] = fname
-        data['lod'] = False
+        data['lod_activated'] = False
         data['lod_value'] = 50
         return data
     except Exception as exc:
         logger.error(
             '!form_reactions.csv_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
-            + json.dumps(fname) + '\n' + str(exc))
+            + json.dumps(dsID) + '\n' + str(exc))
         raise
 
 
@@ -442,35 +437,36 @@ def csv_test_file_from_server(request):
 
 def update_dataset(request):
     dataset_stat = calc.dataset.DatasetInfo()
-    dataset_stat.update_dataset_info(ds_id=request.POST['ds_id'],
-                                     filepath=request.POST['filepath'],
-                                     ds_name=request.POST['ds_name'],
+    dataset_stat.update_dataset_info(dsID=request.POST['dsID'],
                                      index_name=request.POST['index_name'],
                                      features=json.loads(request.POST['features']),
                                      num_records=request.POST['num_records'])
-
     use_col = []
     for item in dataset_stat.features:
         if item['enabled'] == 'true':
             use_col.append(item['feature_name'])
     use_col.append(dataset_stat.index_name)
     dataset = pd.DataFrame()
+    dsID = request.POST['dsID']
+    filename = dsID
     if 'group_id' in request.GET:
+        groups = request.GET.getlist('group_id')
+        for i in groups[:-1]:
+            filename += '.group' + i
+        filename += '.groups'
         group = calc.grouped.GroupedData()
-        dataset = group.load_from_file(int(request.GET['group_id']), request.POST['filepath'])
+        group.set_dsID(dsID)
+        group.set_filename(filename)
+        dataset = group.load_from_file(int(groups[-1]))
     else:
-        reader = LocalReader()
-        dataset = reader.read_df(dataset_stat.filepath, file_format='csv', index_col=0, header=0,usecols=use_col)
+        dataset = LocalReader().read_df(get_dataset_path(dsID), file_format='csv', index_col=0, header=0, usecols=use_col)
     data = data_preparation(dataset, request)
-    data['filename'] = dataset_stat.ds_name
     data['data_uploaded'] = True
     data['features'] = dataset_stat.features
-    data['ds_id'] = dataset_stat.ds_id
-    data['ds_name'] = dataset_stat.ds_name
-    data['filepath'] = dataset_stat.filepath
+    data['dsID'] = dataset_stat.dsID
     data['num_records'] = dataset_stat.num_records
     data['index_name'] = dataset_stat.index_name
-    data['lod'] = request.POST['lod_activated']
+    data['lod_activated'] = request.POST['lod_activated']
     data['lod_value'] = request.POST['lod_value']
     return data
 
@@ -525,11 +521,18 @@ def clusterize(request):
     :param request: 
     :return: 
     """
-    if 'fdid' not in request.POST:
+
+    if 'dsID' not in request.POST:
         logger.error('!form_reactions.clusterize!: There was no file name in the request. \nRequest parameters: '
                      + json.dumps(request.POST))
         return {}
-    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(request.POST['fdid'])
+    dsID = request.POST['dsID']
+    filename = dsID
+    if 'group_id' in request.GET:
+        groups = request.GET.getlist('group_id')
+        for i in groups:
+            filename += '.group' + i
+    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(dsID, filename)
     if dataset is None:
         return {}
     data = prepare_data_object(dataset, original, aux_dataset, op_history)
@@ -599,20 +602,17 @@ def clusterize(request):
                          + json.dumps(request.POST))
     else:
         logger.error('!form_reactions.clusterize!: The request was wrong. \nRequest parameters: ' + json.dumps(request.POST))
-    data['saveid'] = save_data(original, dataset, aux_dataset, op_history, str(lod_value), lod_metadata, request.POST['fdid'])
+    save_data(original, dataset, aux_dataset, op_history, str(lod_value), lod_metadata, dsID, filename)
     data['visualparameters'] = request.POST['visualparameters']
     data['algorithm'] = request.POST['algorithm']
     data['parameters'] = operation.print_parameters()
-    data['filename'] = request.POST['fname']
     data['data_uploaded'] = True
     dataset_info = json.loads(request.POST['dataset_info'])
-    data['ds_id'] = dataset_info['ds_id']
-    data['ds_name'] = dataset_info['ds_name']
-    data['filepath'] = dataset_info['filepath']
+    data['dsID'] = dataset_info['dsID']
     data['num_records'] = dataset_info['num_records']
     data['index_name'] = dataset_info['index_name']
     data['features'] = dataset_info['features']
-    data['lod'] = dataset_info['lod']
+    data['lod_activated'] = dataset_info['lod_activated']
     data['lod_value'] = dataset_info['lod_value']
 
     return data
@@ -624,11 +624,11 @@ def predict_cluster(request):
     :param request: 
     :return: 
     """
-    if ('fdid' not in request.POST) or ('data' not in request.POST):
+    if ('dsID' not in request.POST) or ('data' not in request.POST):
         logger.error('!form_reactions.predict_cluster!: There was no file name in the request. \nRequest parameters: '
                      + json.dumps(request.POST))
         return {}
-    original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
+    original, dataset, op_history, aux_dataset = load_data(request.POST['dsID'])
     if op_history is None:
         logger.error('!form_reactions.predict_cluster!: There was no operations in the history. \nRequest parameters: '
                      + json.dumps(request.POST))
@@ -791,32 +791,27 @@ def read_group_data(request):
     :return:
     """
     group = calc.grouped.GroupedData()
-    if request.method == 'POST':
-        request_dict = dict(request.POST.items())
-    elif request.method == 'GET':
-        request_dict = dict(request.GET.items())
-    fname = request_dict['fdid']
+
+    dsID = request.GET['dsID']
+    filename = dsID
     groups = request.GET.getlist('group_id')
     for i in groups[:-1]:
-        fname += '_' + i
-    fname += '_group'
-    dataset = group.load_from_file(int(groups[-1]), fname)
+        filename += '.group' + i
+    filename += '.groups'
+    group.set_dsID(dsID)
+    group.set_filename(filename)
+    dataset = group.load_from_file(int(groups[-1]))
     data = {}
     data['data_uploaded'] = True
     data['features'] = []
     dataset_stat = calc.dataset.DatasetInfo()
-    dataset_stat.get_info_from_dataset(dataset, ds_id=1,
-                                       ds_name=fname,
-                                       filepath=fname)
+    dataset_stat.get_info_from_dataset(dataset, dsID)
     for i in range(len(dataset_stat.features)):
         data['features'].append(dataset_stat.features[i].__dict__)
-    data['ds_id'] = dataset_stat.ds_id
-    data['ds_name'] = dataset_stat.ds_name
-    data['filepath'] = dataset_stat.filepath
+    data['dsID'] = dataset_stat.dsID
     data['num_records'] = dataset_stat.num_records
     data['index_name'] = dataset_stat.index_name
-    data['filename'] = fname
-    data['lod'] = False
+    data['lod_activated'] = False
     data['lod_value'] = 50
     return data
 

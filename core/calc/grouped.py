@@ -1,9 +1,8 @@
 import pandas as pd
 import linecache
 from . import data_converters
-from core.settings.base import BASE_DIR
-
-SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
+import os
+from django.conf import settings
 
 class GroupedData:
     def __init__(self):
@@ -25,28 +24,33 @@ class GroupedData:
         Each group is saved in file line by line, in accordance with group ID. 
         :return: 
         """
-        fpath = SAVED_FILES_PATH + self.fname
-        file = open(fpath, "w")
+        file = open(os.path.join(settings.MEDIA_ROOT, self.dsID, self.filename+'.groups'), "w")
         for group in self.groups:
             file.write(group.to_json(orient='table'))
             file.write('\n')
         file.close()
 
-    def load_from_file(self, group_id, fname):
+    def load_from_file(self, group_id):
         """
         To search the group in file by the group ID the exact line is extracted. 
         :param fname: 
         :param group_id: 
         :return: 
         """
-        line = linecache.getline(SAVED_FILES_PATH + fname, group_id + 1)
+        line = linecache.getline(os.path.join(settings.MEDIA_ROOT, self.dsID, self.filename), group_id+1)
         return data_converters.table_to_df(line)
 
-    def set_fname(self, fname):
-        self.fname = fname
+    def set_dsID(self, dsID):
+        self.dsID = dsID
 
-    def get_fname(self):
-        return self.fname
+    def get_dsID(self):
+        return self.dsID
+
+    def set_filename(self, filename):
+        self.filename = filename
+
+    def get_filename(self):
+        return self.filename
 
         # dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
         # groups_meta = [[0, [1,2,3,4,5,6,7]], [1, [9,10,11]]]

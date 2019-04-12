@@ -10,40 +10,34 @@ class DatasetInfo():
     def __init__(self):
         pass
 
-    def get_info_from_dataset(self, df, ds_id, ds_name, filepath):
+    def get_info_from_dataset(self, df, dsID):
         """
         Prepare dataset object and gathering dataset information from the POST request:
         - cleaning initial dataset from rows and columns where all elements are NaN
         - assigning parameters from POST request to dataset object
         :param df:
-        :param ds_id:
-        :param ds_name:
+        :param dsID:
         :param filepath:
         :return:
         """
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
-        self.ds_id = ds_id
-        self.ds_name = ds_name
-        self.filepath = filepath
+        self.dsID = dsID
         self.get_dataset_stats(df)
         self.description = ''
         self.features = self.from_dataframe(df)
 
-    def update_dataset_info(self, ds_id, ds_name, index_name, filepath, features, num_records):
+    def update_dataset_info(self, dsID, index_name, features, num_records):
         """
         Update Dataset Info from clients panel
-        :param ds_id:
-        :param ds_name:
+        :param dsID:
         :param index_name:
         :param filepath:
         :param features:
         :param num_records:
         :return:
         """
-        self.ds_id = ds_id
-        self.filepath = filepath
-        self.ds_name = ds_name
+        self.dsID = dsID
         self.index_name = index_name
         self.features = features
         self.num_records = num_records

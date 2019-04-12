@@ -1141,7 +1141,7 @@ class DataVisualization extends Scene{
 			selectedObject: sphereToPrint,
 			scene: this,
 			Recalculate:function() {
-				sendAjaxPredictRequest(sphereToPrint, {csrfmiddlewaretoken: this.scene.csrf, fdid: this.scene.fdid}, this.scene);
+				sendAjaxPredictRequest(sphereToPrint, {csrfmiddlewaretoken: this.scene.csrf, dsID: this.scene.dsID}, this.scene);
 			}
 		};
 
@@ -1246,8 +1246,10 @@ class DataVisualization extends Scene{
 			var vis_group_obj = {
 				VisualizeGroup:function() {
 					var uri = URI(window.location.search);
-					if (!uri.hasQuery("fdid"))
-						uri.addSearch("fdid", scene.fdid);
+					if (!uri.hasQuery("dsID"))
+						uri.addSearch("dsID", scene.dsID);
+					if (uri.hasQuery("remotesrc"))
+						uri.removeSearch("remotesrc");
 					uri.addSearch("group_id",obj.dataObject[0]);
 					window.open('/'+uri.toString(), '_blank');
 				}};
