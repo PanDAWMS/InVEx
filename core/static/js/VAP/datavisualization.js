@@ -1248,6 +1248,8 @@ class DataVisualization extends Scene{
 					var uri = URI(window.location.search);
 					if (!uri.hasQuery("dsID"))
 						uri.addSearch("dsID", scene.dsID);
+					if (uri.hasQuery("remotesrc"))
+						uri.removeSearch("remotesrc");
 					uri.addSearch("group_id",obj.dataObject[0]);
 					window.open('/'+uri.toString(), '_blank');
 				}};
