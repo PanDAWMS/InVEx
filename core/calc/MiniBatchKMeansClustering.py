@@ -60,7 +60,7 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
     def process_data(self, dataset):
         # I'm using normalised center change instead of mini batches not yielding improvement
         # as an early stopping heuristics for the results to be closer to original K-Means.
-        # It includes a slightr overhead though, so it should be reverted if perfomance is a priority.
+        # It includes a slight overhead though, so it should be reverted if perfomance is a priority.
         self.model = MiniBatchKMeans(n_clusters=self.clust_numbers, batch_size=self.batch_size, tol=1e-5, max_no_improvement=None)
         self.model.fit(dataset)
         self.results = self.model.predict(dataset)
