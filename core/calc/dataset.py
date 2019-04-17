@@ -95,7 +95,7 @@ class DatasetInfo():
             if _is_numeric:
                 if _is_cat:
                     _unique_values = df[column].dropna().unique().tolist()
-                    _distribution = df[column].value_counts().to_dict()
+                    _distribution = self.unique_values_distribution(df[column])
                     features.append(FeatureStatistics(feature_name=_name,
                                                       feature_type=_type,
                                                       measure_type=_measure_type,
@@ -181,7 +181,8 @@ class DatasetInfo():
         :param data: pandas.Series
         :return:
         """
-        return data.value_counts()
+        return {str(k): v for k, v in data.value_counts().to_dict().items()}
+        #return {str(k): str(k) for k, v in data.value_counts().to_dict().items()}
 
     def to_datetime(self, column, data):
         """

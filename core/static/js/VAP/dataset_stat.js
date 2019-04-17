@@ -159,7 +159,7 @@ class DatasetStats {
         var _labels = [];
         var _data = [];
         for (var k in distribution_data) {
-            _labels.push(k);
+            _labels.push(k.toString());
             _data.push(distribution_data[k]);
         }
         var data = [{x: _labels, y: _data, type: 'bar'}];
