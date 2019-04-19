@@ -271,7 +271,7 @@ def file_upload(request, source, source_file=False, remote_data=False):
             df = pd.read_json(json.dumps(remote_data))
             df.set_index('pandaid', inplace=True)
             df.to_csv(dest_path)
-    elif source == 'server' and remote_data:
+    elif source == 'server':
         remote_data.to_csv(dest_path)
     return dsID
 
@@ -359,7 +359,7 @@ def csv_file_from_server(request, dsID=False):
                 if os.path.isfile(DATASET_FILES_PATH + file['filename']):
                     filepath = DATASET_FILES_PATH + file['filename']
                     dataset = LocalReader().read_df(file_path=filepath, file_format='csv',index_col=0, header=0)
-                    dsID = file_upload(request, source='server',remote_data=dataset)
+                    dsID = file_upload(request=request, source='server',source_file=False, remote_data=dataset)
                 else:
                     logger.error('!form_reactions.csv_file_from_server!: Failed to read file.\nFilename: ' +
                                  DATASET_FILES_PATH + file['filename'])
