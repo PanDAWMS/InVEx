@@ -1,4 +1,4 @@
-{% load staticfiles %}
+﻿{% load staticfiles %}
 <!DOCTYPE html>
 <html class="no-js" lang="en" dir="ltr">
 <head>
@@ -42,8 +42,10 @@
     .row {
         flex-wrap: nowrap !important;
     }
-    .mainPicture{
-        height:1200px;
+    .mainPicture {
+        min-height: 600px;
+        min-width: 300px;
+        max-height: 99vh;
     }
     .vap-controllers {
         margin-bottom: 0 !important;
@@ -97,6 +99,7 @@
         align-items : left;
         margin-bottom: 10px;
     }
+
     .hist_box {
       height: 10px;
       width: 10px;
@@ -112,72 +115,32 @@
       width: 960px;
     }
 
+    #controllers {
+        min-width: 320px;
+        max-width: 350px;
+        float: left;
+    }
+
+    #legend {
+        float: right;
+    }
+
+    #invex_logo {
+        min-width: 300px;
+    }
+
+    @media (max-width: 700px), only screen and (orientation: landscape) and (max-device-width:900px) {
+        #controllers {
+            flex: auto;
+            max-width: none;
+        }
+
+        .mainPicture {
+            min-width: 320px;
+        }
+    }
+
 </style>
-
-<!-- Main bar -->
-
-{#<div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large" id="main-menu-small">#}
-{#  <button class="menu-icon" type="button" data-toggle="main-menu"></button>#}
-{#  <div class="title-bar-title">Menu</div>#}
-{#</div>#}
-{##}
-{##}
-{#<div class="top-bar stacked-for-large" id="main-menu">#}
-{#  <div class="top-bar-title">#}
-{#    <span data-responsive-toggle="responsive-menu" data-hide-for="medium">#}
-{#      <button class="menu-icon" type="button" data-toggle></button>#}
-{#    </span>#}
-{#    <strong><a href="#" style="color: #fefefe !important; font-weight: normal">{% block title %}  VAP {% endblock %}</a></strong>#}
-{#  </div>#}
-{#    <div class="top-bar-left">#}
-{#      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">#}
-{#        <li class="has-submenu">#}
-{#        <a href="#">Menu1</a>#}
-{#        <ul class="submenu menu vertical">#}
-{#            <li><a>Item1</a></li>#}
-{#        </ul>#}
-{#        </li>#}
-{##}
-{#        <li>#}
-{#            <a href="#">Menu2</a>#}
-{#        </li>#}
-{##}
-{#      </ul>#}
-{#    </div>#}
-{##}
-{##}
-{#    <div class="top-bar-right">#}
-{#        <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">#}
-{##}
-{#            <li class="has-submenu">#}
-{#            <a href="#"><span class='help'>Help</span></a>#}
-{#            <ul class="submenu menu vertical">#}
-{#                <li><a href="#doc"><span class='help'>Help</span></a>#}
-{#            </ul>#}
-{#            </li>#}
-{##}
-{#            <li>#}
-{#             <a href="#">Login</a>#}
-{#            </li>#}
-{##}
-{##}
-{#        </ul>#}
-{#    </div>#}
-{#</div>#}
-
-<!-- End Header and Nav -->
-{#<script src="{% static 'js/foundation/vendor/jquery.js' %}"></script>#}
-{#<script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>#}
-{#<script src="{% static "js/three.js" %}"></script>#}
-{#<script src="{% static "js/controls/OrbitControls.js" %}"></script>#}
-{#<script src="{% static "js/VAP/main.js" %}"></script>#}
-{#<script src="{% static "js/dat.gui.min.js" %}"></script>#}
-{#<script>#}
-{#    $('#main-menu-small').foundation();#}
-{#    $('#main-menu').foundation();#}
-{#</script>#}
-</head>
-<body>
 
 <!-- sub-title and bread-crumbs -->
 {#<div class="top-subbar">#}
@@ -201,18 +164,18 @@
 {% block extra_css %}{% endblock %}
 
 <div class="large-12 columns" id="content">
-<div class="grid-x grid-padding-x">
-  <div class="cell">
-      <div class="grid-x">
-        <div class="cell medium-4">
-            <img src="{% static "img/Original/Original.jpg" %}">
-        </div>
-          <div class="cell auto">
-          </div>
-      </div>
-  </div>
-</div>
-{% block body %} {% endblock %}
+	<div class="grid-x grid-padding-x">
+		<div class="cell">
+			<div class="grid-x">
+				<div class="cell small-2">
+					<img src="{% static "img/Original/Original.jpg" %}" id="invex_logo"/>
+				</div>
+				<div class="cell auto">
+				</div>
+			</div>
+		</div>
+	</div>
+	{% block body %} {% endblock %}
 </div>
 
 {#{% block extra_js %}#}
@@ -220,6 +183,7 @@
 {#<script src="{% static "js/bootstrap.min.js" %}"></script>#}
 {#{% endblock %}#}
 {##}
+
 <script>
     $(document).foundation();
 </script>
@@ -227,11 +191,8 @@
 </body>
 
 <!-- Footer -->
-<footer>
     <div class="large-12 columns">
         {% block helptext %} {% endblock %}
         {% block bottom_copy %} {% endblock %}
-      </div>
     </div>
-</footer>
 </html>
