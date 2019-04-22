@@ -2,44 +2,33 @@
 {% load staticfiles %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static "css/spectrum.css" %}">
-<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
 {% endblock %}
 
 {% block body %}
     {% csrf_token %}
     <div class="vap_container">
         <div class="grid-container fluid">
-          <div class="grid-x grid-padding-x">
-            <div class="cell">
-                {% include "_topmenu.html" %}
-            </div>
-          </div>
-        </div>
-          <div class="row">
-            <br/>
-          </div>
-        </div>
             <div class="grid-x grid-padding-x">
-                  {% include "_leftsidemenu.html" %}
-            </div>
-            <div class="cell auto">
-                <div class="grid-y">
-                    <div class="cell mainPicture" id="picture">
-                      <div id="gui_container"></div>
-                    </div>
-                  </div>
+                <div class="cell">
+                    {% include "_topmenu.html" %}
                 </div>
-
-            </div>
-
-
-            </div>
             </div>
         </div>
-	</div>
+        <div class="row">
+            <br/>
+        </div>
+    </div>
+    <div class="grid-x grid-padding-x">
+            {% include "_leftsidemenu.html" %}
+            <div class="cell auto mainPicture" id="picture">
+                <div id="gui_container"></div>
+            </div>
+    </div>
+
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
@@ -61,8 +50,8 @@
 <script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
 <script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/plotly-latest.min.js" %}"></script>
-    <script src="{% static "js/VAP/dataset_stat.js" %}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
+<script src="{% static "js/VAP/dataset_stat.js" %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
 {% endblock %}
 	<script>
 
@@ -91,7 +80,12 @@
 
         {% endif %}
 
-        scene.renderer.render( scene.scene, scene.camera );
+        function animate() {
+            scene.animate();
+            // requestAnimationFrame(animate);
+        }
+
+        scene.animate();
 		init();
 
 		window.addEventListener( "resize", onSceneResize, false );
