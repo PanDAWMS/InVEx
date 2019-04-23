@@ -37,6 +37,7 @@
 	</div>
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
+<script src="{% static "js/Chart.bundle.min.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/controls/DragControls.js" %}"></script>
 <script src="{% static "js/VAP/sup_func.js" %}"></script>
@@ -177,6 +178,7 @@
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
                 document.getElementById('groups').appendChild(scene.createPlotlyCharts());
+                document.getElementById('groups').appendChild(scene.createChartjsCharts());
                 {% endif %}
                 var temp=scene.createNewGroupElement();
                 document.getElementById('color_changer').appendChild(temp);

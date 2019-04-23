@@ -279,6 +279,126 @@ class MeshVisualization extends DataVisualization{
             element_div.classList.add('hide');
 		}
     }
+
+    createChartjsCharts(){
+        var chartjs_div = document.createElement('div');
+        chartjs_div.sceneobj = this;
+        this.chartjs_div = chartjs_div;
+
+        var chartjs_config = {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+        
+        var chartjs_div_source_id = 'chartjs_chart_source';
+        while(document.getElementById(chartjs_div_source_id)!==null)
+            chartjs_div_source_id += (Math.random()*10).toString().slice(-1);
+        var chartjs_div_source = document.createElement('div');
+        chartjs_div_source.id = chartjs_div_source_id;
+        chartjs_div_source.classList.add('hide');
+        chartjs_div_source.datasets = [];
+        var source_labels = Object.keys(this.meshCoordinates[3]).sort();
+
+        var chartjs_canvas_source = document.createElement('canvas');
+        chartjs_canvas_source.id = chartjs_div_source_id + 'canvas';
+        chartjs_div_source.appendChild(chartjs_canvas_source);
+        var source_chartjs = new Chart(chartjs_canvas_source, {
+            type:'bar',
+            data: {
+                labels: source_labels,
+                datasets: []
+            },
+            options: chartjs_config,
+        });
+        source_chartjs.parameters_order = source_labels;
+        
+
+        var chartjs_div_destination_id = 'chartjs_chart_destination';
+        while(document.getElementById(chartjs_div_destination_id)!==null)
+            chartjs_div_destination_id += (Math.random()*10).toString().slice(-1);
+        var chartjs_div_destination = document.createElement('div');
+        chartjs_div_destination.id = chartjs_div_destination_id;
+        chartjs_div_destination.classList.add('hide');
+        chartjs_div_destination.datasets = [];
+        var destination_labels = Object.keys(this.meshCoordinates[2]).sort();
+
+        var chartjs_canvas_destination = document.createElement('canvas');
+        chartjs_canvas_destination.id = chartjs_div_destination_id + 'canvas';
+        chartjs_div_destination.appendChild(chartjs_canvas_destination);
+        var destination_chartjs = new Chart(chartjs_canvas_destination, {
+            type:'bar',
+            data: {
+                labels: destination_labels,
+                datasets: []
+            },
+            options: chartjs_config,
+        });
+        destination_chartjs.parameters_order = destination_labels;
+
+        chartjs_div.appendChild(chartjs_div_source);
+        chartjs_div.appendChild(chartjs_div_destination);
+        chartjs_div.source_div = chartjs_div_source;
+        chartjs_div.destination_div = chartjs_div_destination;
+        chartjs_div.source_chart = source_chartjs;
+        chartjs_div.destination_chart = destination_chartjs;
+
+        chartjs_div.add_data_source=function(numb_row, group_color="#000000"){
+            var x_dim = this.source_chart.parameters_order;
+            var data = [];
+            var colors = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (this.sceneobj.meshCoordinates[3][x_dim[i]] in this.sceneobj.objectsOnMesh[numb_row]){
+                    data.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[3]
+                        [x_dim[i]]][0].dataObject[1][2]);
+                }
+                else{
+                    data.push(0);
+                }
+                colors.push(group_color);
+            }
+            var dataset = {
+                label: this.sceneobj.meshCoordinates[0][numb_row][0],
+                data: data,
+                backgroundColor: colors,
+            };
+            this.source_chart.data.datasets.push(dataset);
+            this.source_div.datasets.push(dataset);
+            this.source_chart.update();
+            this.source_div.classList.remove('hide');
+        }
+
+        chartjs_div.add_data_destination=function(numb_row, group_color="#000000"){
+            var x_dim = this.source_chart.parameters_order;
+            var data = [];
+            var colors = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (this.sceneobj.meshCoordinates[2][x_dim[i]] in this.sceneobj.objectsOnMesh[numb_row]){
+                    data.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[2]
+                        [x_dim[i]]][0].dataObject[1][2]);
+                }
+                else{
+                    data.push(0);
+                }
+                colors.push(group_color);
+            }
+            var dataset = {
+                label: this.sceneobj.meshCoordinates[1][numb_row][0],
+                data: data,
+                backgroundColor: colors,
+            };
+            this.destination_chart.data.datasets.push(dataset);
+            this.destination_div.datasets.push(dataset);
+            this.destination_chart.update();
+            this.destination_div.classList.remove('hide');
+        }
+        
+        return chartjs_div;
+    }
     
     createPlotlyCharts(){
         var plotly_div = document.createElement('div');
