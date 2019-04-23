@@ -12,6 +12,7 @@ class MeshVisualization extends DataVisualization{
         this.meshCoordinates = [[], [], {}, {}];
         this.objectsOnMesh = [];
         this.visibilityState = [true, true, true, true];
+        this.plotly_div = undefined;
         for (var i = 0; i<xCoordinates.length; ++i)
         {
             this.meshCoordinates[0][i] = [xCoordinates[i], i*meshDistance];
@@ -277,7 +278,118 @@ class MeshVisualization extends DataVisualization{
 			form.appendChild(element_div);
             element_div.classList.add('hide');
 		}
-	}
+    }
+    
+    createPlotlyCharts(){
+        var plotly_div = document.createElement('div');
+        plotly_div.sceneobj = this;
+        this.plotly_div = plotly_div;
+
+        var plotly_config = {displayModeBar: true, responsive: true};
+
+        var plotly_div_source_id = 'plotly_chart_source';
+        while(document.getElementById(plotly_div_source_id)!==null)
+            plotly_div_source_id += (Math.random()*10).toString().slice(-1);
+        var plotly_div_source = document.createElement('div');
+        plotly_div_source.id = plotly_div_source_id;
+        plotly_div_source.classList.add('hide');
+        plotly_div_source.traces = [];
+        Plotly.newPlot(plotly_div_source, [], {title:'Sources', showlegend:true, autosize: true,
+        xaxis: {
+          tickangle: -90
+        },
+        yaxis: {
+          zeroline: false,
+          gridwidth: 2
+        }}, plotly_config);
+        
+
+        var plotly_div_destination_id = 'plotly_chart_destination';
+        while(document.getElementById(plotly_div_destination_id)!==null)
+            plotly_div_destination_id += (Math.random()*10).toString().slice(-1);
+        var plotly_div_destination = document.createElement('div');
+        plotly_div_destination.id = plotly_div_destination_id;
+        plotly_div_destination.classList.add('hide');
+        plotly_div_destination.traces = [];
+        Plotly.newPlot(plotly_div_destination, [], {title:'Destinations', showlegend:true, autosize: true,
+        xaxis: {
+          tickangle: -90
+        },
+        yaxis: {
+          zeroline: false,
+          gridwidth: 2
+        },
+        }, plotly_config);
+
+        plotly_div.appendChild(plotly_div_source);
+        plotly_div.appendChild(plotly_div_destination);
+        plotly_div.source_plot = plotly_div_source;
+        plotly_div.destination_plot = plotly_div_destination;
+
+        plotly_div.add_data_source=function(numb_row, group_color="#000000"){
+            var x_dim = Object.keys(this.sceneobj.meshCoordinates[3]).sort();
+            var y_dim = [];
+            var text_dim = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (this.sceneobj.meshCoordinates[3][x_dim[i]] in this.sceneobj.objectsOnMesh[numb_row]){
+                    y_dim.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[3]
+                        [x_dim[i]]][0].dataObject[1][2]);
+                    text_dim.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[3]
+                            [x_dim[i]]][0].realData[1][2]);
+                }
+                else{
+                    y_dim.push(0);
+                    text_dim.push("N/A");
+                }
+            }
+            var trace = {
+                x: x_dim,
+                y: y_dim,
+                type: 'bar',
+                text: text_dim,
+                name: this.sceneobj.meshCoordinates[0][numb_row][0],
+                marker: {
+                  color: group_color
+                }
+            };
+            Plotly.addTraces(this.source_plot, trace);
+            this.source_plot.traces.push(trace);
+            this.source_plot.classList.remove('hide');
+        }
+
+        plotly_div.add_data_destination=function(numb_row, group_color="#000000"){
+            var x_dim = Object.keys(this.sceneobj.meshCoordinates[2]).sort();
+            var y_dim = [];
+            var text_dim = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (this.sceneobj.meshCoordinates[2][x_dim[i]] in this.sceneobj.objectsOnMesh[numb_row]){
+                    y_dim.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[2]
+                        [x_dim[i]]][0].dataObject[1][2]);
+                    text_dim.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[2]
+                            [x_dim[i]]][0].realData[1][2]);
+                }
+                else{
+                    y_dim.push(0);
+                    text_dim.push("N/A");
+                }
+            }
+            var trace = {
+                x: x_dim,
+                y: y_dim,
+                type: 'bar',
+                text: text_dim,
+                name: this.sceneobj.meshCoordinates[1][numb_row][0],
+                marker: {
+                  color: group_color
+                }
+            };
+            Plotly.addTraces(this.destination_plot, trace);
+            this.destination_plot.traces.push(trace);
+            this.destination_plot.classList.remove('hide');
+        }
+        
+        return plotly_div;
+    }
     
     //#endregion
     //#region User interaction

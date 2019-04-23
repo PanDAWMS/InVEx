@@ -20,7 +20,6 @@
         </div>
             <div class="grid-x grid-padding-x">
                   {% include "_leftsidemenu.html" %}
-            </div>
             <div class="cell auto">
                 <div class="grid-y">
                     <div class="cell mainPicture" id="picture">
@@ -55,6 +54,7 @@
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 <script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/plotly-latest.min.js" %}"></script>
 {% endblock %}
@@ -176,6 +176,7 @@
                 {% if type == "site2site" %}
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
+                document.getElementById('groups').appendChild(scene.createPlotlyCharts());
                 {% endif %}
                 var temp=scene.createNewGroupElement();
                 document.getElementById('color_changer').appendChild(temp);
