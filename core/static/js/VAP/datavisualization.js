@@ -78,6 +78,7 @@ class DataVisualization extends Scene{
         this.auxData = [];
         this.auxNames = [];
         this.lodData = [];
+        this.realStats = [];
         this.selectionsHistory = [];
         this.interactiveMode = 'single';
         
@@ -370,7 +371,7 @@ class DataVisualization extends Scene{
 								group_data[group] = self.getGroupsMeans(selected_spheres);
 						}
 					}
-					self.renderer.render(self.scene, self.camera);
+                    requestAnimationFrame(render);
 					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames)
 				}
 			var clearHistoryBtn = document.createElement('input');
@@ -383,7 +384,7 @@ class DataVisualization extends Scene{
 					self.cleanElement('history');
 					self.resetAllColorGroups();
 					self.selectionsHistory = [];
-					self.renderer.render(self.scene, self.camera);
+                    requestAnimationFrame(render);
 				}
 
 			form.appendChild(updateBtn);
@@ -452,7 +453,7 @@ class DataVisualization extends Scene{
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[initial_group].clone());
         }
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
@@ -850,7 +851,7 @@ class DataVisualization extends Scene{
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
         }
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	changeCluster(sphere, newCluster){
@@ -859,7 +860,7 @@ class DataVisualization extends Scene{
 		sphere.material.color = this.clusters_color_scheme[newCluster].clone();
         scene.selectObject(sphere);
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	createColorScheme(){
@@ -882,7 +883,7 @@ class DataVisualization extends Scene{
 			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
         }
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	// Color group of spheres
@@ -903,7 +904,7 @@ class DataVisualization extends Scene{
 				group[i].material.color = this.customColors[newgroup].clone();
         }
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 		return newgroup;
 	}
 
@@ -943,7 +944,7 @@ class DataVisualization extends Scene{
 		this.quality = quality;
         setCookie('quality', this.quality, 14);
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	//Redraw the scene. Recreates the sphere and selected sphere groups and recreates all the spheres in it.
@@ -968,7 +969,7 @@ class DataVisualization extends Scene{
 		}
         this.scene.add(this.selectedObject);
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
     
 	// Deactivates all interactions before changing it.
@@ -1009,7 +1010,7 @@ class DataVisualization extends Scene{
 			} );
 			this.dragControls.addEventListener( 'dragend', function ( event ) { 
 				event.target.scene.controls.enabled = true;
-				event.target.scene.renderer.render(event.target.scene.scene, event.target.scene.camera);
+                requestAnimationFrame(render);
 			} );
 			this.dragControls.addEventListener( 'drag', this.onSphereMove);
 			this.dragControls.activate();
@@ -1024,7 +1025,7 @@ class DataVisualization extends Scene{
 			}
 		}
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	//Reaction to a movement of a sphere. Checks the boundary, changes the dataobjects of the spheres.
@@ -1066,7 +1067,7 @@ class DataVisualization extends Scene{
 		var scene = event.currentTarget.sceneObject.scene;
 
         event.target.scene.printDataDialog(obj, scene);
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 	
 	//prints the sphere data in a nice dialogue box on top of the scene.
@@ -1170,7 +1171,7 @@ class DataVisualization extends Scene{
 				sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
 									sphere.dataObject[1][this.subSpace[1]],
 									sphere.dataObject[1][this.subSpace[2]]);
-                requestAnimationFrame(animate);
+                requestAnimationFrame(render);
 			});
 		}
 	}
@@ -1219,7 +1220,7 @@ class DataVisualization extends Scene{
     onPointerMove(event) {
         event.preventDefault();
 
-        if (event.pressure > 0.1) requestAnimationFrame(animate);
+        if (event.pressure > 0.1) requestAnimationFrame(render);
     }
 
     processClick(target, offsetX, offsetY) {
@@ -1250,7 +1251,7 @@ class DataVisualization extends Scene{
             }
 
             // Render frame when something has changed
-            requestAnimationFrame(animate);
+            requestAnimationFrame(render);
         }
     }
 
@@ -1292,7 +1293,7 @@ class DataVisualization extends Scene{
 			var selected_group_link = document.getElementById("selected_group_link");
             selected_group_link.style.display = "none";
 
-            requestAnimationFrame(animate);
+            requestAnimationFrame(render);
 			return true;
 		}
 
@@ -1306,7 +1307,7 @@ class DataVisualization extends Scene{
 				this.dims_gui.removeFolder(this.dims_aux_folder);
 			}
 
-            requestAnimationFrame(animate);
+            requestAnimationFrame(render);
 		}
 		
 		this.selectObject(obj);
@@ -1349,7 +1350,7 @@ class DataVisualization extends Scene{
 		this.selectObject(obj);
         this.addElementToTable(this.multiChoiceTable, obj);
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	//reaction to an object click in drag mode.
@@ -1368,7 +1369,7 @@ class DataVisualization extends Scene{
 		this.selectObject(obj);
 		this.printDataDialog(obj, this);
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	//selects the given object
@@ -1393,7 +1394,7 @@ class DataVisualization extends Scene{
         lineCube.visible = obj.visible;
 
         // Render frame when something has changed
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	//Unselects all objects
@@ -1402,7 +1403,7 @@ class DataVisualization extends Scene{
 			this.unSelectObject(this.selectedObject.children.pop());
 		}
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	changeVisibilityAll(){
@@ -1435,7 +1436,7 @@ class DataVisualization extends Scene{
 		obj.material.color.set( invertColor(obj.material.color) );
 		this.groupOfSpheres.add(obj);
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	changeRad(newRad){
@@ -1469,7 +1470,7 @@ class DataVisualization extends Scene{
         }
 
         // Render frame when something has changed
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
 	}
 
 	//Moves all spheres to their new location based on data object and given subspace
@@ -1491,7 +1492,7 @@ class DataVisualization extends Scene{
 		}
         this.changeVisibilityAll();
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
     }
     
     setNewSubSpace(x1, x2, x3){

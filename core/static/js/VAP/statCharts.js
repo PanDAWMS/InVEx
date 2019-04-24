@@ -80,20 +80,21 @@ function drawMultipleGroupRadarChart(element_id, groups_data, selections_history
 
 function drawMultipleClusterRadarChart(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
 
-    //var data2 = dataClustersRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
+    var data2 = dataClustersRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
 
-    //layout = {
-    //  polar: {
-    //    radialaxis: {
-    //      visible: true,
-    //      range: [0, 100]
-    //    }
-    //  }
-    //};
+    layout = {
+        polar: {
+            radialaxis: {
+                visible: true,
+                range: [0, 100]
+            }
+        }
+    };
 
-    //Plotly.plot(element_id, data, layout);
+    Plotly.plot(element_id, data, layout);
+}
 
-
+function drawParallelCoordinates(element_id, real_data, real_stats, dimNames) {
     /*
     * Parallel Coordinates visualization, inspired by :
     * Byron Houwens : https://codepen.io/BHouwens/pen/RaeGVd?editors=0010
@@ -109,10 +110,8 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     for (var i = 0; i < real_data.length; i++) {
         var tmp = [];
 
-        for (var j = 0; j < dimNames.length; j++) {
-            if (j == 0) tmp[dimNames[j]] = real_data[i][j];
-            else tmp[dimNames[j]] = norm_data[i][1][j];
-        }
+        for (var j = 0; j < dimNames.length; j++)
+            tmp[dimNames[j]] = real_data[i][1][j];
 
         data[i] = tmp;
     }
@@ -123,7 +122,7 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
         var tmp = [];
 
         tmp['name'] = dimNames[i];
-        tmp['range'] = [0, 100];
+        tmp['range'] = [real_stats[1][1][i], real_stats[1][2][i]];
 
         features[i] = tmp;
     }
@@ -131,7 +130,7 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     /*
      * Parameters
      *****************************/
-    const width = 1300, height = 500, padding = 28, brush_width = 20;
+    const width = 90 * dimNames.length, height = 500, padding_x = 80, padding_y = 30, brush_width = 20;
     const filters = {};
 
     /*
@@ -140,14 +139,14 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     // Horizontal scale
     const xScale = d3.scalePoint()
         .domain(features.map(x => x.name))
-        .range([padding, width - padding]);
+        .range([padding_x, width - padding_x]);
 
     // Each vertical scale
     const yScales = {};
     features.map(x => {
         yScales[x.name] = d3.scaleLinear()
             .domain(x.range)
-            .range([height - padding, padding]);
+            .range([height - padding_y, padding_y]);
     });
     //yScales.team = d3.scaleOrdinal()
     //    .domain(features[0].range)
@@ -187,8 +186,8 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     const yBrushes = {};
     d3.entries(yScales).map(x => {
         let extent = [
-            [-(brush_width / 2), padding],
-            [brush_width / 2, height - padding]
+            [-(brush_width / 2), padding_y],
+            [brush_width / 2, height - padding_y]
         ];
         yBrushes[x.key] = d3.brushY()
             .extent(extent)
@@ -253,7 +252,7 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     featureAxisG
         .append("text")
         .attr("text-anchor", "middle")
-        .attr('y', padding / 2)
+        .attr('y', padding_y / 2)
         .text(d => d.name);    
 }
 

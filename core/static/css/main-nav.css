@@ -308,7 +308,9 @@
 
 
 
-
+#radar_chart_all {
+    overflow: auto;
+}
 
 #radar_chart_all g.inactive path, g.active path {
     fill: none;
@@ -321,7 +323,7 @@
 }
 
 #radar_chart_all g.feature > text {
-    transform: translateY(5px) rotate(-15deg);
+    transform: translateY(5px) rotate(-8deg);
 }
 
 

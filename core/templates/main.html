@@ -80,12 +80,8 @@
 
         {% endif %}
 
-        function animate() {
-            scene.animate();
-            // requestAnimationFrame(animate);
-        }
+        function render() { scene.render(); }
 
-        scene.animate();
 		init();
 
 		window.addEventListener( "resize", onSceneResize, false );
@@ -185,9 +181,10 @@
                     {% if cluster_ready %}
                             cluster_selector(scene.clusters_color_scheme, "cluster_stat");
                             //drawSingleRadarCharts("radar_chart_single", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
-                            drawMultipleClusterRadarChart("radar_chart_all",
-                                    scene.normData, scene.realData,
-                                    scene.clusters, scene.clusters_color_scheme, scene.dimNames, 100);
+                            //drawMultipleClusterRadarChart("radar_chart_all",
+                            //        scene.normData, scene.realData,
+                            //        scene.clusters, scene.clusters_color_scheme, scene.dimNames, 100);
+                        drawParallelCoordinates("radar_chart_all", scene.realData, scene.realStats, scene.dimNames);
                     {% endif %}
 
                     {% if norm_dataset %}
@@ -224,17 +221,9 @@
                     {% if dsID %}
                         scene.setSource('{{ dsID|safe }}');
                     {% endif %}
-
-                    render();
-
 		}
 
         scene.controls.addEventListener('change', render);
-
-        function render() {
-            scene.renderer.render( scene.scene, scene.camera );
-        }
-
 	</script>
 {% endblock %}
 
