@@ -67,7 +67,7 @@ function prepareUniqueData(data){
 
 class DataVisualization extends Scene{
  
- // #region Initialization
+    // #region Initialization
     constructor(mainDiv, defaultRadius){
         super(mainDiv);
 
@@ -78,6 +78,7 @@ class DataVisualization extends Scene{
         this.auxData = [];
         this.auxNames = [];
         this.lodData = [];
+        this.realStats = [];
         this.selectionsHistory = [];
         this.interactiveMode = 'single';
         
@@ -109,7 +110,9 @@ class DataVisualization extends Scene{
         this.defaultSpRad = defaultRadius;
 
 		//Sets the listener for mouse click
-        mainDiv.addEventListener( "click", function(event){this.sceneObject.onMouseClick(event);}, false );
+        mainDiv.addEventListener("click", function (event) { this.sceneObject.onMouseClick(event); }, false);
+        mainDiv.addEventListener("touchend", function (event) { this.sceneObject.onTouchEnd(event); }, false);
+        mainDiv.addEventListener("pointermove", function (event) { this.sceneObject.onPointerMove(event); }, false);
         this.changeTheme(this.theme);
         this.changeQuality(this.quality);
     }
@@ -222,17 +225,9 @@ class DataVisualization extends Scene{
 		var buttonDiv = document.createElement('div');
 		buttonDiv.setAttribute("align", "center");
 
-		var changeRadiusBtn = document.createElement('input');
-		changeRadiusBtn.id = 'button' + radChangeID;
-		changeRadiusBtn.classList.add('button', 'small');
-		changeRadiusBtn.value = 'Change Radius';
-		changeRadiusBtn.setAttribute('type', 'button');
-		buttonDiv.appendChild(changeRadiusBtn);
-
-		var radiusRange = document.createElement('input');
-		changeRadiusBtn.id = 'range' + radChangeID;
+        var radiusRange = document.createElement('input');
+        radiusRange.id = 'range' + radChangeID;
 		radiusRange.classList.add('custom-range');
-		radiusRange.style.width = '100%';
 		radiusRange.setAttribute('type', 'range');
 		radiusRange.min = 0.1;
 		radiusRange.max = 3;
@@ -241,21 +236,17 @@ class DataVisualization extends Scene{
 		var label = document.createElement('label');
 		label.id = 'for' + radiusRange.id;
 		label.setAttribute('for', radiusRange.id);
-		label.classList.add('text-center');
 		label.innerText = 'Spheres Radius: ';
 
-		changeRadiusBtn.sceneObject = this;
-		changeRadiusBtn.radiusRange = radiusRange;
+        radiusRange.sceneObject = this;
         radiusRange.value = this.defaultSpRad.toString();
-		changeRadiusBtn.onclick = function() {
-			this.sceneObject.changeRad(parseFloat(this.radiusRange.value));
-			this.sceneObject.renderer.render(this.scene, this.camera);
+        radiusRange.oninput = function () {
+			this.sceneObject.changeRad(parseFloat(this.value));
 			return false;
 		};
 
 		form.groupDiv.appendChild(label);
 		form.groupDiv.appendChild(radiusRange);
-		form.groupDiv.appendChild(buttonDiv);
 
 		return form;
 	}
@@ -380,7 +371,7 @@ class DataVisualization extends Scene{
 								group_data[group] = self.getGroupsMeans(selected_spheres);
 						}
 					}
-					self.renderer.render(self.scene, self.camera);
+                    requestAnimationFrame(render);
 					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames)
 				}
 			var clearHistoryBtn = document.createElement('input');
@@ -393,7 +384,7 @@ class DataVisualization extends Scene{
 					self.cleanElement('history');
 					self.resetAllColorGroups();
 					self.selectionsHistory = [];
-					self.renderer.render(self.scene, self.camera);
+                    requestAnimationFrame(render);
 				}
 
 			form.appendChild(updateBtn);
@@ -460,8 +451,9 @@ class DataVisualization extends Scene{
 			var groups_number = this.selectedObject.children[i].dataObject[2].length;
 			var initial_group = this.selectedObject.children[i].dataObject[2][groups_number-1];
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[initial_group].clone());
-		}
-		this.renderer.render(this.scene, this.camera);
+        }
+
+        requestAnimationFrame(render);
 	}
 
 	chosenSpheres(spheres, featureID, featureValues, featureType) {
@@ -808,9 +800,12 @@ class DataVisualization extends Scene{
 	//Creates a sphere on the scene, adds the data to the sphere and the sphere to the data.
     createSphere(normData, realData, cluster, auxData, lodData) {
 		var material = new THREE.MeshPhongMaterial( {color: this.clusters_color_scheme[cluster].clone()} );
-		if (lodData != undefined) {
-			var newSphereRadius = this.defaultSpRad + ((this.defaultSpRad * lodData[3]));
-			this.sphereGeometry = new THREE.SphereGeometry( newSphereRadius, this.numberOfSegements, this.numberOfSegements );
+
+        var radius = this.defaultSpRad;
+
+        if (lodData != undefined) {
+            radius = this.defaultSpRad + ((this.defaultSpRad * lodData[3]));
+            this.sphereGeometry = new THREE.SphereGeometry(radius, this.numberOfSegements, this.numberOfSegements );
 		}
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
 		sphere.position.x = normData[1][this.proectionSubSpace[0]];
@@ -822,7 +817,10 @@ class DataVisualization extends Scene{
 		auxData[3] = sphere;
 		sphere.dataObject = normData;
 		sphere.realData = realData;
-		sphere.auxData = auxData;
+        sphere.auxData = auxData;
+
+        sphere.scale.set(radius, radius, radius);
+
 		this.groupOfSpheres.add(sphere);
 		this.changeVisibilitySphere(sphere);
 		return sphere;
@@ -851,16 +849,18 @@ class DataVisualization extends Scene{
 		for ( var i = 0; i < this.selectedObject.children.length; i++ ) {
 			this.selectedObject.children[i].dataObject[2][this.selectedObject.children[i].dataObject[2].length-1]=0;
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
-		}
-		this.renderer.render(this.scene, this.camera);
+        }
+
+        requestAnimationFrame(render);
 	}
 
 	changeCluster(sphere, newCluster){
 		scene.unSelectObject(sphere);
 		sphere.dataObject[2].unshift(newCluster);
 		sphere.material.color = this.clusters_color_scheme[newCluster].clone();
-		scene.selectObject(sphere);
-		this.renderer.render(this.scene, this.camera);
+        scene.selectObject(sphere);
+
+        requestAnimationFrame(render);
 	}
 
 	createColorScheme(){
@@ -881,8 +881,9 @@ class DataVisualization extends Scene{
 		this.clusters_color_scheme = this.createColorScheme();
 		for ( var i = 0; i < this.groupOfSpheres.children.length; i++ ) {
 			this.groupOfSpheres.children[i].material.color = this.clusters_color_scheme[this.groupOfSpheres.children[i].dataObject[2][0]].clone();
-		}
-		this.renderer.render(this.scene, this.camera);
+        }
+
+        requestAnimationFrame(render);
 	}
 
 	// Color group of spheres
@@ -901,8 +902,9 @@ class DataVisualization extends Scene{
 			}
 			else
 				group[i].material.color = this.customColors[newgroup].clone();
-		}
-		this.renderer.render(this.scene, this.camera);
+        }
+
+        requestAnimationFrame(render);
 		return newgroup;
 	}
 
@@ -940,8 +942,9 @@ class DataVisualization extends Scene{
 		this.sphereGeometry = new THREE.SphereGeometry( this.defaultSpRad, this.numberOfSegements, this.numberOfSegements); //Create a new sphere geometry for all spheres
 		this.redrawScene(); //Redraw the sphere with new quality
 		this.quality = quality;
-		setCookie('quality', this.quality, 14);
-		this.renderer.render(this.scene, this.camera);
+        setCookie('quality', this.quality, 14);
+
+        requestAnimationFrame(render);
 	}
 
 	//Redraw the scene. Recreates the sphere and selected sphere groups and recreates all the spheres in it.
@@ -964,8 +967,9 @@ class DataVisualization extends Scene{
 			var newSphere = this.createSphere(oldGroup.children[i].dataObject, oldGroup.children[i].realData, oldGroup.children[i].dataObject[2][0], oldGroup.children[i].auxData);
 			this.selectObject(newSphere);
 		}
-		this.scene.add(this.selectedObject);
-		this.renderer.render(this.scene, this.camera);
+        this.scene.add(this.selectedObject);
+
+        requestAnimationFrame(render);
 	}
     
 	// Deactivates all interactions before changing it.
@@ -1006,7 +1010,7 @@ class DataVisualization extends Scene{
 			} );
 			this.dragControls.addEventListener( 'dragend', function ( event ) { 
 				event.target.scene.controls.enabled = true;
-				event.target.scene.renderer.render(event.target.scene.scene, event.target.scene.camera);
+                requestAnimationFrame(render);
 			} );
 			this.dragControls.addEventListener( 'drag', this.onSphereMove);
 			this.dragControls.activate();
@@ -1021,6 +1025,7 @@ class DataVisualization extends Scene{
 			}
 		}
 
+        requestAnimationFrame(render);
 	}
 
 	//Reaction to a movement of a sphere. Checks the boundary, changes the dataobjects of the spheres.
@@ -1061,9 +1066,8 @@ class DataVisualization extends Scene{
 
 		var scene = event.currentTarget.sceneObject.scene;
 
-		event.target.scene.printDataDialog(obj, scene);
-		//event.target.scene.renderer.render(event.target.scene.scene, event.target.scene.camera);
-
+        event.target.scene.printDataDialog(obj, scene);
+        requestAnimationFrame(render);
 	}
 	
 	//prints the sphere data in a nice dialogue box on top of the scene.
@@ -1167,41 +1171,112 @@ class DataVisualization extends Scene{
 				sphere.position.set(sphere.dataObject[1][this.subSpace[0]],
 									sphere.dataObject[1][this.subSpace[1]],
 									sphere.dataObject[1][this.subSpace[2]]);
-				this.sceneObject.renderer.render(this.sceneObject.scene, this.sceneObject.camera);
+                requestAnimationFrame(render);
 			});
 		}
 	}
 
 	//Reaction to mouse click event. Depends on the interactive mode calls different functions
 	onMouseClick(event) {
-		event.preventDefault();
+        event.preventDefault();
 
-		this.intersects = this.getIntersects( event.offsetX, event.offsetY );
-		if ( this.intersects.length > 0 ) {
-			var res = this.intersects.filter( function ( res ) {
+        var rect = event.target.getBoundingClientRect();
 
-				return res && res.object;
+        this.processClick(event.target,
+            event.clientX - rect.left,
+            event.clientY - rect.top);
+    }
 
-			} )[ 0 ];
+    //Reaction to touch end event
+    onTouchEnd(event) {
+        event.preventDefault();
 
-			if ( res && res.object ) {
-				if (this.interactiveMode == 'multi')
-					this.multiSelectionClick(res.object);
-				if (this.interactiveMode == 'single')
-					this.singleSelectionClick(res.object);
-				if (this.interactiveMode == 'drag')
-					this.dragSelectionClick(res.object);
+        for (var i = 0; i < event.changedTouches.length; i++) {
+            var rect = event.changedTouches[i].target.getBoundingClientRect();
 
-			} else {
-				if (this.dims_gui.__folders['Multidimensional Coordinates']) {
-					this.dims_gui.removeFolder(this.dims_folder);
-				}
-				if (this.dims_gui.__folders['Auxiliary Data']) {
-					this.dims_gui.removeFolder(this.dims_aux_folder);
-				}
-			}
-		}
-	}
+            this.processClick(event.changedTouches[i].target,
+                event.changedTouches[i].clientX - rect.left,
+                event.changedTouches[i].clientY - rect.top);
+        }
+
+        for (var i = 0; i < event.touches.length; i++) {
+            var rect = event.touches[i].target.getBoundingClientRect();
+
+            this.processClick(event.touches[i].target,
+                event.touches[i].clientX - rect.left,
+                event.touches[i].clientY - rect.top);
+        }
+
+        for (var i = 0; i < event.targetTouches.length; i++) {
+            var rect = event.targetTouches[i].target.getBoundingClientRect();
+
+            this.processClick(event.targetTouches[i].target,
+                event.targetTouches[i].clientX - rect.left,
+                event.targetTouches[i].clientY - rect.top);
+        }
+    }
+
+    //Reaction to touch end event
+    onPointerMove(event) {
+        event.preventDefault();
+
+        if (event.pressure > 0.1) requestAnimationFrame(render);
+    }
+
+    processClick(target, offsetX, offsetY) {
+        this.intersects = this.getIntersects(target, offsetX, offsetY);
+
+        if (this.intersects.length > 0) {
+            var res = this.intersects.filter(function (res) {
+
+                return res && res.object;
+
+            })[0];
+
+            if (res && res.object) {
+                if (this.interactiveMode == 'multi')
+                    this.multiSelectionClick(res.object);
+                if (this.interactiveMode == 'single')
+                    this.singleSelectionClick(res.object);
+                if (this.interactiveMode == 'drag')
+                    this.dragSelectionClick(res.object);
+
+            } else {
+                if (this.dims_gui.__folders['Multidimensional Coordinates']) {
+                    this.dims_gui.removeFolder(this.dims_folder);
+                }
+                if (this.dims_gui.__folders['Auxiliary Data']) {
+                    this.dims_gui.removeFolder(this.dims_aux_folder);
+                }
+            }
+
+            // Render frame when something has changed
+            requestAnimationFrame(render);
+        }
+    }
+
+    //Gets the object that is being on the given two dimensional point
+    getIntersects(target, offsetX, offsetY) {
+        var x = (offsetX / target.clientWidth) * 2 - 1,
+            y = - (offsetY / target.clientHeight) * 2 + 1;
+
+        var select = true, spheres = true;
+
+        this.mouseVector.set(x, y);
+        this.raycaster.setFromCamera(this.mouseVector, this.camera);
+        spheres = spheres && (this.groupOfSpheres.children.length != 0);
+        select = select && (this.selectedObject.children.length != 0);
+        if (spheres)
+            if (select)
+                return this.raycaster.intersectObjects([this.groupOfSpheres, this.selectedObject], true);
+            else
+                return this.raycaster.intersectObject(this.groupOfSpheres, true);
+        else
+            if (select)
+                return this.raycaster.intersectObject(this.selectedObject, true);
+            else
+                return [];
+    }
 
 	//reaction to an object click in single selection mode.
 	singleSelectionClick(obj){
@@ -1216,8 +1291,9 @@ class DataVisualization extends Scene{
 				this.dims_gui.removeFolder(this.dims_aux_folder);
 			}
 			var selected_group_link = document.getElementById("selected_group_link");
-			selected_group_link.style.display = "none";
-			this.renderer.render(this.scene, this.camera);
+            selected_group_link.style.display = "none";
+
+            requestAnimationFrame(render);
 			return true;
 		}
 
@@ -1230,7 +1306,8 @@ class DataVisualization extends Scene{
 			if (this.dims_gui.__folders['Auxiliary Data']) {
 				this.dims_gui.removeFolder(this.dims_aux_folder);
 			}
-			this.renderer.render(this.scene, this.camera);
+
+            requestAnimationFrame(render);
 		}
 		
 		this.selectObject(obj);
@@ -1271,8 +1348,9 @@ class DataVisualization extends Scene{
 		if (!select)
 			return true;
 		this.selectObject(obj);
-		this.addElementToTable(this.multiChoiceTable, obj);
-		this.renderer.render(this.scene, this.camera);
+        this.addElementToTable(this.multiChoiceTable, obj);
+
+        requestAnimationFrame(render);
 	}
 
 	//reaction to an object click in drag mode.
@@ -1290,25 +1368,33 @@ class DataVisualization extends Scene{
 		
 		this.selectObject(obj);
 		this.printDataDialog(obj, this);
-		this.renderer.render(this.scene, this.camera);
+
+        requestAnimationFrame(render);
 	}
 
 	//selects the given object
 	selectObject(obj){
-		if(obj==undefined)
-			return false
-		var geometry = new THREE.BoxBufferGeometry( 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius, 2*obj.geometry.parameters.radius );
-		var edgesCube = new THREE.EdgesGeometry( geometry );
-		var lineCube = new THREE.LineSegments( edgesCube, new THREE.LineBasicMaterial( { color: this.select_linecube_color } ) );
-		obj.selectedCircut = lineCube;
-		lineCube.position.x = obj.position.x;
-		lineCube.position.y = obj.position.y;
-		lineCube.position.z = obj.position.z;
-		obj.material.color.set( invertColor(obj.material.color) );
-		this.groupOfSelectOutlines.add(lineCube);
-		this.selectedObject.add(obj);
-		lineCube.visible = obj.visible;
-		this.renderer.render(this.scene, this.camera);
+        if (obj == undefined)
+            return false;
+
+        var geometry = new THREE.BoxBufferGeometry(1.6, 1.6, 1.6);
+        var edgesCube = new THREE.EdgesGeometry(geometry);
+        var lineCube = new THREE.LineSegments(edgesCube, new THREE.LineBasicMaterial({ color: this.select_linecube_color }));
+
+        obj.selectedCircut = lineCube;
+        lineCube.position.x = obj.position.x;
+        lineCube.position.y = obj.position.y;
+        lineCube.position.z = obj.position.z;
+        obj.material.color.set(invertColor(obj.material.color));
+
+        lineCube.scale.set(obj.scale['x'], obj.scale['y'], obj.scale['z']);
+
+        this.groupOfSelectOutlines.add(lineCube);
+        this.selectedObject.add(obj);
+        lineCube.visible = obj.visible;
+
+        // Render frame when something has changed
+        requestAnimationFrame(render);
 	}
 
 	//Unselects all objects
@@ -1316,7 +1402,8 @@ class DataVisualization extends Scene{
 		while (this.selectedObject.children.length!=0){
 			this.unSelectObject(this.selectedObject.children.pop());
 		}
-		this.renderer.render(this.scene, this.camera);
+
+        requestAnimationFrame(render);
 	}
 
 	changeVisibilityAll(){
@@ -1342,41 +1429,48 @@ class DataVisualization extends Scene{
 		}
 	}
 	
-
 	//Unselects given object
 	unSelectObject(obj){
 		this.groupOfSelectOutlines.remove(obj.selectedCircut);
 		obj.selectedCircut = undefined;
 		obj.material.color.set( invertColor(obj.material.color) );
 		this.groupOfSpheres.add(obj);
-		this.renderer.render(this.scene, this.camera);
-	}
 
-	//Gets the object that is being on the given two dimensional point
-	getIntersects(x, y, select=true, spheres=true) {
-		x = ( x / this.mainDiv.clientWidth ) * 2 - 1;
-		y = - ( y / this.mainDiv.clientHeight ) * 2 + 1;
-		this.mouseVector.set( x, y );
-		this.raycaster.setFromCamera( this.mouseVector, this.camera );
-		spheres = spheres && (this.groupOfSpheres.children.length!=0);
-		select = select && (this.selectedObject.children.length!=0); 
-		if(spheres)
-			if(select)
-				return this.raycaster.intersectObjects( [this.groupOfSpheres, this.selectedObject], true );
-			else
-				return this.raycaster.intersectObject( this.groupOfSpheres, true );
-		else
-			if(select)
-				return this.raycaster.intersectObject( this.selectedObject, true );
-			else
-				return [];
-
+        requestAnimationFrame(render);
 	}
 
 	changeRad(newRad){
-		this.sphereGeometry = new THREE.SphereGeometry( newRad, this.numberOfSegements, this.numberOfSegements );
-		this.defaultSpRad = newRad;
-		this.redrawScene();
+        //this.sphereGeometry = new THREE.SphereGeometry( newRad, this.numberOfSegements, this.numberOfSegements );
+        this.defaultSpRad = newRad;
+        var actualRad = newRad;
+
+        for (var i = 0; i < this.groupOfSpheres.children.length; ++i) {
+            if (this.lodData.length > 0 && this.lodData[this.groupOfSpheres.children[i].dataObject[0]][0] != this.groupOfSpheres.children[i].dataObject[0]) {
+                alert('An error has occured in LOD generator! Check your data! \n lodData[' + this.groupOfSpheres.children[i].dataObject[0] +
+                    '] (' + this.lodData[this.groupOfSpheres.children[i].dataObject[0]][0] + ') is not equal to groupOfSpheres.children[' +
+                    i + '].realData[0] (' + this.groupOfSpheres.children[i].dataObject[0] + ')');
+                return;
+            }
+
+            actualRad =
+                ((this.lodData.length > 0) ?
+                    newRad + (newRad * this.lodData[this.groupOfSpheres.children[i].dataObject[0]][3]) :
+                    newRad);
+            this.groupOfSpheres.children[i].scale.set(actualRad, actualRad, actualRad);
+        }
+
+        for (var i = 0; i < this.selectedObject.children.length; ++i) {
+            actualRad =
+                ((this.lodData.length > 0) ?
+                    newRad + (newRad * this.lodData[this.selectedObject.children[i].dataObject[0]][3]) :
+                    newRad);
+
+            this.selectedObject.children[i].scale.set(actualRad, actualRad, actualRad);
+            this.groupOfSelectOutlines.children[i].scale.set(actualRad, actualRad, actualRad);
+        }
+
+        // Render frame when something has changed
+        requestAnimationFrame(render);
 	}
 
 	//Moves all spheres to their new location based on data object and given subspace
@@ -1396,7 +1490,9 @@ class DataVisualization extends Scene{
 			sphere.selectedCircut.position.y = sphere.position.y;
 			sphere.selectedCircut.position.z = sphere.position.z;
 		}
-		this.changeVisibilityAll();
+        this.changeVisibilityAll();
+
+        requestAnimationFrame(render);
     }
     
     setNewSubSpace(x1, x2, x3){

@@ -308,11 +308,23 @@
 
 
 
+#radar_chart_all {
+    overflow: auto;
+}
 
+#radar_chart_all g.inactive path, g.active path {
+    fill: none;
+    stroke: lightgrey;
+    stroke-linecap: "round"
+}
 
+#radar_chart_all g.active path {
+    stroke: #0081af;
+}
 
-
-
+#radar_chart_all g.feature > text {
+    transform: translateY(5px) rotate(-8deg);
+}
 
 
 
