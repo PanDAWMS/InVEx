@@ -315,11 +315,14 @@
 #radar_chart_all g.inactive path, g.active path {
     fill: none;
     stroke: lightgrey;
-    stroke-linecap: "round"
 }
 
 #radar_chart_all g.active path {
     stroke: #0081af;
+}
+
+#radar_chart_all g.inactive path {
+    stroke-width: 0.3;
 }
 
 #radar_chart_all g.feature > text {
