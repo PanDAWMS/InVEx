@@ -29,7 +29,6 @@ class DataSampleModel(models.Model):
 class HistoryModel(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     userid = models.IntegerField(null=False)
-    base_dataset = models.ForeignKey(DataSampleModel, blank=False, null=False, on_delete=models.CASCADE)
     class Meta:
        managed = False
        db_table = 'history'
@@ -48,6 +47,7 @@ class BaseOperationModel(models.Model):
 class OperationInHistory(models.Model):
     operation = models.ForeignKey(BaseOperationModel, on_delete=models.CASCADE)
     history = models.ForeignKey(HistoryModel, on_dalete=models.CASCADE)
+    parent_operation = models.ForeignKey(OperationInHistory, null=True, default=True, on_delete=models.CASCADE)
     order = models.IntegerField(null=False)
     class Meta:
        managed = False
@@ -65,7 +65,8 @@ class DirectOperationModel(BaseOperationModel):
 
 class GroupingOperationModel(BaseOperationModel):
     parameters = models.TextField(null=False, blank=True, default="")
-    binary_pandas = models.BinaryField(null=True)
+    value = models.CharField(max_length=45, blank=True, default="")
+    features = models.TextField(blank=True, default="")
     agregated_dataset = models.ForeignKey(DataSampleModel, on_delete=models.CASCADE, null=True)
     groups = models.ManyToManyField(DataSampleModel, through=OutputGroups)
     class Meta:
