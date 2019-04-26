@@ -11,9 +11,9 @@ class DataSampleModel(models.Model):
     num_columns = models.IntegerField(default=1)
     num_rows = models.IntegerField(default=1)
     data_real = models.TextField(blank=False, null=False)
-    data_norm = models.TextField(blank=False, null=False)
-    statistics_real = models.TextField(blank=False, null=False)
-    statistics_norm = models.TextField(blank=False, null=False)
+    data_norm = models.TextField(blank=True, null=True, default=True)
+    statistics_real = models.TextField(blank=True, null=True, default=True)
+    statistics_norm = models.TextField(blank=True, null=True, default=True)
     class Meta:
        managed = False
        db_table = 'data_sample'
@@ -63,7 +63,7 @@ class DirectOperationModel(BaseOperationModel):
        db_table = 'direct_operation'
 
 
-class GroupingOperationModel(BaseOperationModel):
+class ChangeDataSampleOperation(BaseOperationModel):
     parameters = models.TextField(null=False, blank=True, default="")
     value = models.CharField(max_length=45, blank=True, default="")
     features = models.TextField(blank=True, default="")
@@ -71,12 +71,12 @@ class GroupingOperationModel(BaseOperationModel):
     groups = models.ManyToManyField(DataSampleModel, through=OutputGroups)
     class Meta:
        managed = False
-       db_table = 'grouping_operation'
+       db_table = 'change_datasample_operation'
 
 
 class OutputGroups(models.Model):
     group = models.ForeignKey(DataSampleModel, null=False, on_delete=models.CASCADE)
-    operation = models.ForeignKey(GroupingOperationModel, null=False, on_delete=models.CASCADE)
+    operation = models.ForeignKey(ChangeDataSampleOperation, null=False, on_delete=models.CASCADE)
     group_metadata = models.TextField(null=True, blank=True)
     class Meta:
        managed = False
