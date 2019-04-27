@@ -499,6 +499,7 @@ class DataVisualization extends Scene{
 			history_dict['max'] = feature_value[1];
 		}
 		this.selectionsHistory.push(history_dict);
+		return history_dict;
 	}
 
 	createCategoricalGroup(form, selectelement, startvalueindex){
