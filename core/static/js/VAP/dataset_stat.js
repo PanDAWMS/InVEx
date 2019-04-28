@@ -489,6 +489,7 @@ class DatasetStats {
         slider.setAttribute("min", item["min"]);
         slider.setAttribute("max", item["max"]);
         slider.value = item[q];
+        slider.disabled = "true";
         var div = document.createElement("div");
         div.textContent = this.formatNumber(item[q].toFixed(2));
         div.style.marginLeft = "10px";
