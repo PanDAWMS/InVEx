@@ -38,9 +38,14 @@ function getColorScheme( clusters, theme='black' ) {
 				base = 1;
 			for( var i = 0; i < len; i++ ) {
 				if (theme=='white')
-					results[clusters_unique[i]] = new THREE.Color( (~~(i/(parts*parts)))%parts/base*0.8 , (~~(i/parts))%parts/base*0.8 , i%parts/base*0.8 );
+                    results[clusters_unique[i]] = new THREE.Color((~~(i / (parts * parts))) % parts / base * 0.8,
+                        (~~(i / parts)) % parts / base * 0.8,
+                        i % parts / base * 0.8);
 				else
-					results[clusters_unique[i]] = new THREE.Color( 1-(~~(i/(parts*parts)))%parts/base , 1-(~~(i/parts))%parts/base , 1-i%parts/base );
+                    results[clusters_unique[i]] = 
+                        new THREE.Color((1 - (~~(i / (parts * parts))) % parts / base) * 0.8,
+                            (1 - (~~(i / parts)) % parts / base) * 0.8,
+                            (1 - i % parts / base) * 0.8);
 			}
 		}
 	return results;
