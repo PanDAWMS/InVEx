@@ -95,6 +95,47 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
 }
 
 function drawParallelCoordinates(element_id, real_data, real_stats, clusters_list, clusters_color_scheme, dimNames) {
+    var _dimensions = [];
+
+    for (var i = 0; i < dimNames.length; i++) {
+        var tmp = {};
+
+        tmp['label'] = dimNames[i];
+        tmp['range'] = [real_stats[1][1][i], real_stats[1][2][i]];
+		tmp['values'] = real_data.map((row) => {return row[1][i]});  
+
+        _dimensions[i] = tmp;
+    }
+
+	var color_count = Object.keys(clusters_color_scheme).length,
+		_colorscale = Object.keys(clusters_color_scheme).
+			map((x, index) => {return [x/(color_count-1), rgbToHex(clusters_color_scheme[index])];}),
+		_color = clusters_list.map((x) => {return x/(color_count-1)});
+
+	var data = [{
+		type: 'parcoords',
+		line: {
+			showscale: true,
+			colorscale: _colorscale,
+			color: _color,
+			colorbar: {
+				ticktext: Object.keys(clusters_color_scheme)
+			}
+		},
+	
+		dimensions: _dimensions
+	}];
+
+	var layout = {
+		width: 80 * dimNames.length
+	};
+
+	Plotly.plot(element_id, data, layout);
+
+	drawParallelCoordinatesD3(element_id, real_data, real_stats, clusters_list, clusters_color_scheme, dimNames);
+}
+
+function drawParallelCoordinatesD3(element_id, real_data, real_stats, clusters_list, clusters_color_scheme, dimNames) {
     /*
     * Parallel Coordinates visualization, inspired by :
     * Byron Houwens : https://codepen.io/BHouwens/pen/RaeGVd?editors=0010

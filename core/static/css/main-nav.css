@@ -329,7 +329,9 @@
     transform: translateY(5px) rotate(-8deg);
 }
 
-
+#radar_chart_all .axis-title {
+    transform: translate(0, -28px) rotate(-9deg);
+}
 
 
 .datatableboldcolumn{
