@@ -22,9 +22,9 @@ function getColorScheme( clusters, theme='black' ) {
 	var results = {};
 	if (len==1){
 		if (theme=='white')
-			results[clusters_unique[0]] = new THREE.Color(0.7,0.7,0.7);
+			results[clusters_unique[0]] = new THREE.Color(1,0,0);
 		else
-			results[clusters_unique[0]] = new THREE.Color(1,1,1);
+			results[clusters_unique[0]] = new THREE.Color(1,0,0);
 	}
 	else
 		if ( len == 2 ) {
@@ -33,19 +33,31 @@ function getColorScheme( clusters, theme='black' ) {
 		} else {
 			// code the clusters as a 3-digits number in base-base number system. 
 			var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
+			var count_of_encoded_colors = Math.pow(parts, 3);
+			if (parts+len > count_of_encoded_colors)
+				parts = parts + 1;
 			var base = parts - 1;
 			if (base == 0)
 				base = 1;
+			var red, green, blue, skipped=0;
+			console.log({'parts':parts, 'base':base, 'count_of_encoded_colors':count_of_encoded_colors});
 			for( var i = 0; i < len; i++ ) {
-				if (theme=='white')
-                    results[clusters_unique[i]] = new THREE.Color((~~(i / (parts * parts))) % parts / base * 0.8,
-                        (~~(i / parts)) % parts / base * 0.8,
-                        i % parts / base * 0.8);
+				if (theme=='white'){
+					red = (~~((i+skipped)/(parts*parts)))%parts/base*0.8;
+					green = (~~((i+skipped)/parts))%parts/base*0.8;
+					blue = (i+skipped)%parts/base*0.8;
+				}
+				else{
+					red = 1-(~~((i+skipped)/(parts*parts)))%parts/base;
+					green = 1-(~~((i+skipped)/parts))%parts/base;
+					blue = 1-(i+skipped)%parts/base;
+				}
+				if (red==green && green==blue){
+					i--;
+					skipped++;
+				}
 				else
-                    results[clusters_unique[i]] = 
-                        new THREE.Color((1 - (~~(i / (parts * parts))) % parts / base) * 0.8,
-                            (1 - (~~(i / parts)) % parts / base) * 0.8,
-                            (1 - i % parts / base) * 0.8);
+					results[clusters_unique[i]] = new THREE.Color(red, green, blue);
 			}
 		}
 	return results;
