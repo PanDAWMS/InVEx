@@ -38,9 +38,14 @@ function getColorScheme( clusters, theme='black' ) {
 				base = 1;
 			for( var i = 0; i < len; i++ ) {
 				if (theme=='white')
-					results[clusters_unique[i]] = new THREE.Color( (~~(i/(parts*parts)))%parts/base*0.8 , (~~(i/parts))%parts/base*0.8 , i%parts/base*0.8 );
+                    results[clusters_unique[i]] = new THREE.Color((~~(i / (parts * parts))) % parts / base * 0.8,
+                        (~~(i / parts)) % parts / base * 0.8,
+                        i % parts / base * 0.8);
 				else
-					results[clusters_unique[i]] = new THREE.Color( 1-(~~(i/(parts*parts)))%parts/base , 1-(~~(i/parts))%parts/base , 1-i%parts/base );
+                    results[clusters_unique[i]] = 
+                        new THREE.Color((1 - (~~(i / (parts * parts))) % parts / base) * 0.8,
+                            (1 - (~~(i / parts)) % parts / base) * 0.8,
+                            (1 - i % parts / base) * 0.8);
 			}
 		}
 	return results;
@@ -1322,13 +1327,12 @@ class DataVisualization extends Scene{
 
 			var vis_group_obj = {
 				VisualizeGroup:function() {
-					var uri = URI(window.location.search);
-					if (!uri.hasQuery("dsID"))
-						uri.addSearch("dsID", scene.dsID);
-					if (uri.hasQuery("remotesrc"))
-						uri.removeSearch("remotesrc");
-					uri.addSearch("group_id",obj.dataObject[0]);
-					window.open('/'+uri.toString(), '_blank');
+					var link=document.createElement('a');
+					link.href=next_group_url.replace('NEWGROUPID', obj.dataObject[0]);
+					console.log(obj.dataObject[0]);
+					console.log(link.href);
+					link.target='_blank';
+					link.click();
 				}};
 			this.dims_folder.add(vis_group_obj,'VisualizeGroup');
 		}
