@@ -103,13 +103,20 @@ def visualization_init(request):
                     '!views.visualization_init!: Could not perform an upload of a new CSV file. \n' + str(exc))
         elif request.POST['formt'] == 'filefromserver':
             try:
-                print('here')
                 data, datasetid = data_functions.csv_file_from_server(request)
             except Exception as exc:
                 logger.error(
                     '!views.visualization_init!: Could not load the a CSV file from the server. \n' + str(exc))
-        if not datasetid is None:
-            return redirect(reverse('regular_visualization_f', kwargs={'maindatasetuid': datasetid}))
+    elif request.method == 'GET' and 'remotesrc' in request.GET:
+        err_msg_subj = '[views/remotesrc=pandajobs]'
+        if request.GET['remotesrc'] == 'pandajobs':
+            try:
+                data, datasetid = form_reactions.get_jobs_from_panda(request)
+            except Exception as exc:
+                logger.error('{0} Remote data are not accessible: {1}'.
+                             format(err_msg_subj, exc))
+    if not datasetid is None:
+        return redirect(reverse('regular_visualization_data', kwargs={'maindatasetuid': datasetid, 'groups': ''}))
     data['type'] = 'datavisualization'
     data['built'] = datetime.now()
     data['PAGE_TITLE'] = "InVEx"
@@ -140,105 +147,18 @@ def visualization_data(request, maindatasetuid, groups='', operationnumber=None)
                 data, op_number = data_functions.clusterize(request, maindatasetuid, parsed_groups)
                 return redirect(reverse('regular_visualization_data_operation', kwargs={'maindatasetuid': maindatasetuid, 'groups': groups, 'operationnumber': str(op_number)}))
             except Exception as exc:
-                logger.error('!views.visualization_data!: Could not perform a clusterization. \n' + str(exc))            
+                logger.error('!views.visualization_data!: Could not perform a clusterization. \n' + str(exc))
+        elif request.POST['formt'] == 'rebuild':
+            try:
+                data = form_reactions.predict_cluster(request)
+                return JsonResponse(data)
+            except Exception as exc:
+                logger.error('!views.visualization_data!: Could not calculate a prediction. \n' + str(exc))
+                return JsonResponse({})
     if data is None:
         data = data_functions.prepare_dataset_data(request, maindatasetuid, parsed_groups, operationnumber)
     data['VISUALIZE_URL'] = reverse('regular_visualization_data_new_group', kwargs={'maindatasetuid': maindatasetuid, 'groups': groups})
     data['NEXT_GROUP_URL'] = reverse('regular_visualization_data_new_group', kwargs={'maindatasetuid': maindatasetuid, "groups": groups})
-    data['type'] = 'datavisualization'
-    data['built'] = datetime.now()
-    data['PAGE_TITLE'] = "InVEx"
-    try:
-        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.DATASET_FILES_PATH)
-    except:
-        data['dataset_files'] = False
-        logger.error('Could not read the list of datasets file')
-    return render(request, 'url_enc/main.html', data, content_type='text/html')
-
-
-def visualization_f(request, maindatasetuid):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-    data = None
-
-    if request.method == 'POST' and 'formt' in request.POST:
-        if request.POST['formt'] == 'visualize':
-            try:
-                data = data_functions.update_dataset(request, maindatasetuid)
-            except Exception as exc:
-                logger.error('!views.performance_test_frame!: Couldn\'t perform an update. \n' + str(exc))
-    if data is None:
-        data = data_functions.prepare_dataset_data(maindatasetuid)
-    data['VISUALIZE_URL'] = reverse('regular_visualization_f', kwargs={'maindatasetuid': maindatasetuid})
-    data['NEXT_GROUP_URL'] = reverse('regular_visualization_fg_newgroup', kwargs={'maindatasetuid': maindatasetuid, "groups": ""})
-    data['type'] = 'datavisualization'
-    data['built'] = datetime.now()
-    data['PAGE_TITLE'] = "InVEx"
-    try:
-        data['dataset_files'] = data_functions.list_csv_data_files(data_functions.DATASET_FILES_PATH)
-    except:
-        data['dataset_files'] = False
-        logger.error('Could not read the list of datasets file')
-    return render(request, 'url_enc/main.html', data, content_type='text/html')
-
-
-def visualization_fg(request, maindatasetuid, groups=''):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-    data = None
-    parsed_groups = parse_groups_url_parameter(groups)
-    if parsed_groups is None:
-        groups=''
-    if request.method == 'POST' and 'formt' in request.POST:
-        if request.POST['formt'] == 'visualize':
-            try:
-                data = data_functions.update_dataset(request, maindatasetuid, parsed_groups)
-            except Exception as exc:
-                logger.error('!views.visualization_fg!: Could not perform an update. \n' + str(exc))
-        if request.POST['formt'] == 'cluster':
-            try:
-                data = data_functions.clusterize(request, maindatasetuid, parsed_groups)
-            except Exception as exc:
-                logger.error('!views.visualization_fg!: Could not perform a clusterization. \n' + str(exc))            
-    if data is None:
-        data = data_functions.prepare_dataset_data(maindatasetuid, parsed_groups)
-    data['VISUALIZE_URL'] = reverse('regular_visualization_fg', kwargs={'maindatasetuid': maindatasetuid, 'groups': groups})
-    data['NEXT_GROUP_URL'] = reverse('regular_visualization_fg_newgroup', kwargs={'maindatasetuid': maindatasetuid, "groups": groups})
-    data['type'] = 'datavisualization'
-    data['built'] = datetime.now()
-    data['PAGE_TITLE'] = "InVEx"
-    try:
-        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.DATASET_FILES_PATH)
-    except:
-        data['dataset_files'] = False
-        logger.error('Could not read the list of datasets file')
-    return render(request, 'url_enc/main.html', data, content_type='text/html')
-
-
-def visualization_fo(request, maindatasetuid, operationnumber):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-    data = EMPTY_DATA
-    data['type'] = 'datavisualization'
-    data['built'] = datetime.now()
-    data['PAGE_TITLE'] = "InVEx"
-    try:
-        data['dataset_files'] = form_reactions.list_csv_data_files(form_reactions.DATASET_FILES_PATH)
-    except:
-        data['dataset_files'] = False
-        logger.error('Could not read the list of datasets file')
-    return render(request, 'url_enc/main.html', data, content_type='text/html')
-
-
-def visualization_fgo(request, maindatasetuid, groups, operationnumber):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-    data = EMPTY_DATA
-    groups_parsed = parse_groups_url_parameter(groups)
     data['type'] = 'datavisualization'
     data['built'] = datetime.now()
     data['PAGE_TITLE'] = "InVEx"
