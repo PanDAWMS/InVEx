@@ -609,27 +609,36 @@ def clusterize(request, datasetid, groups):
     return data, op_history.length()-1
 
 
-def predict_cluster(request):
+def predict_cluster(request, datasetid, groups, operationnumber):
     """
     Predict cluster for the data object. 
     :param request: 
     :return: 
     """
-    if ('dsID' not in request.POST) or ('data' not in request.POST):
-        logger.error('!form_reactions.predict_cluster!: There was no file name in the request. \nRequest parameters: '
+    if 'data' not in request.POST:
+        logger.error('!form_reactions.predict_cluster!: There was no data in the request. \nRequest parameters: '
                      + json.dumps(request.POST))
         return {}
-    original, dataset, op_history, aux_dataset = load_data(request.POST['dsID'])
-    if op_history is None:
-        logger.error('!form_reactions.predict_cluster!: There was no operations in the history. \nRequest parameters: '
-                     + json.dumps(request.POST))
+    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(datasetid, groups)
+    if dataset is None or operationnumber is None or op_history is None:
+        logger.error('!form_reactions.predict_cluster!: Could not load the dataset or the operation history. \nDatasetid: '+
+            datasetid + '\ngroups:' + groups + '\nRequest parameters: ' + json.dumps(request.POST))
         return {}
+    try:
+        operationnumber = int(operationnumber)
+    except:
+        logger.error('!form_reactions.predict_cluster!: Could not convert operation number to int. \nDatasetid: '+
+            datasetid + '\ngroups:' + groups + '\nOperation number: ' + operationnumber + '\nRequest parameters: ' + json.dumps(request.POST))
+        return {}
+    if operationnumber >= op_history.length():
+        operationnumber = op_history.length() - 1
+    
     data = {}
-    operation = op_history.get_previous_step()[0]
+    operation = op_history.get_step(operationnumber)[0]
     if operation._type_of_operation != 'cluster':
         logger.error(
-            '!form_reactions.predict_cluster!: Previous operation was not a clusterization method. \nRequest parameters: '
-            + json.dumps(request.POST))
+            '!form_reactions.predict_cluster!: Previous operation was not a clusterization method. \nDatasetid: '+
+            datasetid + '\ngroups:' + groups + '\nOperation number: ' + operationnumber + '\nRequest parameters: ' + json.dumps(request.POST))
         return {}
     try:
         result = operation.predict([json.loads(request.POST['data'])]).tolist()
@@ -638,8 +647,9 @@ def predict_cluster(request):
         return data
     except Exception as exc:
         logger.error(
-            '!form_reactions.predict_cluster!: Failed to perform prediction. \nOperation parameters:'
-            + json.dumps(operation.save_parameters()) + '\nOperation results: '
+            '!form_reactions.predict_cluster!: Failed to perform prediction. \nDatasetid: '+
+            datasetid + '\ngroups:' + groups + '\nOperation number: ' + operationnumber +
+            '\nOperation parameters:' + json.dumps(operation.save_parameters()) + '\nOperation results: '
             + json.dumps(operation.save_results()) + '\nRequest parameters: '
             + json.dumps(request.POST) + '\n' + str(exc))
         raise
