@@ -94,7 +94,7 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     Plotly.plot(element_id, data, layout);
 }
 
-function drawParallelCoordinates(element_id, real_data, real_stats, dimNames) {
+function drawParallelCoordinates(element_id, real_data, real_stats, clusters_list, clusters_color_scheme, dimNames) {
     /*
     * Parallel Coordinates visualization, inspired by :
     * Byron Houwens : https://codepen.io/BHouwens/pen/RaeGVd?editors=0010
@@ -254,6 +254,12 @@ function drawParallelCoordinates(element_id, real_data, real_stats, dimNames) {
         .attr("text-anchor", "middle")
         .attr('y', padding_y / 2)
         .text(d => d.name);    
+
+    d3.select('g.active').selectAll('path')
+        .each(function (d, i) {
+            d3.select(this)
+                .style('stroke', rgbToHex(clusters_color_scheme[clusters_list[i]]));
+        });
 }
 
 
