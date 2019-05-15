@@ -106,5 +106,4 @@ core/datafiles/*
 core/logs/*
 !core/logs/.keep
 private/*
-
 db.sqlite3
