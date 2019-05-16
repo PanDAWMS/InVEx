@@ -436,7 +436,10 @@ class DatasetStats {
 
             var form = document.createElement('form');
             form.setAttribute('method', 'post');
-            form.setAttribute('action', '');
+            if(typeof visualize_url !== "undefined" )
+                form.setAttribute('action', '');
+            else
+                form.setAttribute('action', visualize_url);
             form.style.display = 'hidden';
 
             var action = document.createElement("input");

@@ -52,6 +52,12 @@
 <script src="{% static "js/plotly-latest.min.js" %}"></script>
 <script src="{% static "js/VAP/dataset_stat.js" %}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
+<script>
+    var visualize_url = "{{ VISUALIZE_URL }}";
+    var next_group_url = "{{ NEXT_GROUP_URL|safe }}";
+    var next_group_url = "{{ NEXT_GROUP_URL|safe }}";
+    var nan=0; {% comment %} TEMPORARY FIX, FOR SMALL GROUPS STATISTICS GIVES NAN {% endcomment %}
+</script>
 {% endblock %}
 	<script>
 
