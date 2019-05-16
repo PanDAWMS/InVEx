@@ -7,8 +7,11 @@ class LoDGenerator:
     of the initial data sample into a number of clusters. 
     """
 
-    def __init__(self, dataset, n=200):
-        self.dataset = dataset.copy()
+    def __init__(self, dataset, n=200, columns=None):
+        if columns and isinstance(columns, list):
+            self.dataset = dataset.loc[:, columns]
+        else:
+            self.dataset = dataset.copy()
         self.initialLength = self.dataset.shape[0]
         self.n = n
         self.kmeans_clustering()
