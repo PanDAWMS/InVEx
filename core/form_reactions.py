@@ -193,7 +193,7 @@ def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_histor
         logger.error('!form_reactions.prepare_data_object!: Failed to prepare basics of the data. \n' + str(exc))
         raise
 
-def data_preparation(dataset, request, datasetid, groups=None):
+def data_preparation(dataset, datasetid, features, lod_params=None, groups=None):
     """
     Data Preparation includes:
     - cleaning data sample from NaNs
@@ -204,16 +204,13 @@ def data_preparation(dataset, request, datasetid, groups=None):
     - calculating statistics for the normalized data sample
     - saving information about normalized data sample and statistics in the operations history file with the unique ID
     :param dataset: 
-    :param request: 
-    :return: 
+    :return:
     """
     LocalReader().drop_na(dataset)
     numeric_dataset = LocalReader().get_numeric_data(dataset)
-    norm_dataset = LocalReader().scaler(numeric_dataset)
-    auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
-    if 'lod_activated' in request.POST and request.POST['lod_activated'] == 'true':
-        lod = int(request.POST['lod_value'])
-        lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
+    if lod_params:
+        lod_data = calc.lod_generator.LoDGenerator(
+            numeric_dataset, lod_params['value'], lod_params['features'])
         norm_lod_dataset = LocalReader().scaler(lod_data.grouped_dataset)
         aux_lod_dataset = lod_data.grouped_dataset.drop(lod_data.grouped_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
@@ -222,28 +219,27 @@ def data_preparation(dataset, request, datasetid, groups=None):
         op_history.append(norm_lod_dataset, metrics)
         data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
         data['lod_data'] = lod_data.groups_metadata
-        data['lod_value'] = request.POST['lod_value']
-        data['lod_activated'] = True
         groupedData = calc.grouped.GroupedData()
-        groupedData.get_groups(dataset, lod_data.groups_metadata)
-        dsID = datasetid
+        groupedData.get_groups(dataset.loc[:, features], lod_data.groups_metadata)
         filename = datasetid
         if not groups is None:
             for i in groups:
                 filename += '.group' + i
         save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
-                                    str(lod), lod_data.groups_metadata, datasetid, groups)
+                  str(lod_params['value']), lod_data.groups_metadata, datasetid, groups)
         groupedData.set_dsID(datasetid)
         groupedData.set_filename(filename)
         groupedData.save_to_file()
     else:
+        numeric_dataset = numeric_dataset.loc[:, features]
+        norm_dataset = LocalReader().scaler(numeric_dataset)
+        auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
         metrics = calc.basicstatistics.BasicStatistics()
         metrics.process_data(norm_dataset)
         op_history.append(norm_dataset, metrics)
         data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
         save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0', datasetid, groups)
-    data['request'] = request
     return data
 
 def file_upload(request, source, source_file=False, remote_data=False):
@@ -375,7 +371,11 @@ def load_dataset(datasetid, groups=None, usecols=None):
         group.set_filename(filename)
         dataset = group.load_from_file(int(groups[-1]))
     else:
-        dataset = LocalReader().read_df(get_dataset_path(datasetid), file_format='csv', index_col=0, header=0, usecols=usecols)
+        dataset = LocalReader().read_df(file_path=get_dataset_path(datasetid),
+                                        file_format='csv',
+                                        **{'index_col': 0,
+                                           'header': 0,
+                                           'usecols': usecols})
     return dataset
 
 
@@ -387,14 +387,14 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
         operationnumber = int(operationnumber)
     except:
         return prepare_dataset_data(datasetid, groups, None)
-    if lod_value > 0:
-        data['lod_data'] = lod_metadata
     if operationnumber >= op_history.length():
         operationnumber = op_history.length() - 1
     oper = op_history.get_step(operationnumber)
-    data = prepare_data_object(dataset, original, aux_dataset, op_history)
     if oper[0]._type_of_operation != 'cluster':
         return prepare_dataset_data(datasetid, groups, None)
+    data = prepare_data_object(dataset, original, aux_dataset, op_history)
+    if lod_value > 0:
+        data['lod_data'] = lod_metadata
     if len(oper) >= 3:
         data['visualparameters'] = oper[2]
     data['parameters'] = oper[0].print_parameters()
@@ -417,7 +417,6 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     data['lod_activated'] = False
     data['lod_value'] = 50
     return data
-    
     
 
 def prepare_dataset_data(request, datasetid, groups=None, operationnumber=None):
@@ -451,24 +450,32 @@ def update_dataset(request, datasetid, groups=None):
                                      index_name=request.POST['index_name'],
                                      features=json.loads(request.POST['features']),
                                      num_records=request.POST['num_records'])
-    use_col = []
-    for item in dataset_stat.features:
-        if item['enabled'] == 'true':
-            use_col.append(item['feature_name'])
-    use_col.append(dataset_stat.index_name)
-    dataset = pd.DataFrame()
-    dsID = datasetid
-    dataset = load_dataset(datasetid, groups, use_col)
-    data = data_preparation(dataset, request, datasetid, groups)
+
+    features, lod_features = [], []
+    for feature in dataset_stat.features:
+        if feature['enabled'] == 'true':
+            features.append(feature['feature_name'])
+        if feature.get('lod_enabled') == 'true':
+            lod_features.append(feature['feature_name'])
+    checked_features = list(set(
+        [dataset_stat.index_name] + features + lod_features))
+
+    lod_params = None
+    if request.POST.get('lod_activated') == 'true':
+        lod_params = {'value': int(request.POST['lod_value']),
+                      'features': lod_features}
+
+    dataset = load_dataset(datasetid, groups, checked_features)
+    data = data_preparation(dataset, datasetid, features, lod_params, groups)
     data['data_uploaded'] = True
-    data['features'] = dataset_stat.features
+    data['features'] = features
     data['dsID'] = datasetid
     data['num_records'] = dataset_stat.num_records
     data['index_name'] = dataset_stat.index_name
     data['lod_activated'] = request.POST['lod_activated']
     data['lod_value'] = request.POST['lod_value']
+    data['request'] = request
     return data
-
 
 
 def get_jobs_from_panda(request):
