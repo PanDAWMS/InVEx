@@ -94,216 +94,60 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     Plotly.plot(element_id, data, layout);
 }
 
-function drawParallelCoordinates(element_id, real_data, real_stats, clusters_list, clusters_color_scheme, dimNames) {
-    var _dimensions = [];
+function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames) {
+    var _dimensions = dimNames.map((dim, index) => {
+        var _values = real_data.map((row) => { return row[1][index] });
 
-    for (var i = 0; i < dimNames.length; i++) {
-        var tmp = {};
-
-        tmp['label'] = dimNames[i];
-        tmp['range'] = [real_stats[1][1][i], real_stats[1][2][i]];
-		tmp['values'] = real_data.map((row) => {return row[1][i]});  
-
-        _dimensions[i] = tmp;
-    }
-
-	var color_count = Object.keys(clusters_color_scheme).length,
-		_colorscale = Object.keys(clusters_color_scheme).
-			map((x, index) => {return [x/(color_count-1), rgbToHex(clusters_color_scheme[index])];}),
-		_color = clusters_list.map((x) => {return x/(color_count-1)});
-
-	var data = [{
-		type: 'parcoords',
-		line: {
-			showscale: true,
-			colorscale: _colorscale,
-			color: _color,
-			colorbar: {
-				ticktext: Object.keys(clusters_color_scheme)
-			}
-		},
-	
-		dimensions: _dimensions
-	}];
-
-	var layout = {
-		width: 80 * dimNames.length
-	};
-
-	Plotly.plot(element_id, data, layout);
-
-	drawParallelCoordinatesD3(element_id, real_data, real_stats, clusters_list, clusters_color_scheme, dimNames);
-}
-
-function drawParallelCoordinatesD3(element_id, real_data, real_stats, clusters_list, clusters_color_scheme, dimNames) {
-    /*
-    * Parallel Coordinates visualization, inspired by :
-    * Byron Houwens : https://codepen.io/BHouwens/pen/RaeGVd?editors=0010
-    * Mike Bostock : https://bl.ocks.org/mbostock/1341021
-    *
-    */
-
-    /*
-     * Data
-     *****************************/
-    var data = [];
-
-    for (var i = 0; i < real_data.length; i++) {
-        var tmp = [];
-
-        for (var j = 0; j < dimNames.length; j++)
-            tmp[dimNames[j]] = real_data[i][1][j];
-
-        data[i] = tmp;
-    }
-        
-    var features = [];
-
-    for (var i = 0; i < dimNames.length; i++) {
-        var tmp = [];
-
-        tmp['name'] = dimNames[i];
-        tmp['range'] = [real_stats[1][1][i], real_stats[1][2][i]];
-
-        features[i] = tmp;
-    }
-
-    /*
-     * Parameters
-     *****************************/
-    const width = 90 * dimNames.length, height = 500, padding_x = 80, padding_y = 30, brush_width = 20;
-    const filters = {};
-
-    /*
-     * Helper functions
-     *****************************/
-    // Horizontal scale
-    const xScale = d3.scalePoint()
-        .domain(features.map(x => x.name))
-        .range([padding_x, width - padding_x]);
-
-    // Each vertical scale
-    const yScales = {};
-    features.map(x => {
-        yScales[x.name] = d3.scaleLinear()
-            .domain(x.range)
-            .range([height - padding_y, padding_y]);
-    });
-    //yScales.team = d3.scaleOrdinal()
-    //    .domain(features[0].range)
-    //    .range([height - padding, padding]);
-
-    // Each axis generator
-    const yAxis = {};
-    d3.entries(yScales).map(x => {
-        yAxis[x.key] = d3.axisLeft(x.value);
-    });
-
-    // Each brush generator
-    const brushEventHandler = function (feature) {
-        if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom")
-            return; // ignore brush-by-zoom
-        if (d3.event.selection != null) {
-            filters[feature] = d3.event.selection.map(d => yScales[feature].invert(d));
-        } else {
-            if (feature in filters)
-                delete (filters[feature]);
+        return {
+            label: dim,
+            range: [Math.min(..._values), Math.max(..._values)],
+            values: _values
         }
-        applyFilters();
-    }
+    }),
 
-    const applyFilters = function () {
-        d3.select('g.active').selectAll('path')
-            .style('display', d => (selected(d) ? null : 'none'));
-    }
+    color_count = Object.keys(clusters_color_scheme).length,
+    zero_color = rgbToHex(clusters_color_scheme[Object.keys(clusters_color_scheme)[0]]),
 
-    const selected = function (d) {
-        const _filters = d3.entries(filters);
-        return _filters.every(f => {
-            return f.value[1] <= d[f.key] && d[f.key] <= f.value[0];
-        });
-    }
+     _colorscale = ((color_count == 1) ? [["0.0", zero_color], ["1.0", zero_color]] :
+        Object.keys(clusters_color_scheme).
+            map((x, index) => { return [x / (color_count - 1), rgbToHex(clusters_color_scheme[index])]; })),
 
-    const yBrushes = {};
-    d3.entries(yScales).map(x => {
-        let extent = [
-            [-(brush_width / 2), padding_y],
-            [brush_width / 2, height - padding_y]
-        ];
-        yBrushes[x.key] = d3.brushY()
-            .extent(extent)
-            .on('brush', () => brushEventHandler(x.key))
-            .on('end', () => brushEventHandler(x.key));
-    });
+    _color = clusters_list.map((x) => { return x }),
 
-    // Paths for data
-    const lineGenerator = d3.line();
+    data = [{
+        type: 'parcoords',
+        line: {
+            showscale: true,
+            colorscale: _colorscale,
+            color: _color
+        },
 
-    const linePath = function (d) {
-        const _data = d3.entries(d).filter(x => x.key);
-        let points = _data.map(x => ([xScale(x.key), yScales[x.key](x.value)]));
-        return (lineGenerator(points));
-    }
+        dimensions: _dimensions
+    }],
 
-    /*
-     * Parallel Coordinates
-     *****************************/
-    // Main svg container
-    const pcSvg = d3.select('#radar_chart_all')
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height);
+    layout = {
+        width: 80 * dimNames.length,
+        annotations: {
+            visible: false
+        }
+    },
 
-    // Inactive data
-    pcSvg.append('g').attr('class', 'inactive').selectAll('path')
-        .data(data)
-        .enter()
-        .append('path')
-        .attr('d', d => linePath(d));
+    config = {
+        toImageButtonOptions: {
+            format: 'png', // one of png, svg, jpeg, webp
+            filename: 'parallel_coordinates',
+            scale: 1 // Multiply title/legend/axis/canvas sizes by this factor
+        }
+    };
+    
+    Plotly.newPlot(element_id, data, layout, config);
 
-    // Inactive data
-    pcSvg.append('g').attr('class', 'active').selectAll('path')
-        .data(data)
-        .enter()
-        .append('path')
-        .attr('d', d => linePath(d));
+    d3.select("#" + element_id)
+        .style("overflow", "auto");
 
-    // Vertical axis for the features
-    const featureAxisG = pcSvg.selectAll('g.feature')
-        .data(features)
-        .enter()
-        .append('g')
-        .attr('class', 'feature')
-        .attr('transform', d => ('translate(' + xScale(d.name) + ',0)'));
-
-    featureAxisG
-        .append('g')
-        .each(function (d) {
-            d3.select(this).call(yAxis[d.name]);
-        });
-
-    featureAxisG
-        .each(function (d) {
-            d3.select(this)
-                .append('g')
-                .attr('class', 'brush')
-                .call(yBrushes[d.name]);
-        });
-
-    featureAxisG
-        .append("text")
-        .attr("text-anchor", "middle")
-        .attr('y', padding_y / 2)
-        .text(d => d.name);    
-
-    d3.select('g.active').selectAll('path')
-        .each(function (d, i) {
-            d3.select(this)
-                .style('stroke', rgbToHex(clusters_color_scheme[clusters_list[i]]));
-        });
+    d3.selectAll("#" + element_id + " .axis-title")
+        .style("transform", "translate(0, -28px) rotate(-9deg)");
 }
-
-
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
     var parent_element = document.getElementById(element_id);
