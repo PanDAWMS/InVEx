@@ -105,12 +105,17 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         }
     }),
 
-    color_count = Object.keys(clusters_color_scheme).length,
-    zero_color = rgbToHex(clusters_color_scheme[Object.keys(clusters_color_scheme)[0]]),
+    color_max = Math.max(...Object.keys(clusters_color_scheme)),
+    color_min = Math.min(...Object.keys(clusters_color_scheme)),
+    zero_color = rgbToHex(clusters_color_scheme[color_min]),
 
-     _colorscale = ((color_count == 1) ? [["0.0", zero_color], ["1.0", zero_color]] :
+    _colorscale = ((Object.keys(clusters_color_scheme).length == 1) ?
+        [["0.0", zero_color], ["1.0", zero_color]] :
         Object.keys(clusters_color_scheme).
-            map((x, index) => { return [x / (color_count - 1), rgbToHex(clusters_color_scheme[index])]; })),
+            map((x) => {
+                return [(x - color_min) / (color_max - color_min),
+                    rgbToHex(clusters_color_scheme[x])];
+            })),
 
     _color = clusters_list.map((x) => { return x }),
 
@@ -127,6 +132,7 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
 
     layout = {
         width: 80 * dimNames.length,
+        height: 500,
         annotations: {
             visible: false
         }

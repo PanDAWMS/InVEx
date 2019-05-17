@@ -354,7 +354,7 @@ class DataVisualization extends Scene{
                         _clusters_color_scheme = [],
                         selected_spheres;
 
-                    for (var i = 0; i < self.selectionsHistory.length; i++) 
+                    for (var i = 0; i < self.selectionsHistory.length; i++)
                         if (self.selectionsHistory[i]['active']) {
                             selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
                                 self.selectionsHistory[i]['feature_id'],
@@ -366,7 +366,6 @@ class DataVisualization extends Scene{
                             for (var j = 0; j < selected_spheres.length; j++) {
                                 _real_data.push(selected_spheres[j].realData);
                                 _clusters_list.push(i);
-
                             }
 
                             _clusters_color_scheme[i] = self.clusters_color_scheme['group' + i];
