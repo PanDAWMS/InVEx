@@ -1,49 +1,66 @@
 from sklearn.cluster import MiniBatchKMeans
 
+MINIBATCH_PARAMS_DEFAULT = {
+    'random_state': 0,
+    'batch_size': 6,
+    'max_iter': 10,
+    'init_size': 3000
+}
+MODE_DEFAULT = 'minibatch'
+NUM_GROUPS_DEFAULT = 100
+
 
 class LoDGenerator:
+
     """
-    Level-of-Detail Generator class provides k-means clusterization 
-    of the initial data sample into a number of clusters. 
+    Level-of-Detail Generator class provides grouping of the initial
+    [large] data sample (default grouping mode is k-means clustering).
     """
 
-    def __init__(self, dataset, n=200, columns=None):
-        if columns and isinstance(columns, list):
-            self.dataset = dataset.loc[:, columns]
+    def __init__(self, dataset, num_groups=None, features=None, **kwargs):
+        self.dataset = dataset.copy()
+        self.num_initial_elements = self.dataset.shape[0]
+        self.num_groups = num_groups or NUM_GROUPS_DEFAULT
+
+        self.grouped_dataset = None  # init
+        self.groups_metadata = None  # init
+
+        self.set_groups(mode=kwargs.get('mode', MODE_DEFAULT),
+                        selected_features=features)
+
+    def set_groups(self, mode, selected_features=None):
+        """
+        Create groups of provided objects (from dataset)
+
+        :param mode: Mode of grouping (default: minibatch).
+        :type mode: str
+        :param selected_features: List of features used for grouping.
+        :type: list/None
+        """
+        if mode == 'minibatch':
+            group_labels = self._get_labels_kmeans_clustering(
+                features=selected_features)
         else:
-            self.dataset = dataset.copy()
-        self.initialLength = self.dataset.shape[0]
-        self.n = n
-        self.kmeans_clustering()
+            raise NotImplementedError
+        self.dataset['group'] = group_labels
+        self.dataset.set_index('group')
+
         self.grouped_dataset = self.get_groups_mean()
         self.groups_metadata = self.get_groups_metadata()
 
-    def kmeans_clustering(self):
-        self.model = MiniBatchKMeans(n_clusters=self.n, random_state=0, batch_size=6, max_iter=10, init_size=3000).fit(
-            self.dataset)
-        self.results = self.model.predict(self.dataset)
-        self.dataset['group'] = self.results
-        self.dataset.set_index('group')
+    def _get_labels_kmeans_clustering(self, features=None):
+        data = self.dataset if not features else self.dataset.loc[:, features]
+        return MiniBatchKMeans(n_clusters=self.num_groups,
+                               **MINIBATCH_PARAMS_DEFAULT).fit_predict(data)
 
     def get_groups_metadata(self):
-        result = []
-        self.clusters = self.dataset.groupby('group')
-        for i in sorted(self.clusters.groups.keys()):
-            group = self.clusters.get_group(i)
-            group_size = len(group)
-            percentage = group_size * 100 / self.initialLength
-            result.append([i, group.index.tolist(), len(group), percentage])
-        return result
-
-    def get_group(self, group_name):
-        return self.clusters.get_group(group_name)
+        output = []
+        grouped = self.dataset.groupby('group')
+        for i in sorted(grouped.groups.keys()):
+            group = grouped.get_group(i)
+            output.append([i, group.index.tolist(), len(group),
+                           len(group) * 100 / self.num_initial_elements])
+        return output
 
     def get_groups_mean(self):
         return self.dataset.groupby('group').mean()
-
-# dataset = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
-# print(dataset)
-# lod = LoDGenerator(dataset, 5)
-# print(lod.initialLength)
-# print(lod.grouped_dataset)
-# print(lod.groups_metadata)
