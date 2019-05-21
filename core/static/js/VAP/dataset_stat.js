@@ -218,7 +218,7 @@ class DatasetStats {
         // empty column for +/-
         tr.appendChild(document.createElement("th"));
         var lod_selector = document.createElement("th");
-        lod_selector.textContent = "lod";
+        lod_selector.textContent = "group";
         tr.appendChild(lod_selector);
         var selector = document.createElement("th");
         selector.textContent = "select";
