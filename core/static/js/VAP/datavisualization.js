@@ -22,7 +22,7 @@ function getColorScheme( clusters, theme='black' ) {
 	var results = {};
 	if (len==1){
 		if (theme=='white')
-			results[clusters_unique[0]] = new THREE.Color(0.7,0.7,0.7);
+			results[clusters_unique[0]] = new THREE.Color(0,0,0);
 		else
 			results[clusters_unique[0]] = new THREE.Color(1,1,1);
 	}
@@ -33,19 +33,31 @@ function getColorScheme( clusters, theme='black' ) {
 		} else {
 			// code the clusters as a 3-digits number in base-base number system. 
 			var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
+			var count_of_encoded_colors = Math.pow(parts, 3);
+			if (parts+len > count_of_encoded_colors)
+				parts = parts + 1;
 			var base = parts - 1;
 			if (base == 0)
 				base = 1;
+			var red, green, blue, skipped=0;
+			console.log({'parts':parts, 'base':base, 'count_of_encoded_colors':count_of_encoded_colors});
 			for( var i = 0; i < len; i++ ) {
-				if (theme=='white')
-                    results[clusters_unique[i]] = new THREE.Color((~~(i / (parts * parts))) % parts / base * 0.8,
-                        (~~(i / parts)) % parts / base * 0.8,
-                        i % parts / base * 0.8);
+				if (theme=='white'){
+					red = (~~((i+skipped)/(parts*parts)))%parts/base*0.8;
+					green = (~~((i+skipped)/parts))%parts/base*0.8;
+					blue = (i+skipped)%parts/base*0.8;
+				}
+				else{
+					red = 1-(~~((i+skipped)/(parts*parts)))%parts/base;
+					green = 1-(~~((i+skipped)/parts))%parts/base;
+					blue = 1-(i+skipped)%parts/base;
+				}
+				if (red==green && green==blue){
+					i--;
+					skipped++;
+				}
 				else
-                    results[clusters_unique[i]] = 
-                        new THREE.Color((1 - (~~(i / (parts * parts))) % parts / base) * 0.8,
-                            (1 - (~~(i / parts)) % parts / base) * 0.8,
-                            (1 - i % parts / base) * 0.8);
+					results[clusters_unique[i]] = new THREE.Color(red, green, blue);
 			}
 		}
 	return results;
@@ -336,48 +348,31 @@ class DataVisualization extends Scene{
 				updateBtn.setAttribute('type', 'button');
 				updateBtn.onclick = function(event) {
 					event.preventDefault();
-                    var group_data = [];
-                    for (var i = 0; i<self.groupOfSpheres.children.length; i++) {
-                        var groups_number = self.groupOfSpheres.children[i].dataObject[2].length;
-                        var initial_group = self.groupOfSpheres.children[i].dataObject[2][groups_number - 1];
-                        self.groupOfSpheres.children[i].material.color = self.clusters_color_scheme[initial_group].clone();
-                    }
-                    for (var i = 0; i < self.selectedObject.children.length; i++ ) {
-                        var groups_number = self.selectedObject.children[i].dataObject[2].length;
-                        var initial_group = self.selectedObject.children[i].dataObject[2][groups_number - 1];
-                        self.selectedObject.children[i].material.color = invertColor(self.clusters_color_scheme[initial_group].clone());
-                    }
-					for (var i = 0; i < self.selectionsHistory.length; i++) {
-						var selected_spheres = [];
-						var feature_id = self.selectionsHistory[i]['feature_id'];
-						var type = self.selectionsHistory[i]['type'];
-						var group = self.selectionsHistory[i]['group'];
 
-						// get IDs of selected features from history
-						if (type == 'range') {
-							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
-								feature_id,
-								[self.selectionsHistory[i]['min'],
-								self.selectionsHistory[i]['max']],
-								self.selectionsHistory[i]['type']);
-						}
-						else if (type == 'categorical') {
-							selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
-								feature_id,
-								[self.selectionsHistory[i]['value']],
-								self.selectionsHistory[i]['type']);
-						}
-                        if (self.selectionsHistory[i]['active'] == true) {
-							for (var x = 0; x < selected_spheres.length; x++)
-                                selected_spheres[x].material.color = self.clusters_color_scheme[group].clone();
-                            for (var x = 0; x < self.selectedObject.children.length; x++ )
-                                self.selectedObject.children[x].material.color = invertColor(self.clusters_color_scheme[group].clone());
-							if (selected_spheres.length > 0)
-								group_data[group] = self.getGroupsMeans(selected_spheres);
-						}
-					}
-                    requestAnimationFrame(render);
-					drawMultipleGroupRadarChart('radar_chart_groups', group_data, self.selectionsHistory, self.dimNames)
+                    var _real_data = [],
+                        _clusters_list = [],
+                        _clusters_color_scheme = [],
+                        selected_spheres;
+
+                    for (var i = 0; i < self.selectionsHistory.length; i++)
+                        if (self.selectionsHistory[i]['active']) {
+                            selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
+                                self.selectionsHistory[i]['feature_id'],
+                                ((self.selectionsHistory[i]['type'] == 'range') ?
+                                    [self.selectionsHistory[i]['min'], self.selectionsHistory[i]['max']] :
+                                    [self.selectionsHistory[i]['value']]),
+                                self.selectionsHistory[i]['type']);
+
+                            for (var j = 0; j < selected_spheres.length; j++) {
+                                _real_data.push(selected_spheres[j].realData);
+                                _clusters_list.push(i);
+                            }
+
+                            _clusters_color_scheme[i] = self.clusters_color_scheme['group' + i];
+                        }
+
+                    drawParallelCoordinates('radar_chart_groups', _real_data, _clusters_list, _clusters_color_scheme, self.dimNames);
+                    requestAnimationFrame(render)
 				}
 			var clearHistoryBtn = document.createElement('input');
 				clearHistoryBtn.id = 'clearHistBtn';

@@ -305,33 +305,6 @@
   color: #fefefe;
 }
 
-
-
-
-#radar_chart_all {
-    overflow: auto;
-}
-
-#radar_chart_all g.inactive path, g.active path {
-    fill: none;
-    stroke: lightgrey;
-}
-
-#radar_chart_all g.active path {
-    stroke: #0081af;
-}
-
-#radar_chart_all g.inactive path {
-    stroke-width: 0.3;
-}
-
-#radar_chart_all g.feature > text {
-    transform: translateY(5px) rotate(-8deg);
-}
-
-
-
-
 .datatableboldcolumn{
   font-weight: bold;
 

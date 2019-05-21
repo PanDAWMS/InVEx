@@ -473,6 +473,7 @@ function printStats(stats, dimensions, parent){
 }
 
 function rgbToHex(color) {
+    if (typeof color === 'undefined') return "#000000";
     var R = color["r"] * 255;
     var G = color["g"] * 255;
     var B = color["b"] * 255;
