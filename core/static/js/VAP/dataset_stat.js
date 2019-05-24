@@ -28,6 +28,8 @@ class DatasetStats {
 
     activate_lod() {
         this.lod_activated = "true";
+        var lod_number = document.getElementById("id_lod_number");
+        lod_number.disabled = false;
         if (document.querySelector('[id^="lod_select_"]')) {
             var lod_selectors = document.querySelectorAll('[id^="lod_select_"]');
             for (var i = 0; i < lod_selectors.length; i++) {
@@ -38,6 +40,8 @@ class DatasetStats {
 
     deactivate_lod() {
         this.lod_activated = "false";
+        var lod_number = document.getElementById("id_lod_number");
+        lod_number.disabled = true;
         if (document.querySelector('[id^="lod_select_"]')) {
             var lod_selectors = document.querySelectorAll('[id^="lod_select_"]');
             for (var i = 0; i < lod_selectors.length; i++) {
@@ -52,87 +56,57 @@ class DatasetStats {
 
     createLOD(id) {
         var top_element = document.getElementById(id);
-        var input = document.createElement("input");
-        input.type = "checkbox";
-        input.setAttribute("name", "activated");
-        input.classList.add("lod_activation");
-        input.setAttribute("id", "lod_activation_" + id);
-        input.dataset_info = this;
-        input.lod_value = this.lod_value;
+        top_element.classList.add("grid-x")
+        top_element.classList.add("grid-margin-x");
+        top_element.classList.add("align-middle");
 
+        var div_check = document.createElement("div");
+        div_check.classList.add("cell");
+        div_check.classList.add("small-4");
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.setAttribute("name", "activated");
+        checkbox.setAttribute("id", "id_lod_checkbox");
+        checkbox.dataset_info = this;
+        checkbox.lod_value = this.lod_value;
         var label = document.createElement("label");
-        label.innerText = "Activate Level-of-Detail Generator for large data samples";
+        label.innerText = "Activate Level-of-Detail Generator";
+        label.title = "LoD is used for grouping of objects from large data samples";
+        div_check.appendChild(checkbox);
+        div_check.appendChild(label);
 
-        var div = document.createElement("div");
-        div.style.display = "none";
+        var div_number = document.createElement("div");
+        div_number.classList.add("cell");
+        div_number.classList.add("small-2");
+        var number = document.createElement("input");
+        number.type = "number";
+        number.setAttribute("name", "lod_value");
+        number.setAttribute("id", "id_lod_number");
+        number.setAttribute("min", "2");
+        number.setAttribute("max", "3000");
+        number.dataset_info = this;
+        div_number.appendChild(number);
 
-        var div_label = document.createElement("label");
-        div_label.innerText = "Level-of-Detail";
+        top_element.appendChild(div_check);
+        top_element.appendChild(div_number);
 
-        var div_grid = document.createElement("div");
-        div_grid.classList.add("grid-x")
-        div_grid.classList.add("grid-margin-x");
-        var div_cell_slider = document.createElement("div");
-        div_cell_slider.classList.add("cell");
-        div_cell_slider.classList.add("small-2");
-        var slider = document.createElement("input");
-        slider.type = "range";
-        slider.setAttribute("min", "1");
-        slider.setAttribute("max", "1000");
-        slider.setAttribute("step", "10");
-        slider.setAttribute("id", "lod_slider_" + id);
-        slider.dataset_info = this;
-        div_cell_slider.appendChild(slider);
-
-        var div_cell_value = document.createElement("div");
-        div_cell_value.classList.add("cell");
-        div_cell_value.classList.add("small-2");
-        var slider_value = document.createElement("input");
-        slider_value.type = "number";
-        slider_value.setAttribute("name", "lod_value");
-        slider_value.setAttribute("id", "sliderOutput_" + id);
-        slider_value.dataset_info = this;
-        div_cell_value.appendChild(slider_value);
-
-        div_grid.appendChild(div_cell_slider);
-        div_grid.appendChild(div_cell_value);
-
-        div.appendChild(div_label);
-        div.appendChild(div_grid);
-
-        top_element.appendChild(input);
-        top_element.appendChild(label);
-        top_element.appendChild(div);
-
-        if (slider_value && input) {
-            slider_value.value = slider.value;
-            slider.addEventListener("change", function(event) {
-                slider_value.value = event.target.value;
-                event.target.dataset_info.set_lod_value(event.target.value);
-            });
-            slider_value.addEventListener("change", function(event) {
-                slider.value = event.target.value;
-                event.target.dataset_info.set_lod_value(event.target.value);
-            });
-            input.addEventListener( "click", function(event) {
+        if (checkbox && number) {
+            number.value = this.lod_value;  // default value
+            checkbox.addEventListener( "click", function(event) {
                 if (event.target.checked) {
-                    if (div.style.display === "none") {
-                        div.style.display = "block";
-                        event.target.dataset_info.activate_lod();
-                        event.target.dataset_info.set_lod_value(event.target.lod_value);
-                    }
+                    event.target.dataset_info.activate_lod();
+                    event.target.dataset_info.set_lod_value(event.target.lod_value);
                 } else {
-                    div.style.display = 'none';
                     event.target.dataset_info.deactivate_lod();
                 }
+            });
+            number.addEventListener("change", function(event) {
+                event.target.dataset_info.set_lod_value(event.target.value);
             });
         }
 
         if (this.lod_activated === "true") {
-            input.checked = true;
-            div.style.display = "block";
-            slider.value = this.lod_value;
-            slider_value.value = this.lod_value;
+            checkbox.checked = true;
             this.activate_lod();
             this.set_lod_value(this.lod_value);
         } else {

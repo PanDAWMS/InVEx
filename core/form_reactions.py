@@ -19,6 +19,8 @@ TEST_DATASET_FILES_PATH = BASE_DIR + '/test_datasets/'
 FILES_LIST_NAME = 'files_list.json'
 BACKUP_FILE = '_backup'
 
+LOD_VALUE_DEFAULT = 50
+
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
@@ -351,7 +353,7 @@ def csv_file_from_server(request, dsID=False):
         data['num_records'] = dataset_stat.num_records
         data['index_name'] = dataset_stat.index_name
         data['lod_activated'] = False
-        data['lod_value'] = 50  
+        data['lod_value'] = LOD_VALUE_DEFAULT
         return data, dsID
     except Exception as exc:
         logger.error(
@@ -415,7 +417,7 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     data['num_records'] = dataset_stat.num_records
     data['index_name'] = dataset_stat.index_name
     data['lod_activated'] = False
-    data['lod_value'] = 50
+    data['lod_value'] = LOD_VALUE_DEFAULT
     return data
     
 
@@ -435,7 +437,7 @@ def prepare_dataset_data(request, datasetid, groups=None, operationnumber=None):
         data['num_records'] = dataset_stat.num_records
         data['index_name'] = dataset_stat.index_name
         data['lod_activated'] = False
-        data['lod_value'] = 50
+        data['lod_value'] = LOD_VALUE_DEFAULT
         return data
     except Exception as exc:
         logger.error(
