@@ -27,11 +27,27 @@ class DatasetStats {
     }
 
     activate_lod() {
-        this.lod_activated = true;
+        this.lod_activated = "true";
+        if (document.querySelector('[id^="lod_select_"]')) {
+            var lod_selectors = document.querySelectorAll('[id^="lod_select_"]');
+            for (var i = 0; i < lod_selectors.length; i++) {
+                lod_selectors[i].disabled = false;
+            }
+        }
     }
 
     deactivate_lod() {
-        this.lod_activated = false;
+        this.lod_activated = "false";
+        if (document.querySelector('[id^="lod_select_"]')) {
+            var lod_selectors = document.querySelectorAll('[id^="lod_select_"]');
+            for (var i = 0; i < lod_selectors.length; i++) {
+                if (lod_selectors[i].checked) {
+                    lod_selectors[i].checked = false;
+                    lod_selectors[i].features[lod_selectors[i].feature_id]["lod_enabled"] = "false";
+                }
+                lod_selectors[i].disabled = true;
+            }
+        }
     }
 
     createLOD(id) {
@@ -91,30 +107,30 @@ class DatasetStats {
         if (slider_value && input) {
             slider_value.value = slider.value;
             slider.addEventListener("change", function(event) {
-                slider_value.value = event.srcElement.value;
-                event.target.dataset_info.set_lod_value(event.srcElement.value);
+                slider_value.value = event.target.value;
+                event.target.dataset_info.set_lod_value(event.target.value);
             });
             slider_value.addEventListener("change", function(event) {
-                slider.value = event.srcElement.value;
-                event.target.dataset_info.set_lod_value(event.srcElement.value);
+                slider.value = event.target.value;
+                event.target.dataset_info.set_lod_value(event.target.value);
             });
             input.addEventListener( "click", function(event) {
-                if (event.srcElement.checked) {
-                    if (div.style.display == 'none') {
-                        div.style.display = 'block';
+                if (event.target.checked) {
+                    if (div.style.display === "none") {
+                        div.style.display = "block";
                         event.target.dataset_info.activate_lod();
                         event.target.dataset_info.set_lod_value(event.target.lod_value);
                     }
                 } else {
                     div.style.display = 'none';
-                    event.target.dataset_info.dataset_info.deactivate_lod();
+                    event.target.dataset_info.deactivate_lod();
                 }
             });
         }
 
-        if (this.lod_activated == "true") {
+        if (this.lod_activated === "true") {
             input.checked = true;
-            div.style.display = 'block';
+            div.style.display = "block";
             slider.value = this.lod_value;
             slider_value.value = this.lod_value;
             this.activate_lod();
@@ -195,13 +211,15 @@ class DatasetStats {
         }
     }
 
-
     _headers(type) {
 
         var thead = document.createElement("thead");
         var tr = document.createElement("tr");
         // empty column for +/-
         tr.appendChild(document.createElement("th"));
+        var lod_selector = document.createElement("th");
+        lod_selector.textContent = "group";
+        tr.appendChild(lod_selector);
         var selector = document.createElement("th");
         selector.textContent = "select";
         tr.appendChild(selector);
@@ -235,6 +253,7 @@ class DatasetStats {
                 var tr = document.createElement("tr");
                 // empty column for +/-
                 tr.appendChild(document.createElement("td"));
+                tr.appendChild(this.print_lod_selector(i));
                 tr.appendChild(this.print_selector(i));
                 this.type_switch(type, this.features[i], tr, columns);
                 tbody.appendChild(tr);
@@ -417,7 +436,10 @@ class DatasetStats {
 
             var form = document.createElement('form');
             form.setAttribute('method', 'post');
-            form.setAttribute('action', '');
+            if(typeof visualize_url !== "undefined" )
+                form.setAttribute('action', '');
+            else
+                form.setAttribute('action', visualize_url);
             form.style.display = 'hidden';
 
             var action = document.createElement("input");
@@ -496,7 +518,6 @@ class DatasetStats {
         td.appendChild(slider);
         td.appendChild(div);
     }
-
     
     print_selector(idx) {
         var td = document.createElement("td");
@@ -519,5 +540,20 @@ class DatasetStats {
         return td;
     }
 
+    print_lod_selector(idx) {
+        var td = document.createElement("td");
+        var selector = document.createElement("input");
+        selector.setAttribute("id","lod_select_"+idx);
+        selector.setAttribute("type","checkbox");
+        selector.feature_id = idx;
+        selector.features = this.features;
+        selector.checked = (this.features[idx]["lod_enabled"] === "true");
+        selector.disabled = (this.lod_activated === "false");
+        selector.addEventListener("click", function(e) {
+            e.target.features[e.target.feature_id]["lod_enabled"] = (e.target.checked) ? "true" : "false";
+        });
+        td.appendChild(selector);
+        return td;
+    }
 
 }

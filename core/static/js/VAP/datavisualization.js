@@ -1322,13 +1322,12 @@ class DataVisualization extends Scene{
 
 			var vis_group_obj = {
 				VisualizeGroup:function() {
-					var uri = URI(window.location.search);
-					if (!uri.hasQuery("dsID"))
-						uri.addSearch("dsID", scene.dsID);
-					if (uri.hasQuery("remotesrc"))
-						uri.removeSearch("remotesrc");
-					uri.addSearch("group_id",obj.dataObject[0]);
-					window.open('/'+uri.toString(), '_blank');
+					var link=document.createElement('a');
+					link.href=next_group_url.replace('NEWGROUPID', obj.dataObject[0]);
+					console.log(obj.dataObject[0]);
+					console.log(link.href);
+					link.target='_blank';
+					link.click();
 				}};
 			this.dims_folder.add(vis_group_obj,'VisualizeGroup');
 		}
