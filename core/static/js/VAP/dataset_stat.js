@@ -56,13 +56,10 @@ class DatasetStats {
 
     createLOD(id) {
         var top_element = document.getElementById(id);
-        top_element.classList.add("grid-x")
-        top_element.classList.add("grid-margin-x");
-        top_element.classList.add("align-middle");
+        top_element.classList.add("grid-x", "grid-margin-x", "align-middle");
 
         var div_check = document.createElement("div");
-        div_check.classList.add("cell");
-        div_check.classList.add("small-4");
+        div_check.classList.add("cell", "small-4");
         var checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.setAttribute("name", "activated");
@@ -76,8 +73,7 @@ class DatasetStats {
         div_check.appendChild(label);
 
         var div_number = document.createElement("div");
-        div_number.classList.add("cell");
-        div_number.classList.add("small-2");
+        div_number.classList.add("cell", "small-2");
         var number = document.createElement("input");
         number.type = "number";
         number.setAttribute("name", "lod_value");
@@ -186,19 +182,46 @@ class DatasetStats {
     }
 
     _headers(type) {
-
         var thead = document.createElement("thead");
+
         var tr = document.createElement("tr");
         // empty column for +/-
         tr.appendChild(document.createElement("th"));
+
         var lod_selector = document.createElement("th");
         lod_selector.textContent = "group";
+        lod_selector.title = "Select all (of the defined measure_type)";
+        lod_selector.style.cursor = "pointer";
+        lod_selector.addEventListener( "click", function() {
+            if (document.getElementById("id_lod_checkbox").checked) {
+                var lod_selectors = document.querySelectorAll('[id^="lod_select_' + type + '"]');
+                for (var i = 0; i < lod_selectors.length; i++) {
+                    if (!lod_selectors[i].checked) {
+                        lod_selectors[i].checked = true;
+                        lod_selectors[i].features[lod_selectors[i].feature_id]["lod_enabled"] = "true";
+                    }
+                }
+            }
+        });
         tr.appendChild(lod_selector);
+
         var selector = document.createElement("th");
         selector.textContent = "select";
+        selector.title = "Select all (of the defined measure_type)";
+        selector.style.cursor = "pointer";
+        selector.addEventListener( "click", function() {
+            var selectors = document.querySelectorAll('[id^="select_' + type + '"]');
+            for (var i = 0; i < selectors.length; i++) {
+                if (!selectors[i].checked) {
+                    selectors[i].checked = true;
+                    selectors[i].features[selectors[i].feature_id]["enabled"] = "true";
+                }
+            }
+        });
         tr.appendChild(selector);
+
         var element = this.MEASURES.filter(function(e) {
-          return e['type'] == type;
+          return (e['type'] === type);
         });
         element[0]['columns'].forEach(create_row);
         function create_row(value, index, array) {
@@ -209,6 +232,7 @@ class DatasetStats {
                 th.classList.add("none");
             tr.appendChild(th);
         }
+
         thead.appendChild(tr);
         return thead;
     }
@@ -218,17 +242,17 @@ class DatasetStats {
         var tbody = document.createElement("tbody");
 
         var element = this.MEASURES.filter(function(e) {
-            return e['type'] == type;
+            return (e['type'] === type);
         });
         var columns = element[0]['columns'];
 
         for (var i=0;i<this.features.length;i++) {
-            if (this.features[i]['measure_type'] == type) {
+            if (this.features[i]['measure_type'] === type) {
                 var tr = document.createElement("tr");
                 // empty column for +/-
                 tr.appendChild(document.createElement("td"));
-                tr.appendChild(this.print_lod_selector(i));
-                tr.appendChild(this.print_selector(i));
+                tr.appendChild(this.print_lod_selector(i, type));
+                tr.appendChild(this.print_selector(i, type));
                 this.type_switch(type, this.features[i], tr, columns);
                 tbody.appendChild(tr);
             }
@@ -356,39 +380,39 @@ class DatasetStats {
     }
 
     display_features_panel(element_id) {
-
         var root = document.getElementById(element_id);
 
         root.appendChild(this.createLOD("lod"));
         root.appendChild(this.display_dataset_info());
-
-        $("#dataset_info").DataTable({searching: false, paging: false, info: false});
+        $("#dataset_info").DataTable({
+            ordering: false,
+            searching: false,
+            paging: false,
+            info: false
+        });
 
         var available_measures = this.available_measures();
-
         for (var i=0;i<this.MEASURES.length;i++) {
             var type = this.MEASURES[i]['type'];
             if (available_measures.includes(type)) {
                 var table = document.createElement("table");
-                table.classList.add("display","compact");
+                table.classList.add("display", "compact");
                 table.setAttribute("id", "features_table_" + type);
                 table.appendChild(this._headers(type));
                 table.appendChild(this._rows(type));
                 root.appendChild(table);
-                $('#features_table_' + type).DataTable({searching: false,
-                                        paging: false,
-                                        info: false,
-                                        responsive: {
-                                            details: {
-                                                type: 'inline'
-                                            }
-                                        },
-                                        columnDefs: [
-                                            { targets: 1,
-                                              visible: true,
-                                              orderable: false}
-                                        ]
-
+                $("#features_table_" + type).DataTable({
+                    searching: false,
+                    paging: false,
+                    info: false,
+                    responsive: {
+                        details: {type: 'inline'}
+                    },
+                    columnDefs: [{
+                        targets: [1, 2],
+                        visible: true,
+                        orderable: false
+                    }]
                 });
             }
         }
@@ -401,7 +425,7 @@ class DatasetStats {
         root.appendChild(csrf);
 
         var button = document.createElement("input");
-        button.classList.add("button","small");
+        button.classList.add("button", "small");
         button.setAttribute("id","visualize_btn");
         button.type = "button";
         button.value = "Visualize";
@@ -493,32 +517,26 @@ class DatasetStats {
         td.appendChild(div);
     }
     
-    print_selector(idx) {
+    print_selector(idx, type) {
         var td = document.createElement("td");
         var selector = document.createElement("input");
-        selector.setAttribute("id","select_"+idx);
+        selector.setAttribute("id", "select_" + type + "_" + idx);
+        selector.setAttribute("type", "checkbox");
         selector.feature_id = idx;
         selector.features = this.features;
-        selector.setAttribute("type","checkbox");
-        if (this.features[idx]['enabled'] == 'true')
-            selector.checked = true;
-        else selector.checked = false;
-        selector.addEventListener("click", function(event) {
-            var idx = event.target.feature_id;
-            if (event.target.checked)
-                event.target.features[idx]['enabled'] = 'true';
-            else
-                event.target.features[idx]['enabled'] = 'false';
+        selector.checked = (this.features[idx]["enabled"] === "true");
+        selector.addEventListener("click", function(e) {
+            e.target.features[e.target.feature_id]["enabled"] = (e.target.checked) ? "true" : "false";
         });
         td.appendChild(selector);
         return td;
     }
 
-    print_lod_selector(idx) {
+    print_lod_selector(idx, type) {
         var td = document.createElement("td");
         var selector = document.createElement("input");
-        selector.setAttribute("id","lod_select_"+idx);
-        selector.setAttribute("type","checkbox");
+        selector.setAttribute("id", "lod_select_" + type + "_" + idx);
+        selector.setAttribute("type", "checkbox");
         selector.feature_id = idx;
         selector.features = this.features;
         selector.checked = (this.features[idx]["lod_enabled"] === "true");
