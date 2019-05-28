@@ -1,3 +1,5 @@
+from math import log1p
+
 from sklearn.cluster import MiniBatchKMeans
 
 MINIBATCH_PARAMS_DEFAULT = {
@@ -59,7 +61,7 @@ class LoDGenerator:
         for i in sorted(grouped.groups.keys()):
             group = grouped.get_group(i)
             output.append([i, group.index.tolist(), len(group),
-                           len(group) * 100 / self.num_initial_elements])
+                           log1p(len(group) * 100 / self.num_initial_elements)])
         return output
 
     def get_groups_mean(self):
