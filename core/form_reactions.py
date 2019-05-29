@@ -36,23 +36,14 @@ def list_csv_data_files(directory):
     csv_data_files = json.loads(file.read())
     return csv_data_files
 
-def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod, lod_metadata, datasetid, groups):
+def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod_metadata, datasetid, groups):
     """
     Saving data to the operations history file.
     1st line - original dataset
     2nd line - normalized datasample
     3rd line - operations history (list of clusterizations)
     4th line - auxiliary data (not numeric values)
-    5th line - value of Level-of-Detail Generator
-    6th line - groups metadata
-    :param lod_metadata: 
-    :param original_dataset: 
-    :param norm_dataset: 
-    :param auxiliary_dataset: 
-    :param op_history: 
-    :param lod:
-    :param filename: 
-    :return: 
+    5th line - Level-of-Detail Generator metadata
     """
     filename = datasetid
     if not groups is None:
@@ -78,9 +69,7 @@ def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod
         file.write('\n')
         file.write(auxiliary_dataset.to_json(orient='table'))
         file.write('\n')
-        file.write(lod)
-        file.write('\n')
-        file.write(str(lod_metadata))
+        file.write(json.dumps(lod_metadata))
         file.close()
     except Exception as exc:
         logger.error('!form_reactions.save_data!: Failed to save the data. \nFilename:'
@@ -96,11 +85,8 @@ def load_data(datasetid, groups=None, operation=None):
     2nd line - normalized datasample
     3rd line - operations history (list of clusterizations)
     4th line - auxiliary data (not numeric values)
-    5th line - value of Level-of-Detail Generator
-    6th line - groups metadata
-    :param filename: 
-    :return: 
-    """    
+    5th line - Level-of-Detail Generator metadata
+    """
     filename = datasetid
     if not groups is None:
         for i in groups:
@@ -123,10 +109,9 @@ def load_data(datasetid, groups=None, operation=None):
         op_history.load_from_json(data)
         data = file.readline()
         aux_dataset = calc.data_converters.table_to_df(data)
-        lod_value = int(file.readline())
-        groups_metadata = file.readline()
+        lod_metadata = json.loads(file.readline())
         file.close()
-        return [original_dataset, norm_dataset, op_history, aux_dataset, lod_value, groups_metadata]
+        return [original_dataset, norm_dataset, op_history, aux_dataset, lod_metadata]
     except Exception as exc:
         logger.error('!form_reactions.load_data!: Failed to load the data. \nFilename:'
                      + history_file + '\n' + str(exc))
@@ -211,24 +196,24 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
     LocalReader().drop_na(dataset)
     numeric_dataset = LocalReader().get_numeric_data(dataset)
     if lod_params:
-        lod_data = calc.lod_generator.LoDGenerator(
+        lod = calc.lod_generator.LoDGenerator(
             numeric_dataset, lod_params['value'], lod_params['features'])
-        norm_lod_dataset = LocalReader().scaler(lod_data.grouped_dataset)
-        aux_lod_dataset = lod_data.grouped_dataset.drop(lod_data.grouped_dataset.columns.tolist(), 1)
+        norm_lod_dataset = LocalReader().scaler(lod.grouped_dataset)
+        aux_lod_dataset = lod.grouped_dataset.drop(lod.grouped_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
         metrics = calc.basicstatistics.BasicStatistics()
         metrics.process_data(norm_lod_dataset)
         op_history.append(norm_lod_dataset, metrics)
-        data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
-        data['lod_data'] = lod_data.groups_metadata
+        data = prepare_data_object(norm_lod_dataset, lod.grouped_dataset, aux_lod_dataset, op_history)
+        data['lod_data'] = lod.get_groups_metadata()
         groupedData = calc.grouped.GroupedData()
-        groupedData.get_groups(dataset.loc[:, features], lod_data.groups_metadata)
+        groupedData.get_groups(dataset.loc[:, features], lod.get_groups_metadata())
         filename = datasetid
         if not groups is None:
             for i in groups:
                 filename += '.group' + i
-        save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history,
-                  str(lod_params['value']), lod_data.groups_metadata, datasetid, groups)
+        save_data(lod.grouped_dataset, norm_lod_dataset, aux_lod_dataset,
+                  op_history, lod.get_full_metadata(), datasetid, groups)
         groupedData.set_dsID(datasetid)
         groupedData.set_filename(filename)
         groupedData.save_to_file()
@@ -241,7 +226,8 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
         metrics.process_data(norm_dataset)
         op_history.append(norm_dataset, metrics)
         data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0', datasetid, groups)
+        save_data(numeric_dataset, norm_dataset, auxiliary_dataset,
+                  op_history, {}, datasetid, groups)
     return data
 
 def file_upload(request, source, source_file=False, remote_data=False):
@@ -382,7 +368,7 @@ def load_dataset(datasetid, groups=None, usecols=None):
 
 
 def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=None):
-    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(datasetid, groups)
+    original, dataset, op_history, aux_dataset, lod_metadata = load_data(datasetid, groups)
     if dataset is None or operationnumber is None:
         return prepare_dataset_data(datasetid, groups, None)
     try:
@@ -395,8 +381,13 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     if oper[0]._type_of_operation != 'cluster':
         return prepare_dataset_data(datasetid, groups, None)
     data = prepare_data_object(dataset, original, aux_dataset, op_history)
-    if lod_value > 0:
-        data['lod_data'] = lod_metadata
+    if lod_metadata.get('value', 0) > 0:
+        data['lod_activated'] = 'true'
+        data['lod_value'] = lod_metadata['value']
+        data['lod_data'] = lod_metadata['groups']
+    else:
+        data['lod_activated'] = 'false'
+        data['lod_value'] = LOD_VALUE_DEFAULT
     if len(oper) >= 3:
         data['visualparameters'] = oper[2]
     data['parameters'] = oper[0].print_parameters()
@@ -416,8 +407,6 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     data['dsID'] = dataset_stat.dsID
     data['num_records'] = dataset_stat.num_records
     data['index_name'] = dataset_stat.index_name
-    data['lod_activated'] = False
-    data['lod_value'] = LOD_VALUE_DEFAULT
     return data
     
 
@@ -531,12 +520,17 @@ def clusterize(request, datasetid, groups):
     :return: 
     """
 
-    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(datasetid, groups)
+    original, dataset, op_history, aux_dataset, lod_metadata = load_data(datasetid, groups)
     if dataset is None:
         return {}
     data = prepare_data_object(dataset, original, aux_dataset, op_history)
-    if lod_value > 0:
-        data['lod_data'] = lod_metadata
+    if lod_metadata.get('value', 0) > 0:
+        data['lod_activated'] = 'true'
+        data['lod_value'] = lod_metadata['value']
+        data['lod_data'] = lod_metadata['groups']
+    else:
+        data['lod_activated'] = 'false'
+        data['lod_value'] = LOD_VALUE_DEFAULT
     data['request'] = request
     operation = None
     if 'algorithm' in request.POST:
@@ -601,7 +595,7 @@ def clusterize(request, datasetid, groups):
                          + json.dumps(request.POST))
     else:
         logger.error('!form_reactions.clusterize!: The request was wrong. \nRequest parameters: ' + json.dumps(request.POST))
-    save_data(original, dataset, aux_dataset, op_history, str(lod_value), lod_metadata, datasetid, groups)
+    save_data(original, dataset, aux_dataset, op_history, lod_metadata, datasetid, groups)
     data['visualparameters'] = request.POST['visualparameters']
     data['algorithm'] = request.POST['algorithm']
     data['parameters'] = operation.print_parameters()
@@ -611,8 +605,6 @@ def clusterize(request, datasetid, groups):
     data['num_records'] = dataset_info['num_records']
     data['index_name'] = dataset_info['index_name']
     data['features'] = dataset_info['features']
-    data['lod_activated'] = dataset_info['lod_activated']
-    data['lod_value'] = dataset_info['lod_value']
 
     return data, op_history.length()-1
 
@@ -627,7 +619,7 @@ def predict_cluster(request, datasetid, groups, operationnumber):
         logger.error('!form_reactions.predict_cluster!: There was no data in the request. \nRequest parameters: '
                      + json.dumps(request.POST))
         return {}
-    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(datasetid, groups)
+    original, dataset, op_history, aux_dataset, lod_metadata = load_data(datasetid, groups)
     if dataset is None or operationnumber is None or op_history is None:
         logger.error('!form_reactions.predict_cluster!: Could not load the dataset or the operation history. \nDatasetid: '+
             datasetid + '\ngroups:' + groups + '\nRequest parameters: ' + json.dumps(request.POST))

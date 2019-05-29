@@ -20,49 +20,77 @@ class LoDGenerator:
     """
 
     def __init__(self, dataset, num_groups=None, features=None, **kwargs):
+        """
+        Initialization.
+
+        :param dataset: Input data sample
+        :type dataset: pandas.DataFrame
+        :param num_groups: Level of Detail value.
+        :type num_groups: int/None
+        :param features: List of features used for grouping.
+        :type features: list/None
+
+        :keyword mode: Mode of grouping (default: minibatch).
+        """
         self.dataset = dataset.copy()
         self.num_initial_elements = self.dataset.shape[0]
-        self.num_groups = num_groups or NUM_GROUPS_DEFAULT
+        self.grouped_dataset = None
 
-        self.grouped_dataset = None  # init
-        self.groups_metadata = None  # init
+        self._init_metadata = {'mode': kwargs.get('mode', MODE_DEFAULT),
+                               'value': num_groups or NUM_GROUPS_DEFAULT,
+                               'features': features}
+        self._groups_metadata = []
+        self.set_groups()
 
-        self.set_groups(mode=kwargs.get('mode', MODE_DEFAULT),
-                        selected_features=features)
-
-    def set_groups(self, mode, selected_features=None):
+    def set_groups(self, **kwargs):
         """
-        Create groups of provided objects (from dataset)
+        Create groups of provided objects (from dataset).
 
-        :param mode: Mode of grouping (default: minibatch).
-        :type mode: str
-        :param selected_features: List of features used for grouping.
-        :type: list/None
+        :keyword mode: Mode of grouping.
+        :keyword num_groups: Number of resulting groups.
+        :keyword features: List of selected features used for grouping.
         """
+        mode = kwargs.get('mode', self._init_metadata['mode'])
+        num_groups = kwargs.get('num_groups', self._init_metadata['value'])
+        features = kwargs.get('features', self._init_metadata['features'])
+
         if mode == 'minibatch':
             group_labels = self._get_labels_kmeans_clustering(
-                features=selected_features)
+                n_clusters=num_groups,
+                features=features)
         else:
             raise NotImplementedError
         self.dataset['group'] = group_labels
         self.dataset.set_index('group')
 
-        self.grouped_dataset = self.get_groups_mean()
-        self.groups_metadata = self.get_groups_metadata()
+        self.grouped_dataset = self._get_groups_mean()
+        self._update_groups_metadata()
 
-    def _get_labels_kmeans_clustering(self, features=None):
+    def _get_labels_kmeans_clustering(self, n_clusters, features=None):
         data = self.dataset if not features else self.dataset.loc[:, features]
-        return MiniBatchKMeans(n_clusters=self.num_groups,
+        return MiniBatchKMeans(n_clusters=n_clusters,
                                **MINIBATCH_PARAMS_DEFAULT).fit_predict(data)
 
-    def get_groups_metadata(self):
-        output = []
-        grouped = self.dataset.groupby('group')
-        for i in sorted(grouped.groups.keys()):
-            group = grouped.get_group(i)
-            output.append([i, group.index.tolist(), len(group),
-                           log1p(len(group) * 100 / self.num_initial_elements)])
+    def _get_groups_mean(self):
+        return self.dataset.groupby('group').mean()
+
+    def _update_groups_metadata(self):
+        if self.grouped_dataset is not None:
+
+            if self._groups_metadata:
+                del self._groups_metadata[:]
+
+            grouped = self.dataset.groupby('group')
+            for i in sorted(grouped.groups.keys()):
+                group = grouped.get_group(i)
+                self._groups_metadata.append(
+                    [i, group.index.tolist(), len(group),
+                     log1p(len(group) * 100 / self.num_initial_elements)])
+
+    def get_full_metadata(self):
+        output = dict(self._init_metadata)
+        output['groups'] = self._groups_metadata
         return output
 
-    def get_groups_mean(self):
-        return self.dataset.groupby('group').mean()
+    def get_groups_metadata(self):
+        return self._groups_metadata
