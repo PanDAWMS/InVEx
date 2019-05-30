@@ -338,6 +338,7 @@ def csv_file_from_server(request, dsID=False):
         data['features'] = []
         dataset_stat = calc.dataset.DatasetInfo()
         dataset_stat.get_info_from_dataset(dataset, dsID)
+        dataset_stat.save_to_file()
         for i in range(len(dataset_stat.features)):
             data['features'].append(dataset_stat.features[i].__dict__)
         data['dsID'] = dataset_stat.dsID
