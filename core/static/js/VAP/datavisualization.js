@@ -352,24 +352,30 @@ class DataVisualization extends Scene{
                     var _real_data = [],
                         _clusters_list = [],
                         _clusters_color_scheme = [],
-                        selected_spheres;
+                        selected_spheres, active;
 
-                    for (var i = 0; i < self.selectionsHistory.length; i++)
-                        if (self.selectionsHistory[i]['active']) {
-                            selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
-                                self.selectionsHistory[i]['feature_id'],
-                                ((self.selectionsHistory[i]['type'] == 'range') ?
-                                    [self.selectionsHistory[i]['min'], self.selectionsHistory[i]['max']] :
-                                    [self.selectionsHistory[i]['value']]),
-                                self.selectionsHistory[i]['type']);
+                    for (var i = 0; i < self.selectionsHistory.length; i++) {
 
-                            for (var j = 0; j < selected_spheres.length; j++) {
+                        selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
+                            self.selectionsHistory[i]['feature_id'],
+                            ((self.selectionsHistory[i]['type'] == 'range') ?
+                                [self.selectionsHistory[i]['min'], self.selectionsHistory[i]['max']] :
+                                [self.selectionsHistory[i]['value']]),
+                            self.selectionsHistory[i]['type']);
+
+                        active = self.selectionsHistory[i]['active'];
+
+                        if (active) _clusters_color_scheme[i] = self.clusters_color_scheme['group' + i];
+
+                        for (var j = 0; j < selected_spheres.length; j++) {
+                            if (active) {
                                 _real_data.push(selected_spheres[j].realData);
                                 _clusters_list.push(i);
                             }
-
-                            _clusters_color_scheme[i] = self.clusters_color_scheme['group' + i];
+                            selected_spheres[j].material.color =
+                                self.clusters_color_scheme[((active) ? 'group' + i : '0')].clone();
                         }
+                    }
 
                     drawParallelCoordinates('radar_chart_groups', _real_data, _clusters_list, _clusters_color_scheme, self.dimNames);
                     requestAnimationFrame(render)
