@@ -58,15 +58,18 @@ class LoDGenerator:
             group_labels = self._get_labels_kmeans_clustering(
                 n_clusters=num_groups,
                 features=features)
+            self.group_name = 'group'
+            self.dataset[self.group_name] = group_labels
+            self.dataset.set_index(self.group_name)
+            self.grouped_dataset = self._get_groups_mean()
+            self._update_groups_metadata()
         elif mode == 'param':
-            self._parameter_grouping(features)
+            self.group_name = features[0]
+            self.grouped_dataset = self._get_groups_mean()
+            self._update_groups_metadata()
         else:
             raise NotImplementedError
-        self.dataset['group'] = group_labels
-        self.dataset.set_index('group')
 
-        self.grouped_dataset = self._get_groups_mean()
-        self._update_groups_metadata()
 
     def _get_labels_kmeans_clustering(self, n_clusters, features=None):
         data = self.dataset if not features else self.dataset.loc[:, features]
@@ -77,7 +80,7 @@ class LoDGenerator:
         self.grouped_dataset = self.dataset.groupby(feature)
 
     def _get_groups_mean(self):
-        return self.dataset.groupby('group').mean()
+        return self.dataset.groupby(self.group_name).mean()
 
     def _update_groups_metadata(self):
         if self.grouped_dataset is not None:
@@ -85,7 +88,7 @@ class LoDGenerator:
             if self._groups_metadata:
                 del self._groups_metadata[:]
 
-            grouped = self.dataset.groupby('group')
+            grouped = self.dataset.groupby(self.group_name)
             for i in sorted(grouped.groups.keys()):
                 group = grouped.get_group(i)
                 self._groups_metadata.append(
