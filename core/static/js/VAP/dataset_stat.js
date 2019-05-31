@@ -4,18 +4,38 @@
 
 class DatasetStats {
 
-    constructor(dsID, num_records, index_name, features, lod_activated, lod_value) {
+    constructor(dsID, num_records, index_name, features, lod_activated, lod_value, lod_mode) {
         this.dsID = dsID;
         this.num_records = num_records;
         this.index_name = index_name;
         this.features = features;
         this.lod_activated = lod_activated;
-        this.lod_value = lod_value;
+        this.lod_mode = lod_mode;
+        this.lod_value =  lod_value;
         this.MEASURES = [{'type':'ratio','columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
                          {'type':'ordinal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
                          {'type':'nominal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
                          {'type':'interval','columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
                          {'type':'clustered','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
+        this.lods = [{
+            'mode': 'minibatch',
+            'message': 'Set the number of clusters and select multiple features using "group" selector',
+            'number_of_groups': 'user_defined'
+          },
+          {
+            'mode': 'param',
+            'message': 'Select single categorical feature for grouping using "group" selector',
+            'number_of_groups': 'auto'
+          }
+        ];
+    }
+
+    set_lod_mode(mode) {
+        this.lod_mode = mode;
+    }
+
+    get_lod_mode() {
+        return this.lod_mode;
     }
 
     set_lod_value(value) {
@@ -28,8 +48,8 @@ class DatasetStats {
 
     activate_lod() {
         this.lod_activated = "true";
-        var lod_number = document.getElementById("id_lod_number");
-        lod_number.disabled = false;
+        // var lod_number = document.getElementById("id_lod_number");
+        // lod_number.disabled = false;
         if (document.querySelector('[id^="lod_select_"]')) {
             var lod_selectors = document.querySelectorAll('[id^="lod_select_"]');
             for (var i = 0; i < lod_selectors.length; i++) {
@@ -40,8 +60,8 @@ class DatasetStats {
 
     deactivate_lod() {
         this.lod_activated = "false";
-        var lod_number = document.getElementById("id_lod_number");
-        lod_number.disabled = true;
+        // var lod_number = document.getElementById("id_lod_number");
+        // lod_number.disabled = true;
         if (document.querySelector('[id^="lod_select_"]')) {
             var lod_selectors = document.querySelectorAll('[id^="lod_select_"]');
             for (var i = 0; i < lod_selectors.length; i++) {
@@ -54,24 +74,74 @@ class DatasetStats {
         }
     }
 
-    createLOD(id) {
-        var top_element = document.getElementById(id);
-        top_element.classList.add("grid-x", "grid-margin-x", "align-middle");
-
-        var div_check = document.createElement("div");
-        div_check.classList.add("cell", "small-4");
-        var checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.setAttribute("name", "activated");
-        checkbox.setAttribute("id", "id_lod_checkbox");
-        checkbox.dataset_info = this;
-        checkbox.lod_value = this.lod_value;
+    //-----
+    // Panel for choosing type of LoD. Currently it's minibatch and parameter.
+    //-----
+    LoDChecker(id) {
+        var div = document.createElement("div");
+        div.classList.add("form-group");
+        div.id = id;
+        div.style.display = "none";
         var label = document.createElement("label");
-        label.innerText = "Activate Level-of-Detail Generator";
-        label.title = "LoD is used for grouping of objects from large data samples";
-        div_check.appendChild(checkbox);
-        div_check.appendChild(label);
+        label.htmlFor = "lod_checker";
+        label.innerText = "Choose LoD Type:";
+        var select = document.createElement("select");
+        select.classList.add("form-control");
+        select.id = "lod_checker";
+        select.root = div;
+        for (var i=0;i<this.lods.length;i++) {
+            var option = document.createElement("option");
+            option.id = this.lods[i]['mode'];
+            option.innerText = this.lods[i]['mode'];
+            select.appendChild(option);
+        }
+        select.lods = this.lods;
+        select.value = this.lod_mode;
 
+        var msg = this.LoDMessage();
+        var groups_number = this.LoDGroupNumber();
+
+        select.msg = msg;
+        select.groups_number = groups_number;
+        select.self = this;
+
+        div.appendChild(label);
+        div.appendChild(select);
+        div.appendChild(msg);
+        div.appendChild(groups_number);
+
+        var selected = this.lods.filter(function(a){ return a.mode == select.value })[0];
+        msg.innerHTML = selected['message'];
+        if (selected['number_of_groups'] == 'user_defined') {
+            groups_number.style.display = "block";
+            groups_number.firstChild.value = this.lod_value;
+        } else {
+            groups_number.style.display = "none";
+        }
+        msg.style.display = "block";
+
+        select.onchange = function(event) {
+          var selected = event.target.lods.filter(function(a){ return a.mode == event.target.value })[0];
+          event.target.self.set_lod_mode(selected['mode']);
+          event.target.msg.innerHTML = selected['message'];
+          if (selected['number_of_groups'] == 'user_defined') {
+              event.target.groups_number.style.display = "block";
+              event.target.groups_number.value = this.lod_value;
+          } else {
+              event.target.groups_number.style.display = "none";
+          }
+          event.target.msg.style.display = "block";
+        };
+        return div;
+    }
+
+    LoDMessage() {
+        var msg = document.createElement("p");
+        msg.style.display = "none";
+        return msg;
+    }
+
+    LoDGroupNumber() {
         var div_number = document.createElement("div");
         div_number.classList.add("cell", "small-2");
         var number = document.createElement("input");
@@ -82,31 +152,59 @@ class DatasetStats {
         number.setAttribute("max", "3000");
         number.dataset_info = this;
         div_number.appendChild(number);
+        div_number.style.display = "none";
+        number.addEventListener("change", function(event) {
+            event.target.dataset_info.set_lod_value(event.target.value);
+        });
+        return div_number;
+    }
+
+    createLOD(id) {
+        var top_element = document.getElementById(id);
+        top_element.classList.add("grid-x", "grid-margin-x", "align-middle");
+
+        var div_check = document.createElement("div");
+        div_check.classList.add("cell", "small-4");
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.setAttribute("name", "activated");
+        checkbox.id = "id_lod_checkbox";
+        checkbox.dataset_info = this;
+        checkbox.lod_value = this.lod_value;
+        checkbox.lod_mode = this.lod_mode;
+        var label = document.createElement("label");
+        label.innerText = "Activate Level-of-Detail Generator";
+        label.title = "LoD is used for grouping of objects from large data samples";
+
+        div_check.appendChild(checkbox);
+        div_check.appendChild(label);
+        var lod_checker = this.LoDChecker("lod_check_panel");
+        checkbox.lod_checker = lod_checker;
+        div_check.appendChild(lod_checker);
 
         top_element.appendChild(div_check);
-        top_element.appendChild(div_number);
 
-        if (checkbox && number) {
-            number.value = this.lod_value;  // default value
-            checkbox.addEventListener( "click", function(event) {
-                if (event.target.checked) {
-                    event.target.dataset_info.activate_lod();
-                    event.target.dataset_info.set_lod_value(event.target.lod_value);
-                } else {
-                    event.target.dataset_info.deactivate_lod();
-                }
-            });
-            number.addEventListener("change", function(event) {
-                event.target.dataset_info.set_lod_value(event.target.value);
-            });
-        }
+        checkbox.addEventListener( "click", function(event) {
+            if (event.target.checked) {
+                event.target.dataset_info.activate_lod();
+                event.target.dataset_info.set_lod_value(event.target.lod_value);
+                event.target.dataset_info.set_lod_mode(event.target.lod_mode);
+                event.target.lod_checker.style.display = "block";
+            } else {
+                event.target.dataset_info.deactivate_lod();
+                event.target.lod_checker.style.display = "none";
+            }
+        });
 
         if (this.lod_activated === "true") {
             checkbox.checked = true;
             this.activate_lod();
             this.set_lod_value(this.lod_value);
+            this.set_lod_mode(this.lod_mode);
+            lod_checker.style.display = "block";
         } else {
             this.deactivate_lod();
+            lod_checker.style.display = "none";
         }
         return top_element;
     }
@@ -453,7 +551,8 @@ class DatasetStats {
                 features: JSON.stringify(event.target.dataset_info.features),
                 index_name: event.target.dataset_info.index_name,
                 lod_activated: event.target.dataset_info.lod_activated,
-                lod_value: event.target.dataset_info.lod_value
+                lod_value: event.target.dataset_info.lod_value,
+                lod_mode: event.target.dataset_info.lod_mode
             };
 
             for (var key in data ){

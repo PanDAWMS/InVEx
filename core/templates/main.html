@@ -78,10 +78,17 @@
             var num_records = {{ num_records }};
             var index_name = '{{ index_name }}';
             var features = {{ features|safe }};
+            var lod_mode = '{{ lod_mode }}';
             var lod_activated = '{{ lod_activated }}';
             var lod_value = {{ lod_value }};
 
-            var features_stat = new DatasetStats(dsID,num_records,index_name,features,lod_activated,lod_value);
+            var features_stat = new DatasetStats(dsID,
+                                                 num_records,
+                                                 index_name,
+                                                 features,
+                                                 lod_activated,
+                                                 lod_value,
+                                                 lod_mode);
             features_stat.display_features_panel("features_panel");
 
         {% endif %}

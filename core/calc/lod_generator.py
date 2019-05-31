@@ -19,7 +19,7 @@ class LoDGenerator:
     [large] data sample (default grouping mode is k-means clustering).
     """
 
-    def __init__(self, dataset, num_groups=None, features=None, **kwargs):
+    def __init__(self, dataset, mode=MODE_DEFAULT, num_groups=None, features=None, **kwargs):
         """
         Initialization.
 
@@ -36,7 +36,7 @@ class LoDGenerator:
         self.num_initial_elements = self.dataset.shape[0]
         self.grouped_dataset = None
 
-        self._init_metadata = {'mode': kwargs.get('mode', MODE_DEFAULT),
+        self._init_metadata = {'mode': mode,
                                'value': num_groups or NUM_GROUPS_DEFAULT,
                                'features': features}
         self._groups_metadata = []
@@ -58,10 +58,10 @@ class LoDGenerator:
             group_labels = self._get_labels_kmeans_clustering(
                 n_clusters=num_groups,
                 features=features)
+        elif mode == 'param':
+            self._parameter_grouping(features)
         else:
             raise NotImplementedError
-        self.dataset['group'] = group_labels
-        self.dataset.set_index('group')
 
         self.grouped_dataset = self._get_groups_mean()
         self._update_groups_metadata()
@@ -70,6 +70,9 @@ class LoDGenerator:
         data = self.dataset if not features else self.dataset.loc[:, features]
         return MiniBatchKMeans(n_clusters=n_clusters,
                                **MINIBATCH_PARAMS_DEFAULT).fit_predict(data)
+
+    def _parameter_grouping(self, feature):
+        self.grouped_dataset = self.dataset.groupby(feature)
 
     def _get_groups_mean(self):
         return self.dataset.groupby('group').mean()
