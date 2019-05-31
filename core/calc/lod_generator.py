@@ -62,6 +62,8 @@ class LoDGenerator:
             self._parameter_grouping(features)
         else:
             raise NotImplementedError
+        self.dataset['group'] = group_labels
+        self.dataset.set_index('group')
 
         self.grouped_dataset = self._get_groups_mean()
         self._update_groups_metadata()
