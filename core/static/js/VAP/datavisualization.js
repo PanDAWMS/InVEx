@@ -810,7 +810,7 @@ class DataVisualization extends Scene{
         var radius = this.defaultSpRad;
 
         if (lodData != undefined) {
-            radius = this.defaultSpRad + ((this.defaultSpRad * lodData[3]));
+            radius = this.defaultSpRad + ((this.defaultSpRad * lodData['group_koeff']));
             this.sphereGeometry = new THREE.SphereGeometry(radius, this.numberOfSegements, this.numberOfSegements );
 		}
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);

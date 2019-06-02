@@ -64,7 +64,7 @@ class LoDGenerator:
             self.grouped_dataset = self._get_groups_mean()
             self._update_groups_metadata()
         elif mode == 'param':
-            self.group_name = features[0]
+            self.group_name = features
             self.grouped_dataset = self._get_groups_mean()
             self._update_groups_metadata()
         else:
@@ -76,24 +76,39 @@ class LoDGenerator:
         return MiniBatchKMeans(n_clusters=n_clusters,
                                **MINIBATCH_PARAMS_DEFAULT).fit_predict(data)
 
-    def _parameter_grouping(self, feature):
-        self.grouped_dataset = self.dataset.groupby(feature)
-
     def _get_groups_mean(self):
         return self.dataset.groupby(self.group_name).mean()
 
     def _update_groups_metadata(self):
+        """
+        Groups metadata is set in a form of list of dictionaries:
+        for each groups:
+        - group_name
+        - group_number
+        - group_indexes
+        - group_length
+        - group_koeff
+        :return:
+        """
         if self.grouped_dataset is not None:
 
             if self._groups_metadata:
                 del self._groups_metadata[:]
 
             grouped = self.dataset.groupby(self.group_name)
-            for i in sorted(grouped.groups.keys()):
-                group = grouped.get_group(i)
-                self._groups_metadata.append(
-                    [i, group.index.tolist(), len(group),
-                     log1p(len(group) * 100 / self.num_initial_elements)])
+
+            # assotiate groups with ordinal numbers
+            group_number = -1
+            # store in groups metadata original groups with its numbers
+            for name, group in grouped:
+                group_number += 1
+                group_meta = {}
+                group_meta['group_name'] = name
+                group_meta['group_number'] = group_number
+                group_meta['group_indexes'] = group.index.tolist()
+                group_meta['group_length'] = len(group)
+                group_meta['group_koeff'] = log1p(len(group) * 100 / self.num_initial_elements)
+                self._groups_metadata.append(group_meta)
 
     def get_full_metadata(self):
         output = dict(self._init_metadata)

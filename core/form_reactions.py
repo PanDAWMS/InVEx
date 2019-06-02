@@ -201,8 +201,15 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
     LocalReader().drop_na(dataset)
     numeric_dataset = LocalReader().get_numeric_data(dataset)
     if lod_params:
+        """
+        Important!
+        LoD needs all data sample (not only numeric) to process grouping
+        by nominal categories. However, all these nominal values will be removed from
+        groups and fixed as index names.
+        """
+
         lod = calc.lod_generator.LoDGenerator(
-            numeric_dataset, lod_params['mode'], lod_params['value'], lod_params['features'])
+            dataset, lod_params['mode'], lod_params['value'], lod_params['features'])
         norm_lod_dataset = LocalReader().scaler(lod.grouped_dataset)
         aux_lod_dataset = lod.grouped_dataset.drop(lod.grouped_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
@@ -485,7 +492,7 @@ def update_dataset(request, datasetid, groups=None):
     data['index_name'] = dataset_stat.index_name
     data['lod_activated'] = request.POST['lod_activated']
     data['lod_value'] = request.POST['lod_value']
-    data['lod_mode'] = request.POST['lod_mode'];
+    data['lod_mode'] = request.POST['lod_mode']
     data['request'] = request
     return data
 
