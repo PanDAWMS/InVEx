@@ -17,17 +17,35 @@ class DatasetStats {
                          {'type':'nominal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
                          {'type':'interval','columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
                          {'type':'clustered','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
-        this.lods = [{
-            'mode': 'minibatch',
-            'message': 'Set the number of clusters and select multiple features using "group" selector',
-            'number_of_groups': 'user_defined'
-          },
-          {
-            'mode': 'param',
-            'message': 'Select single categorical feature for grouping using "group" selector',
-            'number_of_groups': 'auto'
-          }
+        this.lods = [
+              {
+                'idx': 0,
+                'mode': 'minibatch',
+                'title': 'MiniBatchKMeans(sklearn/python) clusterization',
+                'message': 'Set the number of clusters and select numerical continuous features using "group" selector',
+                'number_of_groups': 'user_defined'
+              },
+              {
+                'idx': 1,
+                'mode': 'param_categorical',
+                'title': 'Group by nominal/ordinal parameter(s)',
+                'message': 'Select from one to several categorical features for grouping using "group" selector. ' +
+                'The sequence of checking features = the sequence of grouping',
+                'number_of_groups': 'auto'
+              }, 
+              {
+                'idx': 2,
+                'mode': 'param_num_continuous',
+                'title': 'Group by numerical continuous parameter', 
+                'message': 'Select single numerical continuous parameter for grouping using "group" selector and ' +
+                'set the number of groups',
+                'number_of_groups': 'user_defined'
+              }
         ];
+    }
+
+    get_lod_params(lod_mode) {
+        return this.lods.filter(function(a){ return a.mode == lod_mode })[0];
     }
 
     set_lod_mode(mode) {
@@ -78,6 +96,7 @@ class DatasetStats {
     // Panel for choosing type of LoD. Currently it's minibatch and parameter.
     //-----
     LoDChecker(id) {
+        var lod_params = this.get_lod_params(this.lod_mode);
         var div = document.createElement("div");
         div.classList.add("form-group");
         div.id = id;
@@ -92,11 +111,12 @@ class DatasetStats {
         for (var i=0;i<this.lods.length;i++) {
             var option = document.createElement("option");
             option.id = this.lods[i]['mode'];
-            option.innerText = this.lods[i]['mode'];
+            option.innerText = this.lods[i]['title'];
             select.appendChild(option);
         }
         select.lods = this.lods;
-        select.value = this.lod_mode;
+        select.selectedIndex = lod_params['idx'];
+        // select.value = this.lod_mode;
 
         var msg = this.LoDMessage();
         var groups_number = this.LoDGroupNumber();
@@ -110,7 +130,7 @@ class DatasetStats {
         div.appendChild(msg);
         div.appendChild(groups_number);
 
-        var selected = this.lods.filter(function(a){ return a.mode == select.value })[0];
+        var selected = this.lods.filter(function(a){ return a.mode == lod_params['mode'] })[0];
         msg.innerHTML = selected['message'];
         if (selected['number_of_groups'] == 'user_defined') {
             groups_number.style.display = "block";
@@ -121,7 +141,7 @@ class DatasetStats {
         msg.style.display = "block";
 
         select.onchange = function(event) {
-          var selected = event.target.lods.filter(function(a){ return a.mode == event.target.value })[0];
+          var selected = event.target.lods.filter(function(a){ return a.idx == event.target.selectedIndex })[0];
           event.target.self.set_lod_mode(selected['mode']);
           event.target.msg.innerHTML = selected['message'];
           if (selected['number_of_groups'] == 'user_defined') {

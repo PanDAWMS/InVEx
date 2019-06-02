@@ -63,10 +63,12 @@ class LoDGenerator:
             self.dataset.set_index(self.group_name)
             self.grouped_dataset = self._get_groups_mean()
             self._update_groups_metadata()
-        elif mode == 'param':
+        elif mode == 'param_categorical':
             self.group_name = features
             self.grouped_dataset = self._get_groups_mean()
             self._update_groups_metadata()
+        elif mode == 'param_num_continuous':
+            raise NotImplementedError
         else:
             raise NotImplementedError
 
@@ -103,7 +105,7 @@ class LoDGenerator:
             for name, group in grouped:
                 group_number += 1
                 group_meta = {}
-                group_meta['group_name'] = name
+                group_meta['group_name'] = str(name)
                 group_meta['group_number'] = group_number
                 group_meta['group_indexes'] = group.index.tolist()
                 group_meta['group_length'] = len(group)
