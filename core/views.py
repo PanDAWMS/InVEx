@@ -76,15 +76,15 @@ def initRequest(request):
 
     return True, None
 
-def parse_groups_url_parameter(groups):
-    if groups is None or groups == '':
-        return None
-    regex = re.compile('g/(?P<groupid>[0-9]+)/')
-    all_groups = regex.findall(groups)
-    if all_groups == []:
-        return None
-    return all_groups
 
+def parse_groups_url_parameter(groups):
+    output = None
+
+    if groups not in [None, '']:
+        regex = re.compile('g/(?P<groupid>[0-9]+)/')
+        output = regex.findall(groups) or None
+
+    return output
 
 
 def visualization_init(request):
@@ -127,21 +127,32 @@ def visualization_init(request):
     return render(request, 'main.html', data, content_type='text/html')
 
 
-def visualization_data(request, maindatasetuid, groups='', operationnumber=None):
+def visualization_data(request, maindatasetuid,
+                       groups=None, operationnumber=None):
     valid, response = initRequest(request)
     if not valid:
         return response
-    data = None
+
     parsed_groups = parse_groups_url_parameter(groups)
     if parsed_groups is None:
-        groups=''
+        groups = ''
+
+    data = None
     if request.method == 'POST' and 'formt' in request.POST:
-        if request.POST['formt'] == 'visualize':
+        if request.POST['formt'] == 'preview':
             try:
                 data = form_reactions.update_dataset(request, maindatasetuid, parsed_groups)
             except Exception as exc:
                 logger.error('!views.visualization_data!: Could not perform an update. \n' + str(exc))
-        if request.POST['formt'] == 'cluster':
+        elif request.POST['formt'] == 'submit_feature_selection':
+            err_msg_subj = '[views/formt=submit_feature_selection]'
+            try:
+                data = form_reactions.get_preprocessed_history_data(
+                    maindatasetuid, parsed_groups)
+            except Exception as exc:
+                logger.error('{0} Error with preprocessed history data: {1}'.
+                             format(err_msg_subj, exc))
+        elif request.POST['formt'] == 'cluster':
             try:
                 data, op_number = form_reactions.clusterize(request, maindatasetuid, parsed_groups)
                 return redirect(reverse('regular_visualization_data_operation', kwargs={'maindatasetuid': maindatasetuid, 'groups': groups, 'operationnumber': str(op_number)}))
@@ -156,7 +167,7 @@ def visualization_data(request, maindatasetuid, groups='', operationnumber=None)
                 return JsonResponse({})
     if data is None:
         data = form_reactions.prepare_dataset_data(request, maindatasetuid, parsed_groups, operationnumber)
-    data['VISUALIZE_URL'] = reverse('regular_visualization_data_new_group', kwargs={'maindatasetuid': maindatasetuid, 'groups': groups})
+    data['PREVIEW_URL'] = reverse('regular_visualization_data_new_group', kwargs={'maindatasetuid': maindatasetuid, 'groups': groups})
     data['NEXT_GROUP_URL'] = reverse('regular_visualization_data_new_group', kwargs={'maindatasetuid': maindatasetuid, "groups": groups})
     data['type'] = 'datavisualization'
     data['built'] = datetime.now()
