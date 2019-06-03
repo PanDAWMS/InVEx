@@ -12,11 +12,11 @@ class DatasetStats {
         this.lod_activated = lod_activated;
         this.lod_mode = lod_mode;
         this.lod_value =  lod_value;
-        this.MEASURES = [{'type':'ratio','columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
+        this.MEASURES = [{'type':'continuous','columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
                          {'type':'ordinal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
                          {'type':'nominal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
-                         {'type':'interval','columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
-                         {'type':'clustered','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
+                         {'type':'range','columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
+                         {'type':'non-categorical','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
         this.lods = [
               {
                 'idx': 0,
@@ -381,30 +381,6 @@ class DatasetStats {
     type_switch(type, feature, tr, columns) {
         switch (type) {
             case 'nominal':
-                for (var j=0;j<columns.length;j++) {
-                    var td = document.createElement("td");
-                    var name = columns[j];
-                    if (feature[name] === undefined)
-                        td.textContent = '';
-                    else {
-                        if (name == "distribution") {
-                            if (feature["unique_number"] == 1)
-                                td.appendChild(this.values_frequency(feature));
-                            else
-                               td.appendChild(this.generate_chart(feature["distribution"], name));
-                        }
-                        else if (this.isNumber(feature[name])) {
-                            if (name == "percentage_missing")
-                                td.textContent = this.formatNumber(feature[name].toFixed(2)) + "%";
-                            else
-                                td.textContent = feature[name];
-                        }
-                        else
-                            td.textContent = feature[name];
-                    }
-                    tr.appendChild(td);
-                }
-                break;
             case 'ordinal':
                 for (var j=0;j<columns.length;j++) {
                     var td = document.createElement("td");
@@ -430,7 +406,7 @@ class DatasetStats {
                     tr.appendChild(td);
                 }
                 break;
-            case 'interval':
+            case 'range':
                 for (var j=0;j<columns.length;j++) {
                     var td = document.createElement("td");
                     var name = columns[j];
@@ -449,7 +425,7 @@ class DatasetStats {
                     tr.appendChild(td);
                 }
                 break;
-            case 'clustered':
+            case 'non-categorical':
                 for (var j=0;j<columns.length;j++) {
                     var td = document.createElement("td");
                     var name = columns[j];
@@ -464,7 +440,7 @@ class DatasetStats {
                     tr.appendChild(td);
                 }
                 break;
-            case 'ratio':
+            case 'continuous':
                 for (var j=0;j<columns.length;j++) {
                     var td = document.createElement("td");
                     var name = columns[j];

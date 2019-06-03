@@ -92,7 +92,7 @@ class DatasetInfo():
             if _is_numeric and _is_cat:
                 _measure_type = 'ordinal'
             elif _is_numeric and not _is_cat:
-                _measure_type = 'ratio'
+                _measure_type = 'continuous'
             if _is_object:
                 _measure_type = 'nominal'
 
@@ -167,7 +167,7 @@ class DatasetInfo():
                     elif not _is_cat:
                         _unique_values = df[column].dropna().unique().tolist()[:10]
                     #    _unique_values = self.process_strings(_unique_values)
-                        _measure_type = 'clustered'
+                        _measure_type = 'non-categorical'
                 features.append(FeatureStatistics(feature_name=_name,
                                                   feature_type=_type,
                                                   measure_type=_measure_type,
