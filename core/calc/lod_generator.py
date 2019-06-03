@@ -1,6 +1,7 @@
 from math import log1p
 
 from sklearn.cluster import MiniBatchKMeans
+import pandas as pd
 
 MINIBATCH_PARAMS_DEFAULT = {
     'random_state': 0,
@@ -68,10 +69,36 @@ class LoDGenerator:
             self.grouped_dataset = self._get_groups_mean()
             self._update_groups_metadata()
         elif mode == 'param_num_continuous':
-            raise NotImplementedError
+            curr_variable = self.dataset[features[0]].max()
+            intervals = self.set_intervals(curr_variable)
+            group_number = -1
+
+            if self._groups_metadata:
+                del self._groups_metadata[:]
+
+            self.grouped_dataset = pd.DataFrame()
+
+            for i in intervals:
+                self.group_name = str(i)
+                group_number += 1
+                group = self.dataset[((self.dataset[features[0]] >= i[0]) & (self.dataset[features[0]] < i[1]))]
+                group_meta = {}
+                group_meta['group_name'] = str(self.group_name)
+                group_meta['group_number'] = group_number
+                group_meta['group_indexes'] = group.index.tolist()
+                group_meta['group_length'] = len(group)
+                group_meta['group_koeff'] = log1p(len(group) * 100 / self.num_initial_elements)
+                self._groups_metadata.append(group_meta)
+                group_mean = group.mean()
+                group_mean['group'] = self.group_name
+                self.grouped_dataset = self.grouped_dataset.append(group_mean, ignore_index=True)
+            self.grouped_dataset.set_index('group', inplace=True)
         else:
             raise NotImplementedError
 
+    def set_intervals(self, number):
+        part = number / self._init_metadata['value']
+        return [(i * part, (i + 1) * part) for i in range(self._init_metadata['value'])]
 
     def _get_labels_kmeans_clustering(self, n_clusters, features=None):
         data = self.dataset if not features else self.dataset.loc[:, features]
