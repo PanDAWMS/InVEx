@@ -810,7 +810,7 @@ class DataVisualization extends Scene{
         var radius = this.defaultSpRad;
 
         if (lodData != undefined) {
-            radius = this.defaultSpRad + ((this.defaultSpRad * lodData[3]));
+            radius = this.defaultSpRad + ((this.defaultSpRad * lodData['group_koeff']));
             this.sphereGeometry = new THREE.SphereGeometry(radius, this.numberOfSegements, this.numberOfSegements );
 		}
 		var sphere = new THREE.Mesh(this.sphereGeometry, material);
@@ -1326,12 +1326,12 @@ class DataVisualization extends Scene{
 		 */
 		if (this.lodData.length > 0 ) {
 
+			var curr_group = this.lodData.filter(function(a){ return a.group_name == obj.dataObject[0] })[0]['group_number'];
+
 			var vis_group_obj = {
 				VisualizeGroup:function() {
 					var link=document.createElement('a');
-					link.href=next_group_url.replace('NEWGROUPID', obj.dataObject[0]);
-					console.log(obj.dataObject[0]);
-					console.log(link.href);
+					link.href=next_group_url.replace('NEWGROUPID', curr_group);
 					link.target='_blank';
 					link.click();
 				}};

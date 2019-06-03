@@ -20,6 +20,7 @@ FILES_LIST_NAME = 'files_list.json'
 BACKUP_FILE = '_backup'
 
 LOD_VALUE_DEFAULT = 50
+LOD_MODE_DEFAULT = 'minibatch'
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -200,8 +201,15 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
     LocalReader().drop_na(dataset)
     numeric_dataset = LocalReader().get_numeric_data(dataset)
     if lod_params:
+        """
+        Important!
+        LoD needs all data sample (not only numeric) to process grouping
+        by nominal categories. However, all these nominal values will be removed from
+        groups and fixed as index names.
+        """
+
         lod = calc.lod_generator.LoDGenerator(
-            numeric_dataset, lod_params['value'], lod_params['features'])
+            dataset, lod_params['mode'], lod_params['value'], lod_params['features'])
         norm_lod_dataset = LocalReader().scaler(lod.grouped_dataset)
         aux_lod_dataset = lod.grouped_dataset.drop(lod.grouped_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
@@ -223,7 +231,9 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
         groupedData.set_filename(filename)
         groupedData.save_to_file()
     else:
-        numeric_dataset = numeric_dataset.loc[:, features]
+        numeric_features = list(set(list(numeric_dataset.columns.values)) &
+                                set(features))
+        numeric_dataset = numeric_dataset.loc[:, numeric_features]
         norm_dataset = LocalReader().scaler(numeric_dataset)
         auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
@@ -338,6 +348,7 @@ def csv_file_from_server(request, dsID=False):
         data['features'] = []
         dataset_stat = calc.dataset.DatasetInfo()
         dataset_stat.get_info_from_dataset(dataset, dsID)
+        dataset_stat.save_to_file()
         for i in range(len(dataset_stat.features)):
             data['features'].append(dataset_stat.features[i].__dict__)
         data['dsID'] = dataset_stat.dsID
@@ -390,11 +401,13 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     data = prepare_data_object(dataset, original, aux_dataset, op_history)
     if lod_metadata.get('value', 0) > 0:
         data['lod_activated'] = 'true'
+        data['lod_mode'] = lod_metadata['mode']
         data['lod_value'] = lod_metadata['value']
         data['lod_data'] = lod_metadata['groups']
     else:
         data['lod_activated'] = 'false'
         data['lod_value'] = LOD_VALUE_DEFAULT
+        data['lod_mode'] = LOD_MODE_DEFAULT
     lod_features = lod_metadata.get('features', [])
     if len(oper) >= 3:
         data['visualparameters'] = oper[2]
@@ -441,6 +454,7 @@ def prepare_dataset_data(request, datasetid, groups=None, operationnumber=None):
         data['index_name'] = dataset_stat.index_name
         data['lod_activated'] = False
         data['lod_value'] = LOD_VALUE_DEFAULT
+        data['lod_mode'] = LOD_MODE_DEFAULT
         return data
     except Exception as exc:
         logger.error(
@@ -467,7 +481,8 @@ def update_dataset(request, datasetid, groups=None):
 
     lod_params = None
     if request.POST.get('lod_activated') == 'true':
-        lod_params = {'value': int(request.POST['lod_value']),
+        lod_params = {'mode': request.POST['lod_mode'],
+                      'value': int(request.POST['lod_value']),
                       'features': lod_features}
 
     dataset = load_dataset(datasetid, groups, checked_features)
@@ -479,6 +494,7 @@ def update_dataset(request, datasetid, groups=None):
     data['index_name'] = dataset_stat.index_name
     data['lod_activated'] = request.POST['lod_activated']
     data['lod_value'] = request.POST['lod_value']
+    data['lod_mode'] = request.POST['lod_mode']
     data['request'] = request
     return data
 

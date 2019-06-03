@@ -11,9 +11,8 @@ class GroupedData:
 
     def get_groups(self, dataset, groups_metadata):
         self.groups = []
-        self.groups_metadata = groups_metadata
         for item in groups_metadata:
-            group_ids = item[1]
+            group_ids = item['group_indexes']
             group_data = dataset[dataset.index.isin(group_ids)]
             self.groups.append(pd.DataFrame(group_data))
 
