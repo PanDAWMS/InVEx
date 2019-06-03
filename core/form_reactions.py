@@ -231,7 +231,9 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
         groupedData.set_filename(filename)
         groupedData.save_to_file()
     else:
-        numeric_dataset = numeric_dataset.loc[:, features]
+        numeric_features = list(set(list(numeric_dataset.columns.values)) &
+                                set(features))
+        numeric_dataset = numeric_dataset.loc[:, numeric_features]
         norm_dataset = LocalReader().scaler(numeric_dataset)
         auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()

@@ -79,11 +79,11 @@ class LoDGenerator:
             self.grouped_dataset = pd.DataFrame()
 
             for i in intervals:
-                self.group_name = str(i)
                 group_number += 1
                 group = self.dataset[((self.dataset[features[0]] >= i[0]) & (self.dataset[features[0]] < i[1]))]
                 group_meta = {}
-                group_meta['group_name'] = str(self.group_name)
+                self.group_name = str(round(i[0], 2)) + '-' + str(round(i[1], 2))
+                group_meta['group_name'] = self.group_name
                 group_meta['group_number'] = group_number
                 group_meta['group_indexes'] = group.index.tolist()
                 group_meta['group_length'] = len(group)
