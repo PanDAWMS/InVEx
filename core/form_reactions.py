@@ -422,7 +422,7 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     data['dsID'] = datasetid
     data['features'] = []
     dataset_stat = calc.dataset.DatasetInfo()
-    dataset_stat.get_info_from_dataset(dataset, datasetid)
+    dataset_stat.get_info_from_dataset(original, datasetid)
     for i in range(len(dataset_stat.features)):
         data['features'].append(dataset_stat.features[i].__dict__)
         if data['features'][-1]['feature_name'] in features:
