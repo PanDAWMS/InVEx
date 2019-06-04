@@ -591,8 +591,8 @@ def get_jobs_from_panda(request):
 def clusterize(request, datasetid, groups):
     """
     Implement clusterization.
-    :param request: 
-    :return: 
+    :param request:
+    :return:
     """
     original, dataset, aux_dataset, op_history, features, lod_metadata = \
         load_data(datasetid, groups)
@@ -618,7 +618,7 @@ def clusterize(request, datasetid, groups):
                 result = operation.process_data(dataset.loc[:, numeric_features])
             except Exception as exc:
                 logger.error(
-                    '!form_reactions.clusterize!: Failed to perform KMean clusterization. \nRequest parameters: '
+                    '!form_reactions.clusterize!: Failed to perform KMeans clusterization. \nRequest parameters: '
                     + json.dumps(request.POST) + '\nDataset: ' + dataset.to_json(orient='table') + '\n' + str(exc))
                 raise
             if result is not None:
@@ -629,14 +629,42 @@ def clusterize(request, datasetid, groups):
                     data['cluster_ready'] = True
                 except Exception as exc:
                     logger.error(
-                        '!form_reactions.clusterize!: Failed to perform KMean clusterization. \nOperation parameters:'
+                        '!form_reactions.clusterize!: Failed to perform KMeans clusterization. \nOperation parameters:'
                         + json.dumps(operation.save_parameters()) + '\nOperation results: '
                         + json.dumps(operation.save_results()) + '\nRequest parameters: '
                         + json.dumps(request.POST) + '\n' + str(exc))
                     raise
             else:
                 logger.error(
-                    '!form_reactions.clusterize!: Failed to perform KMean clusterization. \nOperation parameters:'
+                    '!form_reactions.clusterize!: Failed to perform KMeans clusterization. \nOperation parameters:'
+                    + json.dumps(operation.save_parameters()) + '\nRequest parameters: ' + json.dumps(request.POST))
+        elif request.POST['algorithm'] == 'MiniBatchKMeans' and 'numberofcl' in request.POST and 'batch_size' in request.POST:
+            try:
+                operation = calc.MiniBatchKMeansClustering.MiniBatchKMeansClustering()
+                operation.set_parameters(int(request.POST['numberofcl']), int(request.POST['batch_size']))
+                result = operation.process_data(dataset.loc[:, numeric_features])
+            except Exception as exc:
+                logger.error(
+                    '!form_reactions.clusterize!: Failed to perform minibatch KMeans clusterization. \nRequest parameters: '
+                    + json.dumps(request.POST) + '\nDataset: ' + dataset.to_json(orient='table') + '\n' + str(exc))
+                raise
+            if result is not None:
+                try:
+                    op_history.append(dataset.loc[:, numeric_features], operation, request.POST['visualparameters'])
+                    data['clusters'] = result.tolist()
+                    data['count_of_clusters'] = int(request.POST['numberofcl'])
+                    data['batch_size'] = int(request.POST['batch_size'])
+                    data['cluster_ready'] = True
+                except Exception as exc:
+                    logger.error(
+                        '!form_reactions.clusterize!: Failed to perform minibatch KMeans clusterization. \nOperation parameters:'
+                        + json.dumps(operation.save_parameters()) + '\nOperation results: '
+                        + json.dumps(operation.save_results()) + '\nRequest parameters: '
+                        + json.dumps(request.POST) + '\n' + str(exc))
+                    raise
+            else:
+                logger.error(
+                    '!form_reactions.clusterize!: Failed to perform minibatch KMeans clusterization. \nOperation parameters:'
                     + json.dumps(operation.save_parameters()) + '\nRequest parameters: ' + json.dumps(request.POST))
         elif request.POST['algorithm'] == 'DBSCAN' and 'min_samples' in request.POST and 'eps' in request.POST:
             try:
