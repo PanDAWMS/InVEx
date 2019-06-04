@@ -475,7 +475,6 @@ class DatasetStats {
 
     display_features_panel(element_id) {
         var root = document.getElementById(element_id);
-
         root.appendChild(this.createLOD("lod"));
         root.appendChild(this.display_dataset_info());
         $("#dataset_info").DataTable({
@@ -511,63 +510,89 @@ class DatasetStats {
             }
         }
 
-        var csrf = document.createElement('input');
-        csrf.setAttribute("type","hidden");
-        csrf.setAttribute("name","csrfmiddlewaretoken");
-        var csrftoken = Cookies.get('csrftoken');
-        csrf.setAttribute("value",csrftoken);
+        var csrf = document.createElement("input");
+        csrf.setAttribute("type", "hidden");
+        csrf.setAttribute("name", "csrfmiddlewaretoken");
+        var csrftoken = Cookies.get("csrftoken");
+        csrf.setAttribute("value", csrftoken);
         root.appendChild(csrf);
 
-        var button = document.createElement("input");
-        button.classList.add("button", "small");
-        button.setAttribute("id","visualize_btn");
-        button.type = "button";
-        button.value = "Visualize";
-        button.dataset_info = this;
-        button.onclick = function(event){
+        if (!document.getElementById("stats")) {
 
-            var form = document.createElement('form');
-            form.setAttribute('method', 'post');
-            if(typeof visualize_url !== "undefined" )
-                form.setAttribute('action', '');
-            else
-                form.setAttribute('action', visualize_url);
-            form.style.display = 'hidden';
+            var button_preview = document.createElement("input");
+            button_preview.classList.add("button", "small");
+            button_preview.id = "preview_btn";
+            button_preview.type = "button";
+            button_preview.value = "Preview";
+            button_preview.style.margin = "5px 0px 5px 0px";
+            button_preview.dataset_info = this;
+            button_preview.onclick = function (e) {
+                var form = document.createElement("form");
+                form.setAttribute("method", "post");
+                if (typeof(preview_url) !== "undefined")
+                    form.setAttribute("action", "");
+                else
+                    form.setAttribute("action", preview_url);
+                form.style.display = "hidden";
 
-            var action = document.createElement("input");
-            action.type = "hidden";
-            action.name = "formt";
-            action.value = "visualize";
-            form.appendChild(action);
+                var action = document.createElement("input");
+                action.type = "hidden";
+                action.name = "formt";
+                action.value = "preview";
+                form.appendChild(action);
 
-            var data = {
-                dsID: event.target.dataset_info.dsID,
-                csrfmiddlewaretoken: csrftoken,
-                num_records: Number(event.target.dataset_info.num_records),
-                features: JSON.stringify(event.target.dataset_info.features),
-                index_name: event.target.dataset_info.index_name,
-                lod_activated: event.target.dataset_info.lod_activated,
-                lod_value: event.target.dataset_info.lod_value,
-                lod_mode: event.target.dataset_info.lod_mode
+                var data = {
+                    dsID: e.target.dataset_info.dsID,
+                    csrfmiddlewaretoken: csrftoken,
+                    num_records: Number(e.target.dataset_info.num_records),
+                    features: JSON.stringify(e.target.dataset_info.features),
+                    index_name: e.target.dataset_info.index_name,
+                    lod_activated: e.target.dataset_info.lod_activated,
+                    lod_mode: e.target.dataset_info.lod_mode,
+                    lod_value: e.target.dataset_info.lod_value
+                };
+
+                for (var key in data) {
+                    var field = document.createElement("input");
+                    field.type = "hidden";
+                    field.name = key;
+                    field.value = data[key];
+                    form.appendChild(field);
+                }
+                document.body.appendChild(form);
+                form.submit();
             };
+            root.appendChild(button_preview);
 
-            for (var key in data ){
-                var field = document.createElement("input");
-                field.type ="hidden";
-                field.name = key;
-                field.value = data[key];
-                form.appendChild(field);
-            }
-            document.body.appendChild(form);
-            form.submit();
-        };
-        root.appendChild(button);
+            var button_submit = document.createElement("input");
+            button_submit.classList.add("button", "small");
+            button_submit.id = "submit_btn";
+            button_submit.type = "button";
+            button_submit.value = "Submit";
+            button_submit.style.margin = "5px";
+            button_submit.dataset_info = this;
+            button_submit.onclick = function () {
+                var form = document.createElement("form");
+                form.setAttribute("method", "post");
+                form.style.display = "hidden";
 
-        var action = document.createElement("input");
-        action.type = "hidden";
-        action.name = "formt";
-        action.value = "visualize";
-        root.appendChild(action);
+                var action = document.createElement("input");
+                action.type = "hidden";
+                action.name = "formt";
+                action.value = "submit_feature_selection";
+                form.appendChild(action);
+
+                var input_csrf = document.createElement("input");
+                input_csrf.type = "hidden";
+                input_csrf.name = "csrfmiddlewaretoken";
+                input_csrf.value = csrftoken;
+                form.appendChild(input_csrf);
+
+                document.body.appendChild(form);
+                form.submit();
+            };
+            root.appendChild(button_submit);
+        }
     }
 
     formatNumber(num) {
@@ -575,7 +600,7 @@ class DatasetStats {
     }
     
     isNumber (value) {
-        return typeof value === 'number' && isFinite(value);
+        return typeof(value) === 'number' && isFinite(value);
     }
     
     draw_uniques_fieldset(item) {

@@ -464,20 +464,20 @@ def prepare_dataset_data(request, datasetid, groups=None, operationnumber=None):
 
 
 def update_dataset(request, datasetid, groups=None):
-    dataset_stat = calc.dataset.DatasetInfo()
-    dataset_stat.update_dataset_info(dsID=datasetid,
+    dataset_info = calc.dataset.DatasetInfo()
+    dataset_info.update_dataset_info(dsID=datasetid,
                                      index_name=request.POST['index_name'],
                                      features=json.loads(request.POST['features']),
                                      num_records=request.POST['num_records'])
 
     features, lod_features = [], []
-    for feature in dataset_stat.features:
+    for feature in dataset_info.features:
         if feature['enabled'] == 'true':
             features.append(feature['feature_name'])
         if feature.get('lod_enabled') == 'true':
             lod_features.append(feature['feature_name'])
     checked_features = list(set(
-        [dataset_stat.index_name] + features + lod_features))
+        [dataset_info.index_name] + features + lod_features))
 
     lod_params = None
     if request.POST.get('lod_activated') == 'true':
@@ -487,15 +487,52 @@ def update_dataset(request, datasetid, groups=None):
 
     dataset = load_dataset(datasetid, groups, checked_features)
     data = data_preparation(dataset, datasetid, features, lod_params, groups)
-    data['data_uploaded'] = True
-    data['features'] = dataset_stat.features
-    data['dsID'] = datasetid
-    data['num_records'] = dataset_stat.num_records
-    data['index_name'] = dataset_stat.index_name
-    data['lod_activated'] = request.POST['lod_activated']
-    data['lod_value'] = request.POST['lod_value']
-    data['lod_mode'] = request.POST['lod_mode']
-    data['request'] = request
+    data.update({'dsID': datasetid,
+                 'data_uploaded': True,
+                 'data_is_ready': False,
+                 'features': dataset_info.features,
+                 'num_records': dataset_info.num_records,
+                 'index_name': dataset_info.index_name,
+                 'lod_activated': request.POST['lod_activated'],
+                 'lod_mode': request.POST['lod_mode'],
+                 'lod_value': request.POST['lod_value'],
+                 'request': request})
+
+    return data
+
+
+def get_preprocessed_history_data(dataset_id, groups=None):
+    original, dataset, aux_dataset, op_history, features, lod_metadata = \
+        load_data(dataset_id, groups)
+
+    data = prepare_data_object(dataset, original, aux_dataset, op_history)
+    data.update({'dsID': dataset_id,
+                 'data_uploaded': True,
+                 'data_is_ready': True,
+                 'features': []})
+
+    dataset_info = calc.dataset.DatasetInfo()
+    dataset_info.get_info_from_dataset(dataset, dataset_id)
+    data.update({'num_records': dataset_info.num_records,
+                 'index_name': dataset_info.index_name})
+    lod_features = lod_metadata.get('features', [])
+    for i in range(len(dataset_info.features)):
+        f = dataset_info.features[i].__dict__
+        f['enabled'] = 'true' if f['feature_name'] in features else 'false'
+        if f['feature_name'] in lod_features:
+            f['lod_enabled'] = 'true'
+        data['features'].append(f)
+
+    if lod_metadata.get('value', 0) > 0:
+        data.update({'lod_activated': 'true',
+                     'lod_mode': lod_metadata['mode'],
+                     'lod_value': lod_metadata['value'],
+                     'lod_data': lod_metadata['groups']})
+    else:
+        data.update({'lod_activated': 'false',
+                     'lod_mode': LOD_MODE_DEFAULT,
+                     'lod_value': LOD_VALUE_DEFAULT})
+
     return data
 
 
