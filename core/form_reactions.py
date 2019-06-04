@@ -512,7 +512,7 @@ def get_preprocessed_history_data(dataset_id, groups=None):
                  'features': []})
 
     dataset_info = calc.dataset.DatasetInfo()
-    dataset_info.get_info_from_dataset(dataset, dataset_id)
+    dataset_info.get_info_from_dataset(original, dataset_id)
     data.update({'num_records': dataset_info.num_records,
                  'index_name': dataset_info.index_name})
     lod_features = lod_metadata.get('features', [])
