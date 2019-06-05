@@ -210,13 +210,14 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
 
         lod = calc.lod_generator.LoDGenerator(
             dataset, lod_params['mode'], lod_params['value'], lod_params['features'])
-        norm_lod_dataset = LocalReader().scaler(lod.grouped_dataset)
-        aux_lod_dataset = lod.grouped_dataset.drop(lod.grouped_dataset.columns.tolist(), 1)
+        lod_numeric = LocalReader().get_numeric_data(lod.grouped_dataset)
+        norm_lod_dataset = LocalReader().scaler(lod_numeric)
+        aux_lod_dataset = lod.grouped_dataset.drop(lod_numeric.columns.tolist(), 1)
         op_history = calc.operationshistory.OperationHistory()
         metrics = calc.basicstatistics.BasicStatistics()
         metrics.process_data(norm_lod_dataset)
         op_history.append(norm_lod_dataset, metrics)
-        data = prepare_data_object(norm_lod_dataset, lod.grouped_dataset, aux_lod_dataset, op_history)
+        data = prepare_data_object(norm_lod_dataset, lod_numeric, aux_lod_dataset, op_history)
         data['lod_data'] = lod.get_groups_metadata()
         groupedData = calc.grouped.GroupedData()
         groupedData.get_groups(dataset.loc[:, features], lod.get_groups_metadata())
@@ -224,7 +225,7 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
         if not groups is None:
             for i in groups:
                 filename += '.group' + i
-        save_data(lod.grouped_dataset, norm_lod_dataset, aux_lod_dataset,
+        save_data(lod_numeric, norm_lod_dataset, aux_lod_dataset,
                   op_history, features, lod.get_full_metadata(),
                   datasetid, groups)
         groupedData.set_dsID(datasetid)
@@ -422,7 +423,7 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     data['dsID'] = datasetid
     data['features'] = []
     dataset_stat = calc.dataset.DatasetInfo()
-    dataset_stat.get_info_from_dataset(original, datasetid)
+    dataset_stat.get_info_from_dataset(original.join(aux_dataset), datasetid)
     for i in range(len(dataset_stat.features)):
         data['features'].append(dataset_stat.features[i].__dict__)
         if data['features'][-1]['feature_name'] in features:
@@ -512,7 +513,7 @@ def get_preprocessed_history_data(dataset_id, groups=None):
                  'features': []})
 
     dataset_info = calc.dataset.DatasetInfo()
-    dataset_info.get_info_from_dataset(original, dataset_id)
+    dataset_info.get_info_from_dataset(original.join(aux_dataset), dataset_id)
     data.update({'num_records': dataset_info.num_records,
                  'index_name': dataset_info.index_name})
     lod_features = lod_metadata.get('features', [])

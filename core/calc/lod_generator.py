@@ -89,7 +89,7 @@ class LoDGenerator:
                 group_meta['group_length'] = len(group)
                 group_meta['group_koeff'] = log1p(len(group) * 100 / self.num_initial_elements)
                 self._groups_metadata.append(group_meta)
-                group_mean = group.mean()
+                group_mean = self.f(group)
                 group_mean[self.group_features] = group_meta['group_name']
                 self.grouped_dataset = self.grouped_dataset.append(group_mean, ignore_index=True)
             self.grouped_dataset.set_index(self.group_features, inplace=True)
@@ -105,8 +105,19 @@ class LoDGenerator:
         return MiniBatchKMeans(n_clusters=n_clusters,
                                **MINIBATCH_PARAMS_DEFAULT).fit_predict(data)
 
+    def f(self, data):
+        columns_dict = {}
+        for i in data.columns:
+            if (data[i].dtype.name in ['int64', 'float64', 'int32', 'float32', 'int', 'float']):
+                columns_dict[i] = data[i].mean()
+            else:
+                unique_values = data[i].unique()
+                columns_dict[i] = "%s" % ', '.join(unique_values)
+        return pd.Series(dict(columns_dict))
+
     def _get_groups_mean(self):
-        return self.dataset.groupby(self.group_features).mean()
+        return self.dataset.groupby(self.group_features).apply(self.f).drop(self.group_features, 1)
+        # return self.dataset.groupby(self.group_features).mean()
 
     def _update_groups_metadata(self):
         """
