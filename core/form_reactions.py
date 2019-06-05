@@ -412,6 +412,7 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     if len(oper) >= 3:
         data['visualparameters'] = oper[2]
     data['parameters'] = oper[0].print_parameters()
+    print(data['parameters'])
     numeric_features = list(set(features) & set(list(dataset.columns.values)))
     result = oper[0].predict(dataset.loc[:, numeric_features])
     data['data_uploaded'] = True
@@ -605,8 +606,16 @@ def clusterize(request, datasetid, groups):
     if 'algorithm' in request.POST:
         if request.POST['algorithm'] == 'KMeans' and 'numberofcl' in request.POST:
             try:
+                print(request.body)
+                
+                print(request.POST['clustering_list_json'])
+                print(request.POST['numberofcl'])
+
+                cl_list = json.loads(request.POST['clustering_list_json'])
+                print(cl_list)
+                
                 operation = calc.KMeansClustering.KMeansClustering()
-                operation.set_parameters(int(request.POST['numberofcl']))
+                operation.set_parameters(int(request.POST['numberofcl']), cl_list)
                 result = operation.process_data(dataset.loc[:, numeric_features])
             except Exception as exc:
                 logger.error(
@@ -618,6 +627,7 @@ def clusterize(request, datasetid, groups):
                     op_history.append(dataset.loc[:, numeric_features], operation, request.POST['visualparameters'])
                     data['clusters'] = result.tolist()
                     data['count_of_clusters'] = int(request.POST['numberofcl'])
+                    data['clustering_list'] = cl_list
                     data['cluster_ready'] = True
                 except Exception as exc:
                     logger.error(

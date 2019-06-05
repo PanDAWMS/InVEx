@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 CLUST_NUM = 3
-
+CLUST_ARRAY = None
 
 class KMeansClustering(baseoperationclass.BaseOperationClass):
 
@@ -14,23 +14,32 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
     def __init__(self):
         super().__init__()
         self.clust_numbers = CLUST_NUM
+        self.clust_array = CLUST_ARRAY
         self.model = None
         self.results = None
         self.cent = None
 
-    def set_parameters(self, clust_numbers):
+    def set_parameters(self, clust_numbers, clust_array):
         if clust_numbers is not None:
             self.clust_numbers = clust_numbers
+        if clust_array is not None:
+            self.clust_array = clust_array
         return True
 
     def save_parameters(self):
-        return {'cluster_numbers': self.clust_numbers}
+        result = {'numberofcl': self.clust_numbers, 'clust_array': self.clust_array}
+        return result
 
     def load_parameters(self, parameters):
-        if "cluster_numbers" in parameters and parameters["cluster_numbers"] is not None:
-            self.clust_numbers = parameters["cluster_numbers"]
+        if "numberofcl" in parameters and parameters["numberofcl"] is not None:
+            self.clust_numbers = parameters["numberofcl"]
         else:
             self.clust_numbers = CLUST_NUM
+
+        if "clust_array" in parameters and parameters["clust_array"] is not None:
+            self.clust_array = parameters["clust_array"]
+        else:
+            self.clust_array = CLUST_ARRAY
         return True
 
     def save_results(self):
@@ -46,18 +55,29 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {'numberofcl': self.clust_numbers}
+        result = {'numberofcl': self.clust_numbers, 'clust_array': self.clust_array}
         return result
 
     def process_data(self, dataset):
+        print('process')
+        print(self.clust_array is None)
+        print(dataset.loc[:, self.clust_array])
+        dataset_cut = (dataset.loc[:, self.clust_array], dataset)[self.clust_array is None]
+        print(dataset_cut)
+        
         self.model = KMeans(self.clust_numbers)
-        self.model.fit(dataset)
-        self.results = self.model.predict(dataset)
+        self.model.fit(dataset_cut)
+        self.results = self.model.predict(dataset_cut)
         self.cent = self.model.cluster_centers_
+        print(dataset_cut)
+        print(self.results)
         return self.results
 
     def predict(self, dataset):
-        return self.model.predict(dataset)
+        print(self.clust_array)
+        print(dataset)
+        print(self.model.predict(dataset.loc[:, self.clust_array]))
+        return self.model.predict(dataset.loc[:, self.clust_array])
 
 try:
     baseoperationclass.register(KMeansClustering)

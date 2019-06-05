@@ -60,10 +60,18 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
     var label_select = document.createElement('label');
     label_select.innerText='Choose clustering algorithm';
     label_select.setAttribute('for', select_element.id);
+
+    var clustering_list_json = document.createElement('input');
+    clustering_list_json.type = 'text';
+    clustering_list_json.name = 'clustering_list_json';
+    clustering_list_json.style.display = 'none';
+
+    divElement.appendChild(clustering_list_json);
+
     divElement.appendChild(label_select);
     divElement.appendChild(select_element);
     divElement.appendChild(document.createElement('br'));
-    
+
     //Create options and input fields for all the clusterization options. 
     var elements = [];
     for ( var k = 0; k < cluster_params.length; k++ ) {
@@ -128,6 +136,128 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
 
             element_div.appendChild(form_group);
         }
+
+        //***********************************************************************************
+        var cluster_div = document.createElement("div");
+        cluster_div.id = 'clustering_div';
+        cluster_div.classList.add("form-group");
+        cluster_div.style.border = '1px solid lightgray';
+        cluster_div.style.paddingBottom = '15px';
+        cluster_div.style.paddingRight = '6px';
+        cluster_div.style.marginBottom = '10px';
+
+        var elements_label_select = document.createElement('label');
+        elements_label_select.innerText = 'Choose clustering dimensions';
+        cluster_div.appendChild(elements_label_select);
+        cluster_div.appendChild(document.createElement('br'));
+
+        var selectbox = document.createElement('select');
+        selectbox.classList.add('form-control', 'form-control-sm');
+        selectbox.id = 'clusteringSelectBox';
+        selectbox.style.width = '80%';
+
+        for (var j = 0; j < scene.dimNames.length; j++) { // Create options for all the dimensions
+            var option = document.createElement("option");
+            if (j == 0) option.selected = true;
+            option.value = j.toString();
+            option.text = scene.dimNames[j];
+            selectbox.add(option);
+        }
+
+        cluster_div.appendChild(selectbox);
+
+        var recalculate_json = function () {
+            var clustering_list_json = document.getElementsByName('clustering_list_json')[0];
+
+            var clustering_list = [],
+                nodes = $('#clustering_elements')[0].childNodes;
+
+            for (var i = 0; i < nodes.length; i++) {
+                clustering_list.push(nodes[i].dataset.arrayId);
+            }
+
+            clustering_list_json.value = JSON.stringify(clustering_list);
+        };
+
+        var clustering_elements = document.createElement('div');
+        clustering_elements.id = 'clustering_elements';
+
+        var inputElement = document.createElement('input');
+        inputElement.id = 'cluster_elements_input';
+        inputElement.type = 'button';
+        inputElement.value = '+';
+        inputElement.classList.add('button');
+        inputElement.classList.add('small');
+        inputElement.style.margin = '0px';
+        inputElement.style.cssFloat = 'right';
+        inputElement.onclick = function () {
+            var selectbox = document.getElementById('clusteringSelectBox');
+            if (selectbox.selectedIndex == -1) return;
+
+            var c_elements = document.getElementById('clustering_elements'),
+                c_elementN = document.createElement('div');
+
+            c_elementN.id = 'clusteringElement' + selectbox.selectedIndex;
+            c_elementN.dataset.arrayId = selectbox.options[selectbox.selectedIndex].text;
+
+            var selectedLabel = document.createElement('label');
+            selectedLabel.innerText = selectbox.options[selectbox.selectedIndex].text;
+            selectedLabel.style.width = '80%';
+
+            var deleteBtn = document.createElement('input');
+            deleteBtn.dataset.selectedId = selectbox.selectedIndex;
+            deleteBtn.type = 'button';
+            deleteBtn.value = '-';
+            deleteBtn.classList.add('button');
+            deleteBtn.classList.add('small');
+            deleteBtn.style.cssFloat = 'right';
+            deleteBtn.style.margin = '0px';
+            deleteBtn.onclick = function () {
+                var selectedId = this.dataset.selectedId,
+                    clusteringSelectBox = document.getElementById('clusteringSelectBox');
+
+                removeElement('clusteringElement' + selectedId);
+
+                clusteringSelectBox.options[selectedId].disabled = false;
+
+                recalculate_json();
+            };
+
+            c_elementN.appendChild(document.createElement('br'));
+            
+            c_elementN.appendChild(deleteBtn);
+            c_elementN.appendChild(selectedLabel);
+            c_elements.appendChild(c_elementN);
+
+            selectbox.options[selectbox.selectedIndex].disabled = true;
+            selectbox.options[selectbox.selectedIndex].selected = false;
+
+            recalculate_json();
+        };
+        cluster_div.appendChild(inputElement);
+        cluster_div.appendChild(clustering_elements);
+        element_div.appendChild(cluster_div);
+
+        /*inputElement.click();
+        inputElement.click();
+        inputElement.click();*/
+
+        var inputElement1 = document.createElement('input');
+        inputElement1.id = 'cluster_elements_input1';
+        inputElement1.type = 'button';
+        inputElement1.value = '+';
+        inputElement1.classList.add('button');
+        inputElement1.classList.add('small');
+        inputElement1.style.margin = '0px';
+        inputElement1.style.cssFloat = 'right';
+        inputElement1.onclick = function () {
+            console.log($('#cluster_form').serializeArray());
+        };
+        cluster_div.appendChild(inputElement1);
+
+
+        //**************************************************
+
         divElement.appendChild(element_div);
 
         //Make the right element visible
