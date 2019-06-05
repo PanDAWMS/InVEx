@@ -105,9 +105,11 @@
                 {% if data_is_ready %}
 
                     var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
+                        ['MiniBatchKMeans', 'MiniBatchKMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
+                                                               {'name':'batch_size', 'label':'Number of samples in minibatch', 'type':'integer', 'attributes':[['placeholder', '100']], 'defvalue':'100', 'min': 5, 'max': 99999}],
                         ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
-                                             {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
-                    ]];
+                                             {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}]
+                    ];
 
                     var curr_algorithm;
                     var curr_parameters;
@@ -197,14 +199,8 @@
             {% endif %}
             scene.clusters_color_scheme = scene.createColorScheme();
             {% if cluster_ready %}
-                    cluster_selector(scene.clusters_color_scheme, "cluster_stat");
-                    //drawSingleRadarCharts("radar_chart_single", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
-                    //drawMultipleClusterRadarChart("radar_chart_all",
-                    //        scene.normData, scene.realData,
-                    //        scene.clusters, scene.clusters_color_scheme, scene.dimNames, 100);
-
-                //console.log('DataClusters', scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
-                drawParallelCoordinates("radar_chart_all", scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
+               cluster_selector(scene.clusters_color_scheme, "cluster_stat");
+               drawParallelCoordinates("radar_chart_all", scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
             {% endif %}
 
             {% if norm_dataset %}
