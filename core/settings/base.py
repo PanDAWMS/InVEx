@@ -134,3 +134,6 @@ MEDIA_ROOT = join(dirname(core.__file__), 'uploaded')
 MEDIA_URL = '/uploaded/'
 
 mimetypes.add_type("text/javascript", ".js", True)
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 157286400
+FILE_UPLOAD_MAX_MEMORY_SIZE = 157286400
