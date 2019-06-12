@@ -232,8 +232,10 @@ def data_preparation(dataset, datasetid, features, lod_params=None, groups=None)
         groupedData.set_filename(filename)
         groupedData.save_to_file()
     else:
-        numeric_features = list(set(list(numeric_dataset.columns.values)) &
-                                set(features))
+        numeric_features = []
+        for i in numeric_dataset.columns.values:
+            if i in features:
+                numeric_features.append(i)
         numeric_dataset = numeric_dataset.loc[:, numeric_features]
         norm_dataset = LocalReader().scaler(numeric_dataset)
         auxiliary_dataset = dataset.drop(numeric_dataset.columns.tolist(), 1)
@@ -471,14 +473,16 @@ def update_dataset(request, datasetid, groups=None):
                                      features=json.loads(request.POST['features']),
                                      num_records=request.POST['num_records'])
 
-    features, lod_features = [], []
+    features, lod_features, checked_features = [], [], []
+    checked_features.append(dataset_info.index_name)
     for feature in dataset_info.features:
         if feature['enabled'] == 'true':
             features.append(feature['feature_name'])
+            checked_features.append(feature['feature_name'])
         if feature.get('lod_enabled') == 'true':
             lod_features.append(feature['feature_name'])
-    checked_features = list(set(
-        [dataset_info.index_name] + features + lod_features))
+            if feature['feature_name'] not in checked_features:
+                checked_features.append(feature['feature_name'])
 
     lod_params = None
     if request.POST.get('lod_activated') == 'true':

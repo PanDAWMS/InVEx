@@ -11,6 +11,7 @@ function MatrixPlotly(options) {
       type: 'heatmap'
     };
     data = [trace1];
+    console.log(data);
     layout = {title: 'Features Correlation Matrix'};
     Plotly.plot(options.container, {
       data: data,
