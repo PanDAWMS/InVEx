@@ -762,8 +762,11 @@ def predict_cluster(request, datasetid, groups, operationnumber):
         raise
 
 # SITE TO SITE VISUALIZATION FUNCTIONS
-def read_site_to_site_json(filename):
-    file = open(filename)
+def read_site_to_site_json(filename, is_file=False):
+    if is_file:
+        file=filename
+    else:
+        file = open(filename)
     data = json.load(file)
     if 'columns' in data['transfers']:
         columns = data['transfers']['columns']
@@ -840,8 +843,7 @@ def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, numcols, op
 def load_json_site_to_site(request):
     if 'customFile' in request.FILES:
         try:
-            dataset = read_site_to_site_json(io.StringIO(request.FILES['customFile'].read().decode('utf-8')),
-                                             True, True)
+            dataset = read_site_to_site_json(io.StringIO(request.FILES['customFile'].read().decode('utf-8')), True)
         except Exception as exc:
             logger.error(
                 '!form_reactions.load_json_site_to_site!: Failed to load data from the uploaded csv file. \n' + str(

@@ -22,7 +22,7 @@
 <div class="tabs-content" data-tabs-content="deeplinked-tabs" id='deeplinked-content'>
     {% if dataset_files %}
     <div class="tabs-panel is-active" id="serverfile">
-    <form action="{% url 'regular_visualization_init' %}" method="POST" enctype='multipart/form-data'>
+    <form action="{% if type == "datavisualization" %} {% url 'regular_visualization_init' %} {%endif %}" method="POST" enctype='multipart/form-data'>
             {% csrf_token %}
             <div class="custom-file">
                     <input type="hidden" name="formt" value="filefromserver">
@@ -41,7 +41,7 @@
     </div>
     {% endif %}
     <div class="tabs-panel" id="upload">
-        <form action="{% url 'regular_visualization_init' %}" method="POST" enctype='multipart/form-data'>
+        <form action="{% if type == "datavisualization" %} {% url 'regular_visualization_init' %} {%endif %}" method="POST" enctype='multipart/form-data'>
             {% csrf_token %}
             <input type="hidden" name="formt" value="newfile">
             <label for="customFile" class="button small">Upload File</label>
