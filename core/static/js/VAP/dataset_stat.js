@@ -571,9 +571,13 @@ class DatasetStats {
             button_submit.value = "Submit";
             button_submit.style.margin = "5px";
             button_submit.dataset_info = this;
-            button_submit.onclick = function () {
+            button_submit.onclick = function (e) {
                 var form = document.createElement("form");
                 form.setAttribute("method", "post");
+                if (typeof(preview_url) !== "undefined")
+                    form.setAttribute("action", "");
+                else
+                    form.setAttribute("action", preview_url);
                 form.style.display = "hidden";
 
                 var action = document.createElement("input");
@@ -582,11 +586,24 @@ class DatasetStats {
                 action.value = "submit_feature_selection";
                 form.appendChild(action);
 
-                var input_csrf = document.createElement("input");
-                input_csrf.type = "hidden";
-                input_csrf.name = "csrfmiddlewaretoken";
-                input_csrf.value = csrftoken;
-                form.appendChild(input_csrf);
+                var data = {
+                    dsID: e.target.dataset_info.dsID,
+                    csrfmiddlewaretoken: csrftoken,
+                    num_records: Number(e.target.dataset_info.num_records),
+                    features: JSON.stringify(e.target.dataset_info.features),
+                    index_name: e.target.dataset_info.index_name,
+                    lod_activated: e.target.dataset_info.lod_activated,
+                    lod_mode: e.target.dataset_info.lod_mode,
+                    lod_value: e.target.dataset_info.lod_value
+                };
+
+                for (var key in data) {
+                    var field = document.createElement("input");
+                    field.type = "hidden";
+                    field.name = key;
+                    field.value = data[key];
+                    form.appendChild(field);
+                }
 
                 document.body.appendChild(form);
                 form.submit();
