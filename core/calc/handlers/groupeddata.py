@@ -84,17 +84,16 @@ class GroupedDataHandler:
         :param save_to_file: Flag to store data groups into the file.
         :type save_to_file: bool
         """
-        if self._groups:
-            del self._groups[:]
-            for item in groups_metadata:
-                self._groups.append(pd.DataFrame(
-                    dataset[dataset.index.isin(item['group_indexes'])]))
+        del self._groups[:]
+        for item in groups_metadata:
+            self._groups.append(pd.DataFrame(
+                dataset[dataset.index.isin(item['group_indexes'])]))
 
-            if save_to_file:
-                self._remove_file(file_name=self._file_name)
-                with open(self._file_name, 'w') as f:
-                    for group in self._groups:
-                        f.write('{}\n'.format(group.to_json(orient='table')))
+        if save_to_file:
+            self._remove_file(file_name=self._file_name)
+            with open(self._file_name, 'w') as f:
+                for group in self._groups:
+                    f.write('{}\n'.format(group.to_json(orient='table')))
 
     # TODO: Check the correctness of group_id and corresponding extracted data.
     def get_group(self, group_id):

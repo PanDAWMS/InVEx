@@ -45,7 +45,7 @@ class DatasetHandler:
         :type group_ids: list/None
 
         :keyword dataset: Initial dataset sample.
-        :keyword features: Index and selected features (for further analysis).
+        :keyword features: Selected features (for further analysis).
         :keyword lod_data: Level-of-Detail Generator descriptive data.
         :keyword load_initial_dataset: Flag to load initial dataset only.
         :keyword process_initial_dataset: Flag to process initial dataset.
@@ -57,7 +57,8 @@ class DatasetHandler:
         self._modifications = {}
         self._property_set = {}
 
-        if kwargs.get('dataset'):
+        if (isinstance(kwargs.get('dataset'), pd.DataFrame) and
+                not kwargs['dataset'].empty):
             self._origin = kwargs['dataset']
 
         elif (kwargs.get('load_initial_dataset', False) or
@@ -75,14 +76,11 @@ class DatasetHandler:
 
             if kwargs.get('process_initial_dataset', False):
                 self._property_set = {
-                    # first element in features is an index (do not include)
-                    'features': features[1:] or dataset.columns.tolist(),
+                    'features': features or dataset.columns.tolist(),
                     'lod': lod_data,  # if set then will be extended with groups
                     'op_history': None}
 
                 self._form_dataset_modifications(dataset=dataset)
-                self._save_history_data()
-
             else:
                 self._origin = dataset
 
@@ -138,7 +136,7 @@ class DatasetHandler:
                 # re-raise exception if a different error occurred
                 raise
 
-    def _get_initial_dataset(self, **kwargs):  # old name: load_dataset
+    def _get_initial_dataset(self, **kwargs):
         """
         Get initial dataset sample (load from the storage file).
 
@@ -148,12 +146,17 @@ class DatasetHandler:
         :rtype: pandas.DataFrame/None
         """
         if self._group_ids is None:
-            output = local_reader.read_df(
-                file_path=self._get_full_file_name(is_history_file=False),
-                file_format='csv',
-                **{'index_col': 0,
-                   'header': 0,
-                   'usecols': kwargs.get('usecols')})
+            full_file_name = self._get_full_file_name(is_history_file=False)
+            if kwargs.get('usecols'):
+                kwargs['usecols'].insert(0, local_reader.read_df(
+                    file_path=full_file_name,
+                    file_format='csv',
+                    **{'nrows': 1}).columns.tolist()[0])
+            output = local_reader.read_df(file_path=full_file_name,
+                                          file_format='csv',
+                                          **{'index_col': 0,
+                                             'header': 0,
+                                             'usecols': kwargs.get('usecols')})
         elif self._group_ids:
             output = GroupedDataHandler(did=self._did,
                                         group_ids=self._group_ids[:-1]).\
@@ -258,9 +261,9 @@ class DatasetHandler:
 
                 f.write('{}\n'.format(
                     json.dumps(self._property_set['features'])))
-                f.write('{}'.format(json.dumps(self._property_set['lod'])))
+                f.write('{}\n'.format(json.dumps(self._property_set['lod'])))
 
-                f.write('{}\n'.format(self.operation_history.save_to_json()))
+                f.write('{}'.format(self.operation_history.save_to_json()))
         except Exception as e:
             logger.error('[DatasetHandler._save_history_data] '
                          'Failed to save data ({}): {}'.format(file_name, e))
@@ -277,10 +280,12 @@ class DatasetHandler:
         5th line - Level-of-Detail Generator metadata
         6th line - operations history (list of clustering operations)
         """
+        err_msg_subj = '[DatasetHandler._load_history_data]'
+
         file_name = self._get_full_file_name(is_history_file=True)
         if not os.path.isfile(file_name):
-            logger.error('[DatasetHandler._load_history_data] '
-                         'Failed to find the file ({})'.format(file_name))
+            logger.error('{} Failed to find the file ({})'
+                         .format(err_msg_subj, file_name))
 
         try:
             with open(file_name, 'r') as f:
@@ -297,8 +302,8 @@ class DatasetHandler:
                 operation_history.load_from_json(f.readline())
                 self._property_set['op_history'] = operation_history
         except Exception as e:
-            logger.error('[DatasetHandler._load_history_data] '
-                         'Failed to load data ({}): {}'.format(file_name, e))
+            logger.error('{} Failed to load data ({}): {}'.
+                         format(err_msg_subj, file_name, e))
             raise
 
     @staticmethod
@@ -314,6 +319,11 @@ class DatasetHandler:
         output = []
 
         for column in df:
+
+            if not df[column].count():
+                continue
+            # TODO: Re-check that feature with no values should be skipped
+
             item = {
                 'feature_name': column,
                 'feature_type': df[column].dtype.name,
@@ -397,16 +407,16 @@ class DatasetHandler:
         :rtype: dict
         """
         output = {}
-        if self._origin:
+        if self._origin is not None:
             dataset = self._origin.copy()
-            if self._auxiliary:
+            if self._auxiliary is not None:
                 dataset = dataset.join(self._auxiliary)
             dataset.dropna(axis=1, how='all', inplace=True)
             dataset.dropna(axis=0, how='all', inplace=True)
             output.update({
                 'index_name': dataset.index.name,
                 'num_records': len(dataset.index),
-                'features': self._get_features_description(df=self._origin)})
+                'features': self._get_features_description(df=dataset)})
 
             if save_to_file:
                 file_name = self._get_full_file_name(is_stat_file=True)
@@ -444,7 +454,6 @@ class DatasetHandler:
 
             output.update({
                 'data_is_ready': False,
-                # 'index': None,  # TODO: Remove if no errors happen, since the usage is not found.
                 'cluster_ready': False,
                 'clusters': [],
                 'count_of_clusters': None,
@@ -459,6 +468,7 @@ class DatasetHandler:
 
             try:
                 output.update({
+                    'index': [self._origin.index.name or 'id'],
                     'real_dataset': data_converters.pandas_to_js_list(
                         self._origin),
                     'norm_dataset': data_converters.pandas_to_js_list(
@@ -511,7 +521,8 @@ class DatasetHandler:
 
     def save(self):
         """
-        Public method to save changes into history file.
+        Public method to save changes into the history file.
         """
-        if self._origin and self._modifications and self._property_set:
+        if (self._origin is not None and
+                self._modifications and self._property_set):
             self._save_history_data()
