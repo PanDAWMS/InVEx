@@ -501,7 +501,7 @@ class DatasetHandler:
             lod_features = []
             if self._property_set.get('lod', {}).get('value'):
                 output.update({
-                    'lod_activated': 'true',  # TODO: Change value to Boolean.
+                    'lod_activated': True,
                     'lod_mode': self._property_set['lod']['mode'],
                     'lod_value': self._property_set['lod']['value'],
                     'lod_data': self._property_set['lod'].get('groups', [])})

@@ -245,7 +245,7 @@ def get_processed_view_data(request, dataset_id, group_ids=None):
 
 def set_processed_view_data(request, dataset_id, group_ids=None):
     """
-    Process provided dataset sample and get view data for UI representation.
+    Save processed data and get view data for UI representation.
 
     :param request: HTTP [user] request.
     :type request: django.http.HttpRequest
