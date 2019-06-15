@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 CLUST_NUM = 3
-CLUST_ARRAY = None
+CLUST_ARRAY = []
 
 class KMeansClustering(baseoperationclass.BaseOperationClass):
 
@@ -59,8 +59,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return result
 
     def process_data(self, dataset):
-        dataset_cut = (dataset.loc[:, self.clust_array], dataset)[self.clust_array is None]
-
+        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
         self.model = KMeans(self.clust_numbers)
         self.model.fit(dataset_cut)
         self.results = self.model.predict(dataset_cut)
@@ -68,7 +67,8 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return self.results
 
     def predict(self, dataset):
-        return self.model.predict(dataset.loc[:, self.clust_array])
+        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
+        return self.model.predict(dataset_cut)
 
 try:
     baseoperationclass.register(KMeansClustering)
