@@ -41,7 +41,6 @@
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="{% static "js/VAP/correlation_matrix.js" %}"></script>
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
@@ -80,7 +79,7 @@
             var index_name = '{{ index_name }}';
             var features = {{ features|safe }};
             var lod_mode = '{{ lod_mode }}';
-            var lod_activated = '{{ lod_activated }}';
+            var lod_activated = {{ lod_activated|yesno:"true,false" }};
             var lod_value = {{ lod_value }};
 
             var features_stat = new DatasetStats(dsID,
@@ -101,6 +100,34 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
+
+            {% if type == "datavisualization" %}
+                {% if data_is_ready %}
+
+                    var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
+                        ['MiniBatchKMeans', 'MiniBatchKMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
+                                                               {'name':'batch_size', 'label':'Number of samples in minibatch', 'type':'integer', 'attributes':[['placeholder', '100']], 'defvalue':'100', 'min': 5, 'max': 99999}],
+                        ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
+                                             {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}]
+                    ];
+
+                    var curr_algorithm;
+                    var curr_parameters;
+
+                    {%  if algorithm %}
+                        curr_algorithm = "{{ algorithm }}";
+                        curr_parameters = {{ parameters|safe }};
+                    {% endif %}
+                    {% if group_vis is False %}
+                        createClusterElements(
+                            document.getElementById('clustering'),
+                            document.getElementById('cluster_form'),
+                            clustering_parameters,
+                            curr_algorithm,
+                            curr_parameters);
+                    {% endif %}
+                {% endif %}
+            {% endif %}
 
             {% if dim_names %}
                 var dimNames = {{ dim_names|safe }};
@@ -135,69 +162,12 @@
                 {% endif %}
             {% endif %}
 
-            {% if type == "datavisualization" %}
-                {% if data_is_ready %}
-
-                    var clustering_parameters = [
-                        ['KMeans', 'KMeans',
-                            {
-                                'name': 'numberofcl',
-                                'label': 'Number of clusters',
-                                'type': 'integer',
-                                'attributes': [['placeholder', '5']],
-                                'defvalue': '5',
-                                'min': 1,
-                                'max': 20
-                            }
-                        ],
-                        ['DBSCAN', 'DBSCAN',
-                            {
-                                'name': 'min_samples',
-                                'label': 'min_samples',
-                                'type': 'integer',
-                                'attributes': [['placeholder', '5']],
-                                'defvalue': '5',
-                                'min': 1,
-                                'max': 200
-                            },
-                            {
-                                'name': 'eps',
-                                'label': 'epsilon',
-                                'type': 'float',
-                                'attributes': [['placeholder', '0.5']],
-                                'defvalue': '0.5',
-                                'min': 0,
-                                'max': 50
-                            }
-                        ]
-                    ];
-
-                    var curr_algorithm;
-                    var curr_parameters;
-
-                    {%  if algorithm %}
-                        curr_algorithm = "{{ algorithm }}";
-                        curr_parameters = {{ parameters | safe }};
-                    {% endif %}
-                    {% if group_vis is False %}
-                        createClusterElements(
-                            document.getElementById('clustering'),
-                            document.getElementById('cluster_form'),
-                            clustering_parameters,
-                            curr_algorithm,
-                            curr_parameters);
-                    {% endif %}
-                {% endif %}
-            {% endif %}
-
             {% if data_is_ready and corr_matrix %}
                 var corr_matrix = {{ corr_matrix|safe }};
-                Matrix({
-                    container : '#corr-matrix',
+                MatrixPlotly({
+                    container : 'corr-matrix',
                     data      : corr_matrix,
-                    labels    : dimNames,
-                    start_color : '#ffffff',
-                    end_color : '#3498db'
+                    labels    : dimNames
                 });
             {% endif %}
 
@@ -227,14 +197,8 @@
             {% endif %}
             scene.clusters_color_scheme = scene.createColorScheme();
             {% if cluster_ready %}
-                    cluster_selector(scene.clusters_color_scheme, "cluster_stat");
-                    //drawSingleRadarCharts("radar_chart_single", scene.normData, scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
-                    //drawMultipleClusterRadarChart("radar_chart_all",
-                    //        scene.normData, scene.realData,
-                    //        scene.clusters, scene.clusters_color_scheme, scene.dimNames, 100);
-
-                //console.log('DataClusters', scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
-                drawParallelCoordinates("radar_chart_all", scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
+               cluster_selector(scene.clusters_color_scheme, "cluster_stat");
+               drawParallelCoordinates("radar_chart_all", scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
             {% endif %}
 
             {% if norm_dataset %}
