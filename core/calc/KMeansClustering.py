@@ -59,24 +59,15 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return result
 
     def process_data(self, dataset):
-        print('process')
-        print(self.clust_array is None)
-        print(dataset.loc[:, self.clust_array])
         dataset_cut = (dataset.loc[:, self.clust_array], dataset)[self.clust_array is None]
-        print(dataset_cut)
-        
+
         self.model = KMeans(self.clust_numbers)
         self.model.fit(dataset_cut)
         self.results = self.model.predict(dataset_cut)
         self.cent = self.model.cluster_centers_
-        print(dataset_cut)
-        print(self.results)
         return self.results
 
     def predict(self, dataset):
-        print(self.clust_array)
-        print(dataset)
-        print(self.model.predict(dataset.loc[:, self.clust_array]))
         return self.model.predict(dataset.loc[:, self.clust_array])
 
 try:
