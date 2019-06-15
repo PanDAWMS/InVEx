@@ -412,7 +412,6 @@ def prepare_data_for_operation(request, datasetid, groups=None, operationnumber=
     if len(oper) >= 3:
         data['visualparameters'] = oper[2]
     data['parameters'] = oper[0].print_parameters()
-    print(data['parameters'])
     numeric_features = list(set(features) & set(list(dataset.columns.values)))
     result = oper[0].predict(original.loc[:, numeric_features])
     data['data_uploaded'] = True
