@@ -120,13 +120,11 @@
 
             {% if corr_matrix %}
             var corr_matrix = {{ corr_matrix|safe }};
-			Matrix({
-				container : '#corr-matrix',
-				data      : corr_matrix,
-				labels    : dimNames,
-				start_color : '#ffffff',
-				end_color : '#3498db'
-			});
+                MatrixPlotly({
+                    container : 'corr-matrix',
+                    data      : corr_matrix,
+                    labels    : dimNames
+                });
             {% endif %}
 
             {% if visualparameters %}
