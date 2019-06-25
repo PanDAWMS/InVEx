@@ -17,16 +17,21 @@
         <div class="row">
             <br/>
         </div>
-    </div>
-    <div class="grid-x grid-padding-x">
-            {% include "_leftsidemenu.html" %}
-            <div class="cell auto mainPicture" id="picture">
-                <div id="gui_container"></div>
+            <div class="grid-x grid-padding-x">
+                  {% include "_leftsidemenu.html" %}
+            <div class="cell auto">
+                <div class="grid-y">
+                    <div class="cell mainPicture" id="picture">
+                      <div id="gui_container"></div>
+                    </div>
+                  </div>
+                </div>
+
             </div>
-    </div>
 
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
+<script src="{% static "js/Chart.bundle.min.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/controls/DragControls.js" %}"></script>
 <script src="{% static "js/VAP/sup_func.js" %}"></script>
@@ -44,6 +49,7 @@
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 <script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/plotly-latest.min.js" %}"></script>
 {% endblock %}
@@ -165,6 +171,8 @@
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 scene.createCancelDefaultColorButton(document.getElementById('data_on_scene'));
                 scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
+                scene.createPlotlyCharts(document.getElementById('groups'));
+                document.getElementById('groups').appendChild(scene.createChartjsCharts());
                 {% endif %}
                 var temp=scene.createNewGroupElement();
                 document.getElementById('color_changer').appendChild(temp);

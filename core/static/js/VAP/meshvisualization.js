@@ -12,6 +12,7 @@ class MeshVisualization extends DataVisualization{
         this.meshCoordinates = [[], [], {}, {}];
         this.objectsOnMesh = [];
         this.visibilityState = [true, true, true, true];
+        this.plotly_div = undefined;
         this.defaultColoring = true;
         this.clusters_color_scheme = this.createColorScheme();
         for (var i = 0; i<xCoordinates.length; ++i)
@@ -236,6 +237,71 @@ class MeshVisualization extends DataVisualization{
 
     }
 
+    createCategoricalGroup(form, selectelement, startvalueindex){
+		var uniquedata = prepareUniqueData(this.auxData);
+		for ( var k = 0; k < this.auxNames.length; k++ ) {
+			//Create the option element and the div element assosiated with it.
+			var option_element = document.createElement('option');
+			option_element.innerText = this.auxNames[k];
+			option_element.value = startvalueindex + k;
+			selectelement.appendChild(option_element);
+			var element_div = document.createElement('div');
+			element_div.classList.add("form-group");
+			option_element.div = element_div;
+			selectelement.elements.push(element_div);
+			
+            var inputid = 'inp'+form.id+option_element.value;
+			while(document.getElementById(inputid)!==null)
+				inputid += (Math.random()*10).toString().slice(-1);
+			
+			var input = document.createElement("select");
+			input.classList.add("form-control", "form-control-sm");
+			input.id = inputid;
+			
+			//Create options for the select
+			for(var i=0; i<uniquedata[k].length; ++i){
+				var option = document.createElement('option');
+				option.innerText = uniquedata[k][i];
+				option.value = uniquedata[k][i];
+				input.appendChild(option);
+				if (i==0){
+					option.selected=true;
+				}
+			}
+			element_div.appendChild(input);
+
+			element_div.input = input;
+			element_div.auxNumber = k;
+			element_div.feature_name = this.auxNames[k];
+			element_div.sceneObject = this;
+			element_div.submitfunction = function(color){
+				var determFunction=function(sphere, parameters){
+					return sphere.auxData[1][parameters[0]]==parameters[1];
+				}
+				var group = this.sceneObject.getSphereGroup(determFunction, [this.auxNumber, this.input.value]);
+				this.group_id = this.sceneObject.changeColorGroup(group, new THREE.Color(color));
+				var history_dict = this.sceneObject.addSelectionsHistory(this.auxNumber,
+									  this.feature_name,
+									  [this.input.value],
+									  color,
+									  this.group_id,
+                                      'categorical');
+                //this.sceneObject.plotly_div.add
+                this.sceneObject.updateHistoryPanel();
+                if (this.auxNumber == 0)
+                    history_dict['plotly'] =  this.sceneObject.plotly_div.add_data_source(this.sceneObject.meshCoordinates[2][this.input.value], this.group_id, color);
+                if (this.auxNumber == 1)
+                    history_dict['plotly'] = this.sceneObject.plotly_div.add_data_destination(this.sceneObject.meshCoordinates[3][this.input.value], this.group_id, color);
+			}
+			form.appendChild(element_div);
+			if (k!=0){
+				element_div.classList.add('hide');
+			}
+			else
+				element_div.classList.remove('hide');
+		}
+	}
+
     createRangeGroup(form, selectelement, startvalueindex){
 		for ( var k = 2; k < this.dimNames.length; k++ ) {
 			//Create the option element and the div element assosiated with it.
@@ -306,7 +372,292 @@ class MeshVisualization extends DataVisualization{
 			form.appendChild(element_div);
             element_div.classList.add('hide');
 		}
-	}
+    }
+
+    createChartjsCharts(){
+        var chartjs_div = document.createElement('div');
+        chartjs_div.sceneobj = this;
+        this.chartjs_div = chartjs_div;
+
+        var chartjs_config = {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+        
+        var chartjs_div_source_id = 'chartjs_chart_source';
+        while(document.getElementById(chartjs_div_source_id)!==null)
+            chartjs_div_source_id += (Math.random()*10).toString().slice(-1);
+        var chartjs_div_source = document.createElement('div');
+        chartjs_div_source.id = chartjs_div_source_id;
+        chartjs_div_source.classList.add('hide');
+        chartjs_div_source.datasets = [];
+        var source_labels = Object.keys(this.meshCoordinates[3]).sort();
+
+        var chartjs_canvas_source = document.createElement('canvas');
+        chartjs_canvas_source.id = chartjs_div_source_id + 'canvas';
+        chartjs_div_source.appendChild(chartjs_canvas_source);
+        var source_chartjs = new Chart(chartjs_canvas_source, {
+            type:'bar',
+            data: {
+                labels: source_labels,
+                datasets: []
+            },
+            options: chartjs_config,
+        });
+        source_chartjs.parameters_order = source_labels;
+        
+
+        var chartjs_div_destination_id = 'chartjs_chart_destination';
+        while(document.getElementById(chartjs_div_destination_id)!==null)
+            chartjs_div_destination_id += (Math.random()*10).toString().slice(-1);
+        var chartjs_div_destination = document.createElement('div');
+        chartjs_div_destination.id = chartjs_div_destination_id;
+        chartjs_div_destination.classList.add('hide');
+        chartjs_div_destination.datasets = [];
+        var destination_labels = Object.keys(this.meshCoordinates[2]).sort();
+
+        var chartjs_canvas_destination = document.createElement('canvas');
+        chartjs_canvas_destination.id = chartjs_div_destination_id + 'canvas';
+        chartjs_div_destination.appendChild(chartjs_canvas_destination);
+        var destination_chartjs = new Chart(chartjs_canvas_destination, {
+            type:'bar',
+            data: {
+                labels: destination_labels,
+                datasets: []
+            },
+            options: chartjs_config,
+        });
+        destination_chartjs.parameters_order = destination_labels;
+
+        chartjs_div.appendChild(chartjs_div_source);
+        chartjs_div.appendChild(chartjs_div_destination);
+        chartjs_div.source_div = chartjs_div_source;
+        chartjs_div.destination_div = chartjs_div_destination;
+        chartjs_div.source_chart = source_chartjs;
+        chartjs_div.destination_chart = destination_chartjs;
+
+        chartjs_div.add_data_source=function(numb_row, group_color="#000000"){
+            var x_dim = this.source_chart.parameters_order;
+            var data = [];
+            var colors = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (this.sceneobj.meshCoordinates[3][x_dim[i]] in this.sceneobj.objectsOnMesh[numb_row]){
+                    data.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[3]
+                        [x_dim[i]]][0].dataObject[1][2]);
+                }
+                else{
+                    data.push(0);
+                }
+                colors.push(group_color);
+            }
+            var dataset = {
+                label: this.sceneobj.meshCoordinates[0][numb_row][0],
+                data: data,
+                backgroundColor: colors,
+            };
+            this.source_chart.data.datasets.push(dataset);
+            this.source_div.datasets.push(dataset);
+            this.source_chart.update();
+            this.source_div.classList.remove('hide');
+        }
+
+        chartjs_div.add_data_destination=function(numb_row, group_color="#000000"){
+            var x_dim = this.source_chart.parameters_order;
+            var data = [];
+            var colors = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (this.sceneobj.meshCoordinates[2][x_dim[i]] in this.sceneobj.objectsOnMesh[numb_row]){
+                    data.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[2]
+                        [x_dim[i]]][0].dataObject[1][2]);
+                }
+                else{
+                    data.push(0);
+                }
+                colors.push(group_color);
+            }
+            var dataset = {
+                label: this.sceneobj.meshCoordinates[1][numb_row][0],
+                data: data,
+                backgroundColor: colors,
+            };
+            this.destination_chart.data.datasets.push(dataset);
+            this.destination_div.datasets.push(dataset);
+            this.destination_chart.update();
+            this.destination_div.classList.remove('hide');
+        }
+        
+        return chartjs_div;
+    }
+    
+    createPlotlyCharts(parent_div){
+        var plotly_div = document.createElement('div');
+        plotly_div.sceneobj = this;
+        this.plotly_div = plotly_div;
+        parent_div.appendChild(plotly_div);
+
+        var plotly_config = {displayModeBar: true, responsive: true};
+
+        var plotly_div_source_id = 'plotly_chart_source';
+        while(document.getElementById(plotly_div_source_id)!==null)
+            plotly_div_source_id += (Math.random()*10).toString().slice(-1);
+        var plotly_div_source = document.createElement('div');
+        plotly_div_source.id = plotly_div_source_id;
+        plotly_div_source.classList.add('hide');
+        plotly_div_source.plot_layout = {title:'Sources', showlegend:true, autosize: true,
+        xaxis: {
+            tickangle: -45,
+        },
+        yaxis: {
+            zeroline: false,
+            gridwidth: 2
+        }};
+        plotly_div_source.plot_config = plotly_config;
+        plotly_div_source.traces = [];
+        Plotly.newPlot(plotly_div_source, [], plotly_div_source.plot_layout, plotly_div_source.plot_config);
+        
+
+        var plotly_div_destination_id = 'plotly_chart_destination';
+        while(document.getElementById(plotly_div_destination_id)!==null)
+            plotly_div_destination_id += (Math.random()*10).toString().slice(-1);
+        var plotly_div_destination = document.createElement('div');
+        plotly_div_destination.id = plotly_div_destination_id;
+        plotly_div_destination.classList.add('hide');
+        plotly_div_destination.plot_layout = {title:'Destinations', showlegend:true, autosize: true,
+        xaxis: {
+            tickangle: -45,
+        },
+        yaxis: {
+            zeroline: false,
+            gridwidth: 2
+        }};
+        plotly_div_destination.plot_config = plotly_config;
+        plotly_div_destination.traces = [];
+        Plotly.newPlot(plotly_div_destination, [], plotly_div_destination.plot_layout, plotly_div_destination.plot_config);
+
+        plotly_div.appendChild(plotly_div_source);
+        plotly_div.appendChild(plotly_div_destination);
+        plotly_div.source_plot = plotly_div_source;
+        plotly_div.destination_plot = plotly_div_destination;
+
+        plotly_div.add_data_source=function(numb_row, group_id, group_color="#000000"){
+            var x_dim = [];
+            for(var i=0; i<scene.meshCoordinates[1].length; ++i){
+                x_dim.push(scene.meshCoordinates[1][i][0])
+            }
+            var y_dim = [];
+            var text_dim = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (this.sceneobj.meshCoordinates[3][x_dim[i]] in this.sceneobj.objectsOnMesh[numb_row]){
+                    y_dim.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[3]
+                        [x_dim[i]]][0].dataObject[1][2]);
+                    text_dim.push(this.sceneobj.objectsOnMesh[numb_row][this.sceneobj.meshCoordinates[3]
+                            [x_dim[i]]][0].realData[1][2]);
+                }
+                else{
+                    y_dim.push(0);
+                    text_dim.push("N/A");
+                }
+            }
+            var trace = {
+                x: x_dim,
+                y: y_dim,
+                type: 'bar',
+                text: text_dim,
+                name: this.sceneobj.meshCoordinates[0][numb_row][0],
+                marker: {
+                  color: group_color
+                }
+            };
+            Plotly.addTraces(this.source_plot, trace);
+            if (this.source_plot.traces.length == 0){
+                this.source_plot.classList.remove('hide');
+                Plotly.relayout(this.sceneobj.plotly_div.source_plot, {
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                });
+            }
+            this.source_plot.traces.push([group_id, trace]);
+            return {'add_function': Plotly.addTraces, 'trace': trace, 'plotlychart': this.source_plot, 'remove_function': this.remove_data_source, 'remove_param':group_id}
+        }
+
+        plotly_div.add_data_destination=function(numb_row, group_id, group_color="#000000"){
+            var x_dim = [];
+            for(var i=0; i<scene.meshCoordinates[0].length; ++i){
+                x_dim.push(scene.meshCoordinates[0][i][0])
+            }
+            var y_dim = [];
+            var text_dim = [];
+            for(var i=0; i<x_dim.length; ++i){
+                if (numb_row in this.sceneobj.objectsOnMesh[this.sceneobj.meshCoordinates[2][x_dim[i]]]){
+                    y_dim.push(this.sceneobj.objectsOnMesh[this.sceneobj.meshCoordinates[2][x_dim[i]]][numb_row][0].dataObject[1][2]);
+                    text_dim.push(this.sceneobj.objectsOnMesh[this.sceneobj.meshCoordinates[2][x_dim[i]]][numb_row][0].realData[1][2]);
+                }
+                else{
+                    y_dim.push(0);
+                    text_dim.push("N/A");
+                }
+            }
+            var trace = {
+                x: x_dim,
+                y: y_dim,
+                type: 'bar',
+                text: text_dim,
+                name: this.sceneobj.meshCoordinates[1][numb_row][0],
+                marker: {
+                  color: group_color
+                }
+            };
+            Plotly.addTraces(this.destination_plot, trace);
+            if (this.destination_plot.traces.length == 0){
+                this.destination_plot.classList.remove('hide');
+                Plotly.relayout(this.sceneobj.plotly_div.destination_plot, {
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                });
+            }
+            this.destination_plot.traces.push([group_id, trace]);
+            return {'add_function': Plotly.addTraces, 'trace': trace, 'plotlychart': this.destination_plot, 'remove_function': this.remove_data_destination, 'remove_param':group_id}
+        }
+
+        plotly_div.remove_data_source = function(group_id){
+            for (var i=0; i<this.source_plot.traces.length; ++i)
+                if (this.source_plot.traces[i][0] == group_id){
+                    Plotly.deleteTraces(this.source_plot, i);
+                    this.source_plot.traces.splice(i,1);
+                }
+            if (this.source_plot.traces.length==0){
+                this.source_plot.classList.add('hide');
+            }
+        }
+
+        plotly_div.remove_data_destination = function(group_id){
+            for (var i=0; i<this.destination_plot.traces.length; ++i)
+                if (this.destination_plot.traces[i][0] == group_id){
+                    Plotly.deleteTraces(this.destination_plot, i);
+                    this.destination_plot.traces.splice(i,1);
+                }
+            if (this.destination_plot.traces.length==0){
+                this.destination_plot.classList.add('hide');
+            }
+        }
+
+        plotly_div.clear_charts = function(){
+            this.source_plot.traces = [];
+            Plotly.newPlot(this.source_plot, [], this.source_plot.plot_layout, this.source_plot.plot_config);
+            this.source_plot.classList.add('hide');
+            this.destination_plot.traces = [];
+            Plotly.newPlot(this.destination_plot, [], this.destination_plot.plot_layout, this.destination_plot.plot_config);
+            this.destination_plot.classList.add('hide');
+
+        }
+        
+        return plotly_div;
+    }
     
     //#endregion
     //#region User interaction
@@ -584,7 +935,8 @@ class MeshVisualization extends DataVisualization{
 					event.preventDefault();
 					self.cleanElement('history');
 					self.resetAllColorGroups();
-					self.selectionsHistory = [];
+                    self.selectionsHistory = [];
+                    self.plotly_div.clear_charts();
 				}
 
 			form.appendChild(updateBtn);
