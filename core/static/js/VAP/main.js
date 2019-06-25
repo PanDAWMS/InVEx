@@ -42,11 +42,11 @@ class Scene {
 			// init camera
 			this.camera = new THREE.PerspectiveCamera( 50, 2, 1, 1000 );
 			this.camera.position.set(120, 120, 120);
-			this.camera.lookAt( 50, 50, 50 );
+			this.camera.lookAt( 0, 0, 0 );
 
 			this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
         this.controls.enableRotate = true;
-        this.controls.target = new THREE.Vector3(50, 50, 50);
+        this.controls.target = new THREE.Vector3(0, 0, 0);
 			this.controls.saveState();
 			
 			this.grid = undefined;
@@ -363,14 +363,14 @@ class Scene {
 	}
 
 	// Function that is called to render the scene.
-    animate() {
+    render() {
         this.resizeCanvasToDisplaySize();
-		this.renderer.render( this.scene, this.camera );
+        this.renderer.render( this.scene, this.camera );
 	}
 
 	// Recalculates everything needed after window resize.
 	onResize() {
-        this.animate();
+        this.render();
 	}
 
 	redrawScene(){

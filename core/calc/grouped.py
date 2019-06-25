@@ -2,6 +2,7 @@ import pandas as pd
 import linecache
 from . import data_converters
 import os
+import errno
 from django.conf import settings
 
 class GroupedData:
@@ -10,11 +11,17 @@ class GroupedData:
 
     def get_groups(self, dataset, groups_metadata):
         self.groups = []
-        self.groups_metadata = groups_metadata
         for item in groups_metadata:
-            group_ids = item[1]
+            group_ids = item['group_indexes']
             group_data = dataset[dataset.index.isin(group_ids)]
             self.groups.append(pd.DataFrame(group_data))
+
+    def silentremove(self, filename):
+        try:
+            os.remove(filename)
+        except OSError as e:  # this would be "except OSError, e:" before Python 2.6
+            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+                raise  # re-raise exception if a different error occurred
 
     def save_to_file(self):
         """
@@ -24,7 +31,9 @@ class GroupedData:
         Each group is saved in file line by line, in accordance with group ID. 
         :return: 
         """
-        file = open(os.path.join(settings.MEDIA_ROOT, self.dsID, self.filename+'.groups'), "w")
+        filename = os.path.join(settings.MEDIA_ROOT, self.dsID, self.filename+'.groups')
+        self.silentremove(filename)
+        file = open(filename, "w")
         for group in self.groups:
             file.write(group.to_json(orient='table'))
             file.write('\n')

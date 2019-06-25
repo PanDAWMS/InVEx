@@ -10,10 +10,6 @@
     <li class="tabs-title"><a href="#print">Print Dataset</a></li>
     <li class="tabs-title"><a href="#stats">Statistics</a></li>
     <li class="tabs-title"><a href="#corr">Correlations</a></li>
-{% comment %} {% if type == "site2site" %}
-    <li class="tabs-title"><a href="#xcoord">X-Coordinate</a></li>
-    <li class="tabs-title"><a href="#ycoord">Y-Coordinate</a></li>
-{% endif %} {% endcomment %}
 {% if cluster_ready %}
     <li class="tabs-title"><a href="#clusters">Clusters</a></li>
 {% endif %}
@@ -26,7 +22,7 @@
 <div class="tabs-content" data-tabs-content="deeplinked-tabs" id='deeplinked-content'>
     {% if dataset_files %}
     <div class="tabs-panel is-active" id="serverfile">
-    <form action="" method="POST" enctype='multipart/form-data'>
+    <form action="{% if type == "datavisualization" %} {% url 'regular_visualization_init' %} {%endif %}" method="POST" enctype='multipart/form-data'>
             {% csrf_token %}
             <div class="custom-file">
                     <input type="hidden" name="formt" value="filefromserver">
@@ -45,7 +41,7 @@
     </div>
     {% endif %}
     <div class="tabs-panel" id="upload">
-        <form action="" method="POST" enctype='multipart/form-data'>
+        <form action="{% if type == "datavisualization" %} {% url 'regular_visualization_init' %} {%endif %}" method="POST" enctype='multipart/form-data'>
             {% csrf_token %}
             <input type="hidden" name="formt" value="newfile">
             <label for="customFile" class="button small">Upload File</label>

@@ -4,6 +4,10 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
+import os
+import errno
+from django.conf import settings
+import json
 
 class DatasetInfo():
 
@@ -88,7 +92,7 @@ class DatasetInfo():
             if _is_numeric and _is_cat:
                 _measure_type = 'ordinal'
             elif _is_numeric and not _is_cat:
-                _measure_type = 'ratio'
+                _measure_type = 'continuous'
             if _is_object:
                 _measure_type = 'nominal'
 
@@ -163,7 +167,7 @@ class DatasetInfo():
                     elif not _is_cat:
                         _unique_values = df[column].dropna().unique().tolist()[:10]
                     #    _unique_values = self.process_strings(_unique_values)
-                        _measure_type = 'clustered'
+                        _measure_type = 'non-categorical'
                 features.append(FeatureStatistics(feature_name=_name,
                                                   feature_type=_type,
                                                   measure_type=_measure_type,
@@ -291,6 +295,25 @@ class DatasetInfo():
         :return: float
         """
         return (np.count_nonzero(df[column].isnull()) * 100) / len(df[column])
+
+    def silentremove(self, filename):
+        try:
+            os.remove(filename)
+        except OSError as e:  # this would be "except OSError, e:" before Python 2.6
+            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+                raise  # re-raise exception if a different error occurred
+
+    def save_to_file(self):
+        filename = os.path.join(settings.MEDIA_ROOT, self.dsID, self.dsID + '.stat')
+        self.silentremove(filename)
+        file = open(filename, "w")
+        data = {}
+        data['dsID'] = self.dsID
+        data['num_records'] = self.num_records
+        data['index_name'] = self.index_name
+        data['features'] = json.loads(pd.DataFrame.from_records([f.__dict__ for f in self.features]).T.to_json())
+        file.write(json.dumps(data))
+        file.close()
 
 
 class FeatureStatistics():
