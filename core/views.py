@@ -9,73 +9,65 @@ import re
 from datetime import datetime
 from urllib.parse import urlencode, urlparse, parse_qs
 
-from django.shortcuts import render, reverse, render_to_response, redirect
 from django.http import JsonResponse
+from django.shortcuts import render, reverse, render_to_response, redirect
 
 from core import form_reactions
 
-EMPTY_DATA = {
-    'dataset': [],
-    'dim_names': [],
-    'index': '',
-    'new_file': False,
-    'norm_dataset': [],
-    'real_dataset': [],
-    'filename': False,
-    'visualparameters': False,
-    'lod_data': False,
-    'algorithm': False,
-    'type': False,
-    'xarray': False,
-    'stats': [],
-    'corr_matrix': [],
-    'aux_dataset': [],
-    'aux_names': []
-}
 logger = logging.getLogger(__name__)
 
 
-def initRequest(request):
+# TODO: Re-check the following method.
+def request_init(request):
     """
-    A function to check and verify request
-    :param request:
-    :return:
-    """
+    Checking and verifying HTTP request.
 
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :return: Flag of correctness and django.http.HttpResponse if is not correct.
+    :rtype: tuple
+    """
     url = request.get_full_path()
     u = urlparse(url)
     query = parse_qs(u.query)
     query.pop('timestamp', None)
+
     try:
         u = u._replace(query=urlencode(query, True))
     except UnicodeEncodeError:
-        data = {
-            'errormessage': 'Error appeared while encoding URL!'
-        }
-        return False, render_to_response(json.dumps(data), content_type='text/html')
-
-    ## Set default page lifetime in the http header, for the use of the front end cache
-    request.session['max_age_minutes'] = 10
-
-    ## Create a dict in session for storing request params
-    requestParams = {}
-    request.session['requestParams'] = requestParams
-
-    if request.method == 'POST':
-        for p in request.POST:
-            pval = request.POST[p]
-            pval = pval.replace('+', ' ')
-            request.session['requestParams'][p.lower()] = pval
+        output = False, render_to_response(
+            template_name='main.html',
+            context=json.dumps({
+                'errormessage': 'Error appeared while encoding URL!'}),
+            content_type='text/html')
     else:
-        for p in request.GET:
-            pval = request.GET[p]
-            pval = pval.replace('+', ' ')
+        # set default page lifetime in the http header
+        # (for the use of the front end cache)
+        request.session['max_age_minutes'] = 10
+        # create a dict in session for storing request params
+        request.session['requestParams'] = {}
+        if request.method == 'POST':
+            for p in request.POST:
+                pval = request.POST[p]
+                pval = pval.replace('+', ' ')
+                request.session['requestParams'][p.lower()] = pval
+        else:
+            for p in request.GET:
+                pval = request.GET[p]
+                pval = pval.replace('+', ' ')
 
-            ## Here check if int or date type params can be placed
+                # check if int or date type params can be placed
+                request.session['requestParams'][p.lower()] = pval
+        output = True, None
 
-            request.session['requestParams'][p.lower()] = pval
+    return output
 
-    return True, None
+
+def main(request):
+    is_valid, response = request_init(request)
+    if not is_valid:
+        return response
+    return redirect(to=reverse(viewname='regular_visualization_init'))
 
 
 def parse_groups_url_parameter(groups):
@@ -89,57 +81,50 @@ def parse_groups_url_parameter(groups):
 
 
 def visualization_init(request):
-    valid, response = initRequest(request)
-    if not valid:
+    is_valid, response = request_init(request)
+    if not is_valid:
         return response
 
     err_msg_subj = '[views.visualization_init]'
 
-    datasetid = None
+    dataset_id = None
     if request.method == 'POST' and 'formt' in request.POST:
         if request.POST['formt'] == 'newfile':
             try:
-                datasetid = form_reactions.set_new_csv_file(request)
+                dataset_id = form_reactions.set_new_csv_file(request)
             except Exception as e:
                 logger.error('{} Failed to upload new CSV file: {}'.
                              format(err_msg_subj, e))
         elif request.POST['formt'] == 'filefromserver':
             try:
-                datasetid = form_reactions.set_csv_file_from_server(request)
+                dataset_id = form_reactions.set_csv_file_from_server(request)
             except Exception as e:
                 logger.error('{} Failed to load CSV file from server: {}'.
                              format(err_msg_subj, e))
     elif request.method == 'GET' and 'remotesrc' in request.GET:
         if request.GET['remotesrc'] == 'pandajobs':
             try:
-                datasetid = form_reactions.set_jobs_data_from_panda(request)
+                dataset_id = form_reactions.set_jobs_data_from_panda(request)
             except Exception as e:
                 logger.error('{} Remote data from PanDA is not accessible: {}'.
                              format(err_msg_subj, e))
 
-    if datasetid is not None:
-        return redirect(reverse('regular_visualization_data',
-                                kwargs={'maindatasetuid': datasetid,
-                                        'groups': ''}))
-
-    data = EMPTY_DATA
-    data['type'] = 'datavisualization'
-    data['built'] = datetime.now()
-    data['PAGE_TITLE'] = 'InVEx'
-    try:
-        data['dataset_files'] = form_reactions.list_csv_data_files(
-            form_reactions.DATASET_FILES_PATH)
-    except Exception as e:
-        data['dataset_files'] = False
-        logger.error('{} Failed to read the list of files with datasets: {}'.
-                     format(err_msg_subj, e))
-    return render(request, 'main.html', data, content_type='text/html')
+    if dataset_id is not None:
+        output = redirect(to=reverse(viewname='regular_visualization_data',
+                                     kwargs={'maindatasetuid': dataset_id,
+                                             'groups': ''}))
+    else:
+        output = render(request=request,
+                        template_name='main.html',
+                        context=form_reactions.get_empty_view_data(),
+                        content_type='text/html')
+    return output
 
 
 def visualization_data(request, maindatasetuid, groups=None,
                        operationnumber=None):
-    valid, response = initRequest(request)
-    if not valid:
+    is_valid, response = request_init(request)
+    if not is_valid:
         return response
 
     err_msg_subj = '[views.visualization_data]'
@@ -148,77 +133,74 @@ def visualization_data(request, maindatasetuid, groups=None,
     if parsed_groups is None:
         groups = ''
 
-    data = None
+    kw = {'dataset_id': maindatasetuid,
+          'group_ids': parsed_groups}
+    kw_extra = {'preview_url': reverse(
+                    viewname='regular_visualization_data_new_group',
+                    kwargs={'maindatasetuid': maindatasetuid,
+                            'groups': groups})}
+
+    context = None
     if request.method == 'POST' and 'formt' in request.POST:
         if request.POST['formt'] == 'preview':
             try:
-                data = form_reactions.get_processed_view_data(
-                    request, maindatasetuid, parsed_groups)
+                context = form_reactions.get_processed_view_data(
+                    request=request, **kw, **kw_extra)
             except Exception as e:
                 logger.error('{} Failed to process provided dataset sample: {}'.
                              format(err_msg_subj, e))
         elif request.POST['formt'] == 'submit_feature_selection':
             try:
-                data = form_reactions.set_processed_view_data(
-                    request, maindatasetuid, parsed_groups)
+                context = form_reactions.set_processed_view_data(
+                    request=request, **kw, **kw_extra)
             except Exception as e:
                 logger.error('{} Failed to prepare and save processed data: {}'.
                              format(err_msg_subj, e))
         elif request.POST['formt'] == 'cluster':
             try:
-                data, op_number = form_reactions.clusterize(
-                    request, maindatasetuid, parsed_groups)
-                return redirect(reverse(
-                    'regular_visualization_data_operation',
+                return redirect(to=reverse(
+                    viewname='regular_visualization_data_operation',
                     kwargs={'maindatasetuid': maindatasetuid,
                             'groups': groups,
-                            'operationnumber': str(op_number)}))
+                            'operationnumber': str(
+                                form_reactions.clusterize(
+                                    request=request, **kw))}))
             except Exception as e:
                 logger.error('{} Failed to perform data clustering: {}'.
                              format(err_msg_subj, e))
         elif request.POST['formt'] == 'rebuild':
             try:
-                data = form_reactions.predict_cluster(request)
-                return JsonResponse(data)
+                _ret = form_reactions.predict_cluster(request)
             except Exception as e:
                 logger.error('{} Failed to rebuild clusters: {}'.
                              format(err_msg_subj, e))
                 return JsonResponse({})
+            else:
+                return JsonResponse(_ret)
 
-    if data is None:
-        data = form_reactions.prepare_view_data(
-            maindatasetuid, parsed_groups, operationnumber)
+    if context is None:
+        try:
+            op_number = int(operationnumber)
+        except (TypeError, ValueError):
+            op_number = None
 
-    data['PREVIEW_URL'] = reverse('regular_visualization_data_new_group',
-                                  kwargs={'maindatasetuid': maindatasetuid,
-                                          'groups': groups})
-    data['NEXT_GROUP_URL'] = reverse('regular_visualization_data_new_group',
-                                     kwargs={'maindatasetuid': maindatasetuid,
-                                             'groups': groups})
-    data['type'] = 'datavisualization'
-    data['built'] = datetime.now()
-    data['PAGE_TITLE'] = "InVEx"
-    try:
-        data['dataset_files'] = form_reactions.list_csv_data_files(
-            form_reactions.DATASET_FILES_PATH)
-    except Exception as e:
-        data['dataset_files'] = False
-        logger.error('{} Failed to read the list of files with datasets: {}'.
-                     format(err_msg_subj, e))
-    return render(request, 'main.html', data, content_type='text/html')
+        if op_number is None:
+            context = form_reactions.get_initial_view_data(**kw, **kw_extra)
+        else:
+            context = form_reactions.get_operational_view_data(
+                op_number=op_number, **kw, **kw_extra)
 
-
-def main(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-    return redirect(reverse('regular_visualization_init'))
+    return render(request=request,
+                  template_name='main.html',
+                  context=context,
+                  content_type='text/html')
 
 
 def site_to_site(request):
-    valid, response = initRequest(request)
-    if not valid:
+    is_valid, response = request_init(request)
+    if not is_valid:
         return response
+
     data = {}
     if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
         startedat = datetime.now()
@@ -237,8 +219,23 @@ def site_to_site(request):
                     '!views.site_to_site!: Couldn\'t load the a CSV file from the server. \n' + str(exc))
 
     else:
-        data = EMPTY_DATA
-        data['type'] = 'site2site'
+        data = {
+            'dataset': [],
+            'dim_names': [],
+            'index': '',
+            'new_file': False,
+            'norm_dataset': [],
+            'real_dataset': [],
+            'filename': False,
+            'visualparameters': False,
+            'lod_data': False,
+            'algorithm': False,
+            'xarray': False,
+            'stats': [],
+            'corr_matrix': [],
+            'aux_dataset': [],
+            'aux_names': [],
+            'type': 'site2site'}
     data['built'] = datetime.now()
     data['PAGE_TITLE'] = "InVEx"
     if ('benchmark' in request.GET and request.GET['benchmark']=='true'):
@@ -264,8 +261,8 @@ def performance_test(request):
 
 def performance_test_frame(request):
     start_time = datetime.now()
-    valid, response = initRequest(request)
-    if not valid:
+    is_valid, response = request_init(request)
+    if not is_valid:
         return response
 
     if request.method == 'POST' and 'formt' in request.POST:

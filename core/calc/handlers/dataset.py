@@ -3,37 +3,30 @@ Class DatasetHandler provides methods to store, examine and transform
 the original dataset, and to process it according to the required view.
 """
 
-import errno
 import json
 import logging
 import os
 
-import numpy as np
 import pandas as pd
-
-from django.conf import settings
 
 from ...providers import LocalReader
 
 from .. import data_converters
-from ..basicstatistics import BasicStatistics, DESCRIPTION as STAT_DESCRIPTION
+from ..basicstatistics import BasicStatistics
 from ..lod_generator import LoDGenerator
 from ..operationshistory import OperationHistory
 
+from ._base import BaseDataHandler
 from .groupeddata import GroupedDataHandler
 
 FILE_EXTENSION_DEFAULT = 'csv'
 HISTORY_FILE_EXTENSION = 'history'
-STAT_FILE_EXTENSION = 'stat'
-
-LOD_MODE_DEFAULT = 'minibatch'
-LOD_VALUE_DEFAULT = 50
 
 local_reader = LocalReader()
 logger = logging.getLogger(__name__)
 
 
-class DatasetHandler:
+class DatasetHandler(BaseDataHandler):
 
     def __init__(self, did, group_ids=None, **kwargs):
         """
@@ -51,7 +44,8 @@ class DatasetHandler:
         :keyword process_initial_dataset: Flag to process initial dataset.
         :keyword load_history_data: Flag to load history data.
         """
-        self._did = did
+        super().__init__(did=did)
+
         self._group_ids = group_ids  # possible values: None, empty list, list
         self._origin = None
         self._modifications = {}
@@ -87,54 +81,27 @@ class DatasetHandler:
         elif kwargs.get('load_history_data', False):
             self._load_history_data()
 
-    def _get_full_file_name(self, is_history_file=False, is_stat_file=False):
+    def _get_full_file_name(self, is_history_file=False):
         """
         Form full file name with initial dataset or with history information.
 
         :param is_history_file: Flag to get file name with history data.
         :type is_history_file: bool
-        :param is_stat_file: Flag to get file name with statistics data.
-        :type is_stat_file: bool
         :return: Full file name.
         :rtype: str
         """
-        dir_name = os.path.join(settings.MEDIA_ROOT, '{}'.format(self._did))
-
         if is_history_file:
             group_ids = self._group_ids or []
             file_name = '{}{}.{}'.format(
                 self._did,
                 ''.join(['.group{}'.format(i) for i in group_ids]),
                 HISTORY_FILE_EXTENSION)
-        elif is_stat_file:
-            file_name = '{}.{}'.format(
-                self._did,
-                STAT_FILE_EXTENSION)
         else:
             file_name = '{}.{}'.format(
                 self._did,
                 FILE_EXTENSION_DEFAULT)
 
-        return os.path.join(dir_name, file_name)
-
-    @staticmethod
-    def _remove_file(file_name):
-        """
-        Remove file with provided full name.
-
-        :param file_name: Full file name.
-        :type file_name: str
-        """
-        try:
-            os.remove(file_name)
-        except OSError as e:
-            # errno.ENOENT - no such file or directory
-            if e.errno != errno.ENOENT:
-                logger.error(
-                    '[DatasetHandler._remove_file] Failed to remove file '
-                    '({}): {}'.format(file_name, e))
-                # re-raise exception if a different error occurred
-                raise
+        return os.path.join(self._get_full_dir_name(), file_name)
 
     def _get_initial_dataset(self, **kwargs):
         """
@@ -183,12 +150,12 @@ class DatasetHandler:
                          'Dataset for clustering is not prepared')
             raise
 
-        _set = set(self._normalized.columns.tolist())
+        _set = set(self._origin.columns.tolist())
         _features = [x for x in self._property_set['features'] if x in _set]
         # TODO: Re-check that feature selection is needed here
         #  (it was processed at _form_dataset_modifications for _origin dataset)
         #  (Note: for LoD _origin dataset it might behave differently)
-        return self._normalized.loc[:, _features]
+        return self._origin.loc[:, _features]
 
     @property
     def operation_history(self):
@@ -305,219 +272,6 @@ class DatasetHandler:
             logger.error('{} Failed to load data ({}): {}'.
                          format(err_msg_subj, file_name, e))
             raise
-
-    @staticmethod
-    def _get_features_description(df):
-        """
-        Get list of features with descriptive and statistical metrics.
-
-        :param df: Dataset for features analysis.
-        :type df: pandas.DataFrame
-        :return: Feature descriptions.
-        :rtype: list
-        """
-        output = []
-
-        for column in df:
-
-            if not df[column].count():
-                continue
-            # TODO: Re-check that feature with no values should be skipped
-
-            item = {
-                'feature_name': column,
-                'feature_type': df[column].dtype.name,
-                'percentage_missing':
-                    (np.count_nonzero(df[column].isnull()) * 100.) /
-                    len(df[column]),
-                'measure_type': 'unknown'}
-            # TODO: Re-check the formula for percentage_missing
-
-            is_category = float(df[column].nunique()) / df[column].count() < .1
-
-            if item['feature_type'] in ['int64', 'float64', 'int32',
-                                        'float32', 'int', 'float']:
-
-                if is_category:
-                    unique_values = df[column].dropna().unique().tolist()
-                    item.update({
-                        'measure_type': 'ordinal',
-                        'unique_values': unique_values,
-                        'unique_number': len(unique_values),
-                        'distribution': {str(k): v for k, v in df[column].
-                                         value_counts().to_dict().items()},
-                        'enabled': 'false'})
-                else:
-                    item.update({
-                        'measure_type': 'continuous',
-                        'min': df[column].min(),
-                        'max': df[column].max(),
-                        'mean': df[column].mean(),
-                        'std': df[column].std(),
-                        'q10': df[column].quantile(.1),
-                        'q25': df[column].quantile(.25),
-                        'q50': df[column].quantile(.5),
-                        'q75': df[column].quantile(.75),
-                        'q90': df[column].quantile(.9),
-                        'enabled': 'true'})
-
-            elif item['feature_type'] == 'object':
-
-                item.update({
-                    'measure_type': 'nominal',
-                    'unique_number': len(df[column].dropna().unique().tolist()),
-                    'distribution': {},
-                    'enabled': 'false'})
-
-                is_datetime_object = False
-                if any(n in column for n in ['time', 'date', 'start', 'end']):
-                    try:
-                        dt_object = pd.to_datetime(df[column].dropna())
-                    except ValueError:
-                        pass
-                    else:
-                        item.update({
-                            'measure_type': 'range',
-                            'unique_values': [dt_object.min().isoformat(),
-                                              dt_object.max().isoformat()]})
-                        is_datetime_object = True
-
-                if not is_datetime_object:
-
-                    unique_values = df[column].dropna().unique().tolist()
-                    if is_category:
-                        item.update({
-                            'unique_values': unique_values,
-                            'distribution': df[column].value_counts().to_dict()})
-                    else:
-                        item.update({
-                            'measure_type': 'non-categorical',
-                            'unique_values': unique_values[:10]})
-
-            output.append(item)
-        return output
-
-    def describe(self, save_to_file=False):
-        """
-        Get descriptive and statistical information.
-
-        :param save_to_file: Flag to store dataset info into the file.
-        :type save_to_file: bool
-        :return: Descriptive and statistical information about origin dataset.
-        :rtype: dict
-        """
-        output = {}
-        if self._origin is not None:
-            dataset = self._origin.copy()
-            if self._auxiliary is not None:
-                dataset = dataset.join(self._auxiliary)
-            dataset.dropna(axis=1, how='all', inplace=True)
-            dataset.dropna(axis=0, how='all', inplace=True)
-            output.update({
-                'index_name': dataset.index.name,
-                'num_records': len(dataset.index),
-                'features': self._get_features_description(df=dataset)})
-
-            if save_to_file:
-                file_name = self._get_full_file_name(is_stat_file=True)
-                self._remove_file(file_name=file_name)
-                with open(file_name, 'w') as f:
-                    f.write(json.dumps({
-                        'index_name': output['index_name'],
-                        'num_records': output['num_records'],
-                        'features': json.loads(
-                            pd.DataFrame.from_records(output['features']).T.
-                            to_json())}))
-        return output
-
-    def get_view_data(self, with_full_set=False, save_stats=False):
-        """
-        Get view data for UI representation (for the client side).
-
-        :param with_full_set: Flag to get full set of parameters.
-        :type with_full_set: bool
-        :param save_stats: Flag to save dataset descriptive information (stats).
-        :type save_stats: bool
-        :return: Key-value pairs for UI representation.
-        :rtype: dict
-        """
-        output = {
-            'data_uploaded': True,
-            'dsID': self._did,
-            'lod_activated': False,
-            'lod_mode': LOD_MODE_DEFAULT,
-            'lod_value': LOD_VALUE_DEFAULT,
-            'lod_data': None}
-        output.update(self.describe(save_to_file=save_stats))
-
-        if with_full_set:
-
-            output.update({
-                'data_is_ready': False,
-                'cluster_ready': False,
-                'clusters': [],
-                'count_of_clusters': None,
-                'algorithm': None,
-                'visualparameters': None,
-                'parameters': {},
-                'filename': False,
-                'type': 'datavisualization',
-                'group_vis': False})
-            # TODO: Check the consistency of the view_data key-value pairs.
-            # TODO: Re-work view_data parameter names.
-
-            try:
-                output.update({
-                    'index': [self._origin.index.name or 'id'],
-                    'real_dataset': data_converters.pandas_to_js_list(
-                        self._origin),
-                    'norm_dataset': data_converters.pandas_to_js_list(
-                        self._normalized),
-                    'aux_dataset': data_converters.pandas_to_js_list(
-                        self._auxiliary),
-                    'dim_names': self._normalized.columns.tolist(),
-                    'aux_names': self._auxiliary.columns.tolist(),
-                    'operation_history': self.operation_history})
-
-                real_dataset_stats_or = BasicStatistics().\
-                    process_data(self._origin)
-                real_dataset_stats = []
-                for i in range(len(real_dataset_stats_or)):
-                    real_dataset_stats.append(real_dataset_stats_or[i].tolist())
-                output['real_metrics'] = [STAT_DESCRIPTION, real_dataset_stats]
-                # TODO: Re-work this.
-
-                corr_matrix = self._origin.corr()
-                corr_matrix.dropna(axis=0, how='all', inplace=True)
-                corr_matrix.dropna(axis=1, how='all', inplace=True)
-                output['corr_matrix'] = corr_matrix.values.tolist()
-            except Exception as e:
-                logger.error('[DatasetHandler.get_view_data] '
-                             'Failed to prepare basics of the view data: {}'.
-                             format(e))
-                raise
-
-            # prepare LoD information
-            lod_features = []
-            if self._property_set.get('lod', {}).get('value'):
-                output.update({
-                    'lod_activated': True,
-                    'lod_mode': self._property_set['lod']['mode'],
-                    'lod_value': self._property_set['lod']['value'],
-                    'lod_data': self._property_set['lod'].get('groups', [])})
-                lod_features.extend(self._property_set['lod']['features'])
-
-            # prepare information about checked features
-            features = self._property_set.get('features', [])
-            for feature in output['features']:
-                if feature['feature_name'] in features:
-                    feature['enabled'] = 'true'
-                else:
-                    feature['enabled'] = 'false'
-                if feature['feature_name'] in lod_features:
-                    feature['lod_enabled'] = 'true'
-
-        return output
 
     def save(self):
         """

@@ -2,20 +2,19 @@
 Class GroupedDataHandler provides methods to deal with grouped data.
 """
 
-import errno
 import linecache
 import os
 
 import pandas as pd
 
-from django.conf import settings
-
 from .. import data_converters
+
+from ._base import BaseDataHandler
 
 FILE_EXTENSION_DEFAULT = 'groups'
 
 
-class GroupedDataHandler:
+class GroupedDataHandler(BaseDataHandler):
 
     def __init__(self, did, group_ids=None):
         """
@@ -26,7 +25,8 @@ class GroupedDataHandler:
         :param group_ids: List of [hierarchical] group ids.
         :type group_ids: list/None
         """
-        self._did = did
+        super().__init__(did=did)
+
         self._file_name = self._get_full_file_name(group_ids=group_ids)
         self._groups = []
 
@@ -41,28 +41,11 @@ class GroupedDataHandler:
         """
         group_ids = group_ids or []
         return os.path.join(
-            settings.MEDIA_ROOT,
-            '{}'.format(self._did),
+            self._get_full_dir_name(),
             '{}{}.{}'.format(
                 self._did,
                 ''.join(['.group{}'.format(i) for i in group_ids]),
                 FILE_EXTENSION_DEFAULT))
-
-    @staticmethod
-    def _remove_file(file_name):
-        """
-        Remove file with provided full name.
-
-        :param file_name: Full file name.
-        :type file_name: str
-        """
-        try:
-            os.remove(file_name)
-        except OSError as e:
-            # errno.ENOENT - no such file or directory
-            if e.errno != errno.ENOENT:
-                # re-raise exception if a different error occurred
-                raise
 
     def set_file_name(self, group_ids):
         """

@@ -16,34 +16,14 @@ from django.conf import settings
 from core.settings.base import BASE_DIR
 from core import calc
 
-from .calc.handlers import DatasetHandler
+from .calc.handlers import DatasetHandler, ViewDataHandler
+from .calc.handlers.viewdata import list_csv_data_files, DATASET_FILES_PATH
 from .providers import LocalReader
 
-DATASET_FILES_PATH = BASE_DIR + '/datasets/'
 SITE_SITE_DATASET_FILES_PATH = BASE_DIR + '/site_site_datasets/'
-FILES_LIST_NAME = 'files_list.json'
 
 logger = logging.getLogger(__name__)
 local_reader = LocalReader()
-
-
-def list_csv_data_files(dir_name):
-    """
-    Get the list of local CSV data files.
-
-    :param dir_name: [Full] directory name.
-    :type dir_name: str
-    :return: List with descriptions of local files.
-    :rtype: list
-    """
-    output = None
-
-    full_file_name = os.path.join(dir_name, FILES_LIST_NAME)
-    if os.path.isfile(full_file_name):
-        with open(full_file_name, 'r') as f:
-            output = json.loads(f.read())
-
-    return output
 
 
 def create_dataset_storage(dataset_id):
@@ -117,7 +97,7 @@ def set_csv_file_from_server(request):
     err_msg_subj = '[form_reactions.set_csv_file_from_server]'
 
     output = None
-    list_of_files = list_csv_data_files(DATASET_FILES_PATH)
+    list_of_files = list_csv_data_files()
     if 'filename' in request.POST and list_of_files is not None:
         for f in list_of_files:
             if f['value'] == request.POST['filename']:
@@ -169,7 +149,7 @@ def set_jobs_data_from_panda(request):
         try:
             from .providers import PandaReader
         except ImportError as e:
-            logger.error('{0} {1}'.format(err_msg_subj, e))
+            logger.error('{} {}'.format(err_msg_subj, e))
             raise
         else:
             filter_params = {}
@@ -191,6 +171,37 @@ def set_jobs_data_from_panda(request):
     return output
 
 
+def get_empty_view_data(mode=None):
+    """
+    Get view data for UI representation (with default values).
+
+    :param mode: Mode of the visualization process.
+    :type mode: str/None
+    :return: Key-value pairs for UI representation.
+    :rtype: dict
+    """
+    return ViewDataHandler(mode=mode).context_data
+
+
+def get_initial_view_data(dataset_id, group_ids=None, **kwargs):
+    """
+    Get view data for loaded dataset sample (with corresponding initial values).
+
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :param group_ids: Group ids (if dataset groups were created).
+    :type group_ids: list/None
+    :return: Key-value pairs for UI representation.
+    :rtype: dict
+    """
+    viewdata_hdlr = ViewDataHandler(dataset_handler=DatasetHandler(
+        did=dataset_id, group_ids=group_ids, load_initial_dataset=True))
+    viewdata_hdlr.set_dataset_description(with_full_set=False)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    return viewdata_hdlr.context_data
+
+
 def _get_dataset_handler_by_request_data(request, dataset_id, group_ids=None):
     """
     Create DatasetHandler by input parameters from the request.
@@ -202,7 +213,7 @@ def _get_dataset_handler_by_request_data(request, dataset_id, group_ids=None):
     :param group_ids: Group ids (if dataset groups were created).
     :type group_ids: list/None
     :return: DatasetHandler object.
-    :rtype: dataset.DatasetHandler
+    :rtype: handlers.dataset.DatasetHandler
     """
     features, lod_features = [], []
     for feature in json.loads(request.POST['features']):
@@ -212,7 +223,7 @@ def _get_dataset_handler_by_request_data(request, dataset_id, group_ids=None):
             lod_features.append(feature['feature_name'])
 
     lod_data = None
-    if request.POST.get('lod_activated') == 'true':
+    if request.POST['lod_activated'] == 'true':
         lod_data = {'mode': request.POST['lod_mode'],
                     'value': int(request.POST['lod_value']),
                     'features': lod_features}
@@ -222,7 +233,7 @@ def _get_dataset_handler_by_request_data(request, dataset_id, group_ids=None):
                           process_initial_dataset=True)
 
 
-def get_processed_view_data(request, dataset_id, group_ids=None):
+def get_processed_view_data(request, dataset_id, group_ids=None, **kwargs):
     """
     Process provided dataset sample and get view data for UI representation.
 
@@ -235,15 +246,16 @@ def get_processed_view_data(request, dataset_id, group_ids=None):
     :return: Key-value pairs for UI representation.
     :rtype: dict
     """
-    ds_handler = _get_dataset_handler_by_request_data(
-        request, dataset_id, group_ids)
+    viewdata_hdlr = ViewDataHandler(
+        dataset_handler=_get_dataset_handler_by_request_data(
+            request=request, dataset_id=dataset_id, group_ids=group_ids))
+    viewdata_hdlr.set_dataset_description(with_full_set=True)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    return viewdata_hdlr.context_data
 
-    view_data = ds_handler.get_view_data(with_full_set=True)
-    view_data.update({'request': request})
-    return view_data
 
-
-def set_processed_view_data(request, dataset_id, group_ids=None):
+def set_processed_view_data(request, dataset_id, group_ids=None, **kwargs):
     """
     Save processed data and get view data for UI representation.
 
@@ -256,17 +268,19 @@ def set_processed_view_data(request, dataset_id, group_ids=None):
     :return: Key-value pairs for UI representation.
     :rtype: dict
     """
-    ds_handler = _get_dataset_handler_by_request_data(
-        request, dataset_id, group_ids)
-    ds_handler.save()
+    dataset_hdlr = _get_dataset_handler_by_request_data(
+        request=request, dataset_id=dataset_id, group_ids=group_ids)
+    dataset_hdlr.save()
 
-    view_data = ds_handler.get_view_data(with_full_set=True)
-    view_data.update({'data_is_ready': True,
-                      'request': request})
-    return view_data
+    viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
+    viewdata_hdlr.set_dataset_description(with_full_set=True)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    viewdata_hdlr.set_data_readiness()
+    return viewdata_hdlr.context_data
 
 
-def prepare_view_data(dataset_id, group_ids=None, op_number=None):
+def get_operational_view_data(dataset_id, group_ids, op_number, **kwargs):
     """
     Prepare view data for UI [initial page load and with applied operations].
 
@@ -275,47 +289,33 @@ def prepare_view_data(dataset_id, group_ids=None, op_number=None):
     :param group_ids: Group ids (if dataset groups were created).
     :type group_ids: list/None
     :param op_number: [Current] operation number.
-    :type op_number: int/str/None
+    :type op_number: int
     :return: Key-value pairs for UI representation.
     :rtype: dict
     """
-    err_msg_subj = '[form_reactions.prepare_view_data]'
+    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
+                                  load_history_data=True)
 
-    try:
-        op_number = int(op_number)
-    except (TypeError, ValueError):
-        op_number = None
+    op_history = dataset_hdlr.operation_history
+    if op_number >= op_history.length():
+        op_number = op_history.length() - 1
 
-    if op_number is not None:
-        ds_handler = DatasetHandler(did=dataset_id, group_ids=group_ids,
-                                    load_history_data=True)
+    operation, _, camera_params = op_history.get_step(op_number)
+    if operation._type_of_operation != 'cluster':
+        logger.error('[form_reactions.get_operational_view_data] '
+                     'The type of the operation is not "cluster": {}'.
+                     format(operation._type_of_operation))
+    clusters = operation.predict(dataset_hdlr.clustering_dataset).tolist()
 
-        op_history = ds_handler.operation_history
-        if op_number >= op_history.length():
-            op_number = op_history.length() - 1
-
-        operation = op_history.get_step(op_number)
-        if operation[0]._type_of_operation != 'cluster':
-            logger.error('{} The type of the operation is not "cluster": {}'.
-                         format(err_msg_subj, operation[0]._type_of_operation))
-        clusters = operation[0].predict(ds_handler.clustering_dataset).tolist()
-
-        view_data = ds_handler.get_view_data(with_full_set=True)
-        view_data.update({
-            'data_is_ready': True,
-            'clusters': clusters,
-            'count_of_clusters': len(set(clusters)),
-            'cluster_ready': True,
-            'parameters': operation[0].print_parameters()})
-
-        if len(operation) >= 3:
-            view_data['visualparameters'] = operation[2]
-    else:
-        ds_handler = DatasetHandler(did=dataset_id, group_ids=group_ids,
-                                    load_initial_dataset=True)
-        view_data = ds_handler.get_view_data(with_full_set=False)
-
-    return view_data
+    viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
+    viewdata_hdlr.set_dataset_description(with_full_set=True)
+    viewdata_hdlr.set_clustering_data(clusters=clusters,
+                                      operation=operation,
+                                      camera_params=camera_params)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    viewdata_hdlr.set_data_readiness()
+    return viewdata_hdlr.context_data
 
 
 def clusterize(request, dataset_id, group_ids=None):
@@ -328,21 +328,23 @@ def clusterize(request, dataset_id, group_ids=None):
     :type dataset_id: int/str
     :param group_ids: Group ids (if dataset groups were created).
     :type group_ids: list/None
-    :return: Key-value pairs for UI representation.
-    :rtype: dict
+    :return: Number/id of the current operation.
+    :rtype: int
     """
     err_msg_subj = '[form_reactions.clusterize]'
 
-    operation, view_data_extras = None, {}
+    operation = None
     if 'algorithm' in request.POST:
         if (request.POST['algorithm'] == 'KMeans' and
                 'numberofcl' in request.POST):
 
-            clusters_list = [] if request.POST['clustering_list_json'] == '' else\
-               json.loads(request.POST['clustering_list_json'])
+            clusters_list = []
+            if request.POST['clustering_list_json']:
+                clusters_list = json.loads(request.POST['clustering_list_json'])
 
             operation = calc.KMeansClustering.KMeansClustering()
-            operation.set_parameters(int(request.POST['numberofcl']), clusters_list)
+            operation.set_parameters(int(request.POST['numberofcl']),
+                                     clusters_list)
 
         elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
                 'numberofcl' in request.POST and 'batch_size' in request.POST):
@@ -351,7 +353,6 @@ def clusterize(request, dataset_id, group_ids=None):
                 MiniBatchKMeansClustering()
             operation.set_parameters(int(request.POST['numberofcl']),
                                      int(request.POST['batch_size']))
-            view_data_extras['batch_size'] = int(request.POST['batch_size'])
 
         elif (request.POST['algorithm'] == 'DBSCAN' and
                 'min_samples' in request.POST and 'eps' in request.POST):
@@ -359,9 +360,6 @@ def clusterize(request, dataset_id, group_ids=None):
             operation = calc.DBScanClustering.DBScanClustering()
             operation.set_parameters(int(request.POST['min_samples']),
                                      float(request.POST['eps']))
-            view_data_extras.update({
-                'min_samples': int(request.POST['min_samples']),
-                'eps': float(request.POST['eps'])})
 
         else:
             logger.error('{} Requested algorithm is not found: {}'.
@@ -370,43 +368,32 @@ def clusterize(request, dataset_id, group_ids=None):
         logger.error('{} Request is incorrect: {}'.
                      format(err_msg_subj, json.dumps(request.POST)))
 
-    output_op_number = None
-    ds_handler = DatasetHandler(did=dataset_id, group_ids=group_ids,
-                                load_history_data=True)
+    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
+                                  load_history_data=True)
 
+    output_op_number = None
     if operation is not None:
-        view_data_extras['parameters'] = operation.print_parameters()
         try:
-            clusters = operation.process_data(ds_handler.clustering_dataset)
+            clusters = operation.process_data(dataset_hdlr.clustering_dataset)
         except Exception as e:
-            logger.error('{} Failed to perform clustering: {} - {}'.
+            logger.error('{} Failed to perform data clustering: {} - {}'.
                          format(err_msg_subj, json.dumps(request.POST), e))
             raise
         else:
             if clusters is not None:
-                op_history = ds_handler.operation_history
-                op_history.append(ds_handler.clustering_dataset,
+                op_history = dataset_hdlr.operation_history
+                op_history.append(dataset_hdlr.clustering_dataset,
                                   operation,
                                   request.POST['visualparameters'])
-                view_data_extras.update({
-                    'clusters': clusters.tolist(),
-                    'count_of_clusters': int(request.POST['numberofcl']),
-                    'cluster_ready': True})
+                dataset_hdlr.operation_history = op_history
+                dataset_hdlr.save()
+
                 output_op_number = op_history.length() - 1
-                ds_handler.operation_history = op_history
-                ds_handler.save()
             else:
                 logger.error('{} No clusters were created: {}'.format(
                     err_msg_subj, json.dumps(operation.save_parameters())))
 
-    view_data = ds_handler.get_view_data(with_full_set=True)
-    view_data.update(view_data_extras)
-    view_data.update({
-        'algorithm': request.POST['algorithm'],
-        'visualparameters': request.POST['visualparameters'],
-        'request': request})
-
-    return view_data, output_op_number
+    return output_op_number
 
 
 # TODO: Re-check/re-work this method (!), it might work incorrectly.
@@ -450,6 +437,7 @@ def predict_cluster(request, dataset_id=None, group_ids=None, op_number=None):
 
     return output
 
+# ------------------------------
 
 # SITE TO SITE VISUALIZATION FUNCTIONS
 def read_site_to_site_json(filename, is_file=False):
