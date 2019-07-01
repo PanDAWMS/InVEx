@@ -183,12 +183,12 @@ class DatasetHandler:
                          'Dataset for clustering is not prepared')
             raise
 
-        _set = set(self._normalized.columns.tolist())
+        _set = set(self._origin.columns.tolist())
         _features = [x for x in self._property_set['features'] if x in _set]
         # TODO: Re-check that feature selection is needed here
         #  (it was processed at _form_dataset_modifications for _origin dataset)
         #  (Note: for LoD _origin dataset it might behave differently)
-        return self._normalized.loc[:, _features]
+        return self._origin.loc[:, _features]
 
     @property
     def operation_history(self):

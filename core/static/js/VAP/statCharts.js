@@ -96,20 +96,20 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
 
 function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames) {
     var _dimensions = dimNames.map((dim, index) => {
-        var _values = real_data.map((row) => { return row[1][index] });
+        var _values = real_data.map((row) => { return row[1][index]; });
 
         return {
             label: dim,
             range: [Math.min(..._values), Math.max(..._values)],
             values: _values
-        }
+        };
     }),
 
     color_max = Math.max(...Object.keys(clusters_color_scheme)),
     color_min = Math.min(...Object.keys(clusters_color_scheme)),
     zero_color = rgbToHex(clusters_color_scheme[color_min]),
 
-    _colorscale = ((Object.keys(clusters_color_scheme).length == 1) ?
+    _colorscale = ((Object.keys(clusters_color_scheme).length === 1) ?
         [["0.0", zero_color], ["1.0", zero_color]] :
         Object.keys(clusters_color_scheme).
             map((x) => {
@@ -117,7 +117,7 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
                     rgbToHex(clusters_color_scheme[x])];
             })),
 
-    _color = clusters_list.map((x) => { return x }),
+    _color = clusters_list.map((x) => { return x; }),
 
     data = [{
         type: 'parcoords',
