@@ -336,14 +336,13 @@ def clusterize(request, dataset_id, group_ids=None):
     operation = None
     if 'algorithm' in request.POST:
         if (request.POST['algorithm'] == 'KMeans' and
-                'numberofcl' in request.POST):
+                'numberofclKMeans' in request.POST):
 
-            clusters_list = []
-            if request.POST['clustering_list_json']:
-                clusters_list = json.loads(request.POST['clustering_list_json'])
+            clusters_list = [] if request.POST['clustering_list_json'] else\
+                json.loads(request.POST['clustering_list_json'])
 
             operation = calc.KMeansClustering.KMeansClustering()
-            operation.set_parameters(int(request.POST['numberofcl']),
+            operation.set_parameters(int(request.POST['numberofclKMeans']),
                                      clusters_list)
 
         elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
