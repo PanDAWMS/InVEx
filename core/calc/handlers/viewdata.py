@@ -10,6 +10,9 @@ import os
 import numpy as np
 import pandas as pd
 
+from sklearn import preprocessing
+from sklearn.impute import SimpleImputer
+
 from datetime import datetime
 
 from ...settings.base import BASE_DIR
@@ -151,6 +154,19 @@ class ViewDataHandler(BaseDataHandler):
     @property
     def context_data(self):
         return self._data
+
+    @staticmethod
+    def _get_scaled_dataset(df):
+        df_numeric = df._get_numeric_data()
+        df_imputer = pd.DataFrame(
+            data=SimpleImputer(
+                missing_values=np.nan,
+                strategy='mean').fit_transform(df_numeric),
+            columns=df_numeric.columns)
+        scaled_df = pd.DataFrame(
+            data=preprocessing.MinMaxScaler().fit_transform(df_imputer),
+            columns=df_imputer.columns)
+        return scaled_df
 
     @staticmethod
     def _get_dataset_features_description(df):
