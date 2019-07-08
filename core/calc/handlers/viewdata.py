@@ -353,7 +353,7 @@ class ViewDataHandler(BaseDataHandler):
         :type camera_params: dict
         """
         self._data.update({
-            'algorithm': operation._operation_name,  # temporary (!)
+            'algorithm': operation._operation_code_name,
             # TODO: The code-name of algorithm should be part of the
             #  corresponding class (the same as element name in html-page).
             'parameters': operation.print_parameters(),
@@ -361,8 +361,6 @@ class ViewDataHandler(BaseDataHandler):
             'count_of_clusters': len(set(clusters)),
             'cluster_ready': True,
             'visualparameters': camera_params})
-        # for the direct access to parameters "update" method should be applied:
-        # self._data.update(operation.print_parameters())
 
     def set_preview_url(self, value):
         """

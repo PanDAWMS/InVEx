@@ -6,9 +6,11 @@ import pickle
 CLUST_NUM = 3
 CLUST_ARRAY = []
 
+
 class KMeansClustering(baseoperationclass.BaseOperationClass):
 
     _operation_name = 'K-Means Clustering'
+    _operation_code_name = 'KMeans'
     _type_of_operation = 'cluster'
 
     def __init__(self):
@@ -27,12 +29,12 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def save_parameters(self):
-        result = {'numberofcl': self.clust_numbers, 'clust_array': self.clust_array}
+        result = {'numberofclKMeans': self.clust_numbers, 'clust_array': self.clust_array}
         return result
 
     def load_parameters(self, parameters):
-        if "numberofcl" in parameters and parameters["numberofcl"] is not None:
-            self.clust_numbers = parameters["numberofcl"]
+        if "numberofclKMeans" in parameters and parameters["numberofclKMeans"] is not None:
+            self.clust_numbers = parameters["numberofclKMeans"]
         else:
             self.clust_numbers = CLUST_NUM
 
@@ -55,7 +57,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {'numberofcl': self.clust_numbers, 'clust_array': self.clust_array}
+        result = {'numberofclKMeans': self.clust_numbers, 'clust_array': self.clust_array}
         return result
 
     def process_data(self, dataset):
