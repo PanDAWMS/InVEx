@@ -338,8 +338,8 @@ def clusterize(request, dataset_id, group_ids=None):
         if (request.POST['algorithm'] == 'KMeans' and
                 'numberofclKMeans' in request.POST):
 
-            clusters_list = [] if request.POST['clustering_list_json'] else\
-                json.loads(request.POST['clustering_list_json'])
+            clusters_list = [] if request.POST['clustering_list_json'] == '' \
+                else json.loads(request.POST['clustering_list_json'])
 
             operation = calc.KMeansClustering.KMeansClustering()
             operation.set_parameters(int(request.POST['numberofclKMeans']),
