@@ -10,7 +10,9 @@ EPS = 0.5
 
 
 class DBScanClustering(baseoperationclass.BaseOperationClass):
+
     _operation_name = 'DBSCAN Clustering'
+    _operation_code_name = 'DBSCAN'
     _type_of_operation = 'cluster'
 
     def __init__(self):

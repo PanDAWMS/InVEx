@@ -8,7 +8,9 @@ BATCH_SIZE = 200
 
 
 class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
+
     _operation_name = 'MiniBatch K-Means Clustering'
+    _operation_code_name = 'MiniBatchKMeans'
     _type_of_operation = 'cluster'
 
     def __init__(self):

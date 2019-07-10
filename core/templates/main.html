@@ -41,6 +41,7 @@
 <script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="{% static "js/VAP/correlation_matrix.js" %}"></script>
 <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
 <script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
@@ -54,7 +55,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
 <script>
     var preview_url = "{{ PREVIEW_URL }}";
-    var next_group_url = "{{ NEXT_GROUP_URL|safe }}";
     var next_group_url = "{{ NEXT_GROUP_URL|safe }}";
     var nan=0; {% comment %} TEMPORARY FIX, FOR SMALL GROUPS STATISTICS GIVES NAN {% endcomment %}
 </script>
@@ -79,7 +79,7 @@
             var index_name = '{{ index_name }}';
             var features = {{ features|safe }};
             var lod_mode = '{{ lod_mode }}';
-            var lod_activated = '{{ lod_activated }}';
+            var lod_activated = {{ lod_activated|yesno:"true,false" }};
             var lod_value = {{ lod_value }};
 
             var features_stat = new DatasetStats(dsID,
@@ -100,35 +100,6 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-
-            {% if type == "datavisualization" %}
-                {% if data_is_ready %}
-
-                    var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
-                        ['MiniBatchKMeans', 'MiniBatchKMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20},
-                                                               {'name':'batch_size', 'label':'Number of samples in minibatch', 'type':'integer', 'attributes':[['placeholder', '100']], 'defvalue':'100', 'min': 5, 'max': 99999}],
-                        ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
-                                             {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}]
-                    ];
-
-                    var curr_algorithm;
-                    var curr_parameters;
-
-                    {%  if algorithm %}
-                        curr_algorithm = "{{ algorithm }}";
-                        curr_parameters = {{ parameters|safe }};
-                    {% endif %}
-                    {% if group_vis is False %}
-                        createClusterElements(
-                            document.getElementById('clustering'),
-                            document.getElementById('cluster_form'),
-                            clustering_parameters,
-                            curr_algorithm,
-                            curr_parameters);
-                    {% endif %}
-                {% endif %}
-            {% endif %}
-
             {% if dim_names %}
                 var dimNames = {{ dim_names|safe }};
                 scene.setDimNames(dimNames);
@@ -159,6 +130,81 @@
                 scene.setRealStats(statistics_real);
                 {% if data_is_ready %}
                     printStats(statistics_real, dimNames, "stats");
+                {% endif %}
+            {% endif %}
+
+            {% if type == "datavisualization" %}
+                {% if data_is_ready %}
+
+                    var clustering_parameters = [
+                        ['KMeans',
+                            'KMeans',
+                            {
+                                'name': 'numberofclKMeans',
+                                'label': 'Number of clusters',
+                                'type': 'integer',
+                                'attributes': [['placeholder', '5']],
+                                'defvalue': '5',
+                                'min': 1,
+                                'max': 20
+                            }],
+                        ['MiniBatchKMeans',
+                            'MiniBatchKMeans',
+                            {
+                                'name': 'numberofcl',
+                                'label': 'Number of clusters',
+                                'type': 'integer',
+                                'attributes': [['placeholder', '5']],
+                                'defvalue': '5',
+                                'min': 1,
+                                'max': 20
+                            },
+                            {
+                                'name': 'batch_size',
+                                'label': 'Number of samples in minibatch',
+                                'type': 'integer',
+                                'attributes': [['placeholder', '100']],
+                                'defvalue': '100',
+                                'min': 5,
+                                'max': 99999
+                            }],
+                        ['DBSCAN',
+                            'DBSCAN',
+                            {
+                                'name': 'min_samples',
+                                'label': 'min_samples',
+                                'type': 'integer',
+                                'attributes': [['placeholder', '5']],
+                                'defvalue': '5',
+                                'min': 1,
+                                'max': 200
+                            },
+                            {
+                                'name': 'eps',
+                                'label': 'epsilon',
+                                'type': 'float',
+                                'attributes': [['placeholder', '0.5']],
+                                'defvalue': '0.5',
+                                'min': 0,
+                                'max': 50
+                            }]
+                    ];
+
+                    var curr_algorithm;
+                    var curr_parameters;
+
+                    {%  if algorithm %}
+                        curr_algorithm = "{{ algorithm }}";
+                        curr_parameters = {{ parameters | safe }};
+                    {% endif %}
+                    {% if group_vis is False %}
+                        createClusterElements(
+                            document.getElementById('clustering'),
+                            document.getElementById('cluster_form'),
+                            clustering_parameters,
+                            curr_algorithm,
+                            curr_parameters);
+                    {% endif %}
                 {% endif %}
             {% endif %}
 

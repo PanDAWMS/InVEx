@@ -65,7 +65,7 @@ class DatasetStats {
     }
 
     activate_lod() {
-        this.lod_activated = "true";
+        this.lod_activated = true;
         // var lod_number = document.getElementById("id_lod_number");
         // lod_number.disabled = false;
         if (document.querySelector('[id^="lod_select_"]')) {
@@ -77,7 +77,7 @@ class DatasetStats {
     }
 
     deactivate_lod() {
-        this.lod_activated = "false";
+        this.lod_activated = false;
         // var lod_number = document.getElementById("id_lod_number");
         // lod_number.disabled = true;
         if (document.querySelector('[id^="lod_select_"]')) {
@@ -216,7 +216,7 @@ class DatasetStats {
             }
         });
 
-        if (this.lod_activated === "true") {
+        if (this.lod_activated === true) {
             checkbox.checked = true;
             this.activate_lod();
             this.set_lod_value(this.lod_value);
@@ -571,9 +571,13 @@ class DatasetStats {
             button_submit.value = "Submit";
             button_submit.style.margin = "5px";
             button_submit.dataset_info = this;
-            button_submit.onclick = function () {
+            button_submit.onclick = function (e) {
                 var form = document.createElement("form");
                 form.setAttribute("method", "post");
+                if (typeof(preview_url) !== "undefined")
+                    form.setAttribute("action", "");
+                else
+                    form.setAttribute("action", preview_url);
                 form.style.display = "hidden";
 
                 var action = document.createElement("input");
@@ -582,11 +586,24 @@ class DatasetStats {
                 action.value = "submit_feature_selection";
                 form.appendChild(action);
 
-                var input_csrf = document.createElement("input");
-                input_csrf.type = "hidden";
-                input_csrf.name = "csrfmiddlewaretoken";
-                input_csrf.value = csrftoken;
-                form.appendChild(input_csrf);
+                var data = {
+                    dsID: e.target.dataset_info.dsID,
+                    csrfmiddlewaretoken: csrftoken,
+                    num_records: Number(e.target.dataset_info.num_records),
+                    features: JSON.stringify(e.target.dataset_info.features),
+                    index_name: e.target.dataset_info.index_name,
+                    lod_activated: e.target.dataset_info.lod_activated,
+                    lod_mode: e.target.dataset_info.lod_mode,
+                    lod_value: e.target.dataset_info.lod_value
+                };
+
+                for (var key in data) {
+                    var field = document.createElement("input");
+                    field.type = "hidden";
+                    field.name = key;
+                    field.value = data[key];
+                    form.appendChild(field);
+                }
 
                 document.body.appendChild(form);
                 form.submit();
@@ -660,7 +677,7 @@ class DatasetStats {
         selector.feature_id = idx;
         selector.features = this.features;
         selector.checked = (this.features[idx]["lod_enabled"] === "true");
-        selector.disabled = (this.lod_activated === "false");
+        selector.disabled = (this.lod_activated === false);
         selector.addEventListener("click", function(e) {
             e.target.features[e.target.feature_id]["lod_enabled"] = (e.target.checked) ? "true" : "false";
         });

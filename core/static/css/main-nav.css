@@ -309,3 +309,15 @@
   font-weight: bold;
 
 }
+
+.sortable-placeholder {
+    background-color: lightpink;
+    margin-top: 15px;
+    height: 35px;
+}
+
+.selectedLabel {
+    width: max-content;
+    padding-right: 15px;
+    margin: auto;
+}

@@ -4,7 +4,7 @@ import json
 OPERATION_NAME_STRING = "operationname"
 OPERATION_PARAMETERS_STRING = "parameters"
 OPERATION_RESULTS_STRING = "operationresults"
-OPERATION_CAMERA_STRING = "caneraatm"
+OPERATION_CAMERA_STRING = "cameraatm"
 
 
 class OperationHistory:
