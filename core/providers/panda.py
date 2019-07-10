@@ -66,8 +66,10 @@ class RemoteJSONReader(object):
         # note: ignore verifying the SSL certificate (applies to host certs)
 
         if response.status_code == requests.codes.ok:
-            output = json.loads(response.content)
-
+            if isinstance(response.content, str):
+                output = json.loads(response.content)
+            else:
+                output = json.loads(response.content.decode('latin1'))
             if self.verbose:
                 print('Data is collected successfully | response code: {0}'.
                       format(response.status_code))
