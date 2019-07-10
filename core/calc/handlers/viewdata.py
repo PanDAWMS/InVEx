@@ -357,24 +357,21 @@ class ViewDataHandler(BaseDataHandler):
                 if feature['feature_name'] in lod_features:
                     feature['lod_enabled'] = 'true'
 
-    def set_clustering_data(self, clusters, operation, camera_params):
+    def set_clustering_data(self, operation, camera_params):
         """
         Set parameters related to the clustering process.
 
-        :param clusters: Clusters identifications per element.
-        :type clusters: list
-        :param operation: Operation represents clustering algorithm.
+        :param operation: Applied operation of clustering (with result labels).
         :type operation: baseoperationclass.BaseOperationClass
         :param camera_params: Camera parameters.
         :type camera_params: dict
         """
+        cluster_labels = operation.save_results()['results']
         self._data.update({
             'algorithm': operation._operation_code_name,
-            # TODO: The code-name of algorithm should be part of the
-            #  corresponding class (the same as element name in html-page).
             'parameters': operation.print_parameters(),
-            'clusters': clusters,
-            'count_of_clusters': len(set(clusters)),
+            'clusters': cluster_labels,
+            'count_of_clusters': len(set(cluster_labels)),
             'cluster_ready': True,
             'visualparameters': camera_params})
 

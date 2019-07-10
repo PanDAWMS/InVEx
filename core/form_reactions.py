@@ -303,14 +303,12 @@ def get_operational_view_data(dataset_id, group_ids, op_number, **kwargs):
     operation, _, camera_params = op_history.get_step(op_number)
     if operation._type_of_operation != 'cluster':
         logger.error('[form_reactions.get_operational_view_data] '
-                     'The type of the operation is not "cluster": {}'.
+                     'The type of the operation is not "cluster": type={}'.
                      format(operation._type_of_operation))
-    clusters = operation.predict(dataset_hdlr.clustering_dataset).tolist()
 
     viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
     viewdata_hdlr.set_dataset_description(with_full_set=True)
-    viewdata_hdlr.set_clustering_data(clusters=clusters,
-                                      operation=operation,
+    viewdata_hdlr.set_clustering_data(operation=operation,
                                       camera_params=camera_params)
     if 'preview_url' in kwargs:
         viewdata_hdlr.set_preview_url(kwargs['preview_url'])
