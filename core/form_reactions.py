@@ -10,6 +10,7 @@ import os.path
 import pandas as pd
 
 from datetime import datetime
+from urllib.parse import urlparse
 
 from django.conf import settings
 
@@ -145,25 +146,59 @@ def set_jobs_data_from_panda(request):
     err_msg_subj = '[form_reactions.set_jobs_data_from_panda]'
 
     output = None
-    if request.GET['remotesrc'] == 'pandajobs' and 'taskid' in request.GET:
+    if request.GET['remotesrc'] == 'pandajobs':
         try:
             from .providers import PandaReader
         except ImportError as e:
             logger.error('{} {}'.format(err_msg_subj, e))
             raise
-        else:
+
+        source_data = None
+
+        if 'taskid' in request.GET:
             filter_params = {}
             if 'days' in request.GET:
                 filter_params['days'] = request.GET['days']
             else:
                 filter_params['fulllist'] = 'true'
 
+            source_data = PandaReader().get_jobs_data_by_task(
+                task_id=request.GET['taskid'],
+                filter_params=filter_params)
+
+        elif 'bigpandaUrl' in request.GET:
+            try:
+                parsed_url = urlparse(request.GET['bigpandaUrl'])
+            except ValueError as e:
+                logger.error('{} No URL provided or provided str is not URL: '
+                             '{}'.format(err_msg_subj, e))
+                raise
+
+            if parsed_url.path != '/jobs/':
+                logger.error('{} Provided BigPanDA URL is incorrect: {}'.
+                             format(err_msg_subj, json.dumps(request.GET)))
+                raise
+
+            filter_params = {'fulllist': 'true'}
+            if len(parsed_url.query) > 0 and '=' in parsed_url.query:
+                filter_params.update(dict(query_param.split('=') for query_param
+                                          in parsed_url.query.split('&')))
+                bigpanda_params_to_delete = ['display_limit']
+                [filter_params.pop(i, None) for i in bigpanda_params_to_delete]
+
+            source_data = PandaReader().get_jobs_data_by_url(
+                filter_params=filter_params)
+
+        if source_data:
             output = _process_input_data(
                 source_type='json',
-                source_data=PandaReader().get_jobs_data_by_task(
-                    task_id=request.GET['taskid'],
-                    filter_params=filter_params),
+                source_data=source_data,
                 **{'index_name': 'pandaid'})
+        else:
+            logger.error('{} Data from BigPanDA was not collected: {}'.
+                         format(err_msg_subj, json.dumps(request.GET)))
+            raise
+
     else:
         logger.error('{} Request parameters are incorrect: {}'.
                      format(err_msg_subj, json.dumps(request.GET)))
