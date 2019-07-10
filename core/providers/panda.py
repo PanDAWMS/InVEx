@@ -135,6 +135,23 @@ class PandaReader(RemoteJSONReader, BaseReader):
 
         return output
 
+    def get_jobs_data_by_url(self, filter_params=None):
+        """
+        Get jobs data from BigPanDA by URL
+        :param filter_params: Parameters to filter the request provided in URL.
+        :type filter_params: dict/None
+
+        :return: Jobs data
+        :rtype: list
+        """
+        output = []
+
+        if filter_params:
+            output = self.get(url_path='jobs/',
+                              filter_params=filter_params).get('jobs', [])
+
+        return output
+
     def read_jobs_df(self, task_id, filter_params=None, **kwargs):
         """
         Read data of DataFrame format from the corresponding file.

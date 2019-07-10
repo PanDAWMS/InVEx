@@ -566,6 +566,33 @@ def get_jobs_from_panda(request):
                 filter_params['fulllist'] = 'true'
             data = PandaReader().get_jobs_data_by_task(task_id=request.GET['taskid'],
                                                        filter_params=filter_params)
+    elif 'bigpandaUrl' in request.GET:
+        try:
+            from .providers import PandaReader
+            from urllib.parse import urlparse
+        except ImportError as exc:
+            logger.error('{0} {1}'.format(err_msg_subj, exc))
+        else:
+            bigpanda_url = request.GET['bigpandaUrl']
+            try:
+                parsed_url = urlparse(bigpanda_url)
+            except ValueError as exc:
+                logger.error('{0} No URL provided or provided str is not URL: {1}'.format(err_msg_subj, exc))
+                raise
+
+            if parsed_url.path != '/jobs/':
+                logger.error('{0} Provided bigpanda URL is incorrect: {1}'.
+                     format(err_msg_subj, json.dumps(request.GET)))
+                raise
+            if len(parsed_url.query) > 0 and '=' in parsed_url.query:
+                filter_params = dict(query_param.split('=') for query_param in parsed_url.query.split('&'))
+                bigpanda_params_to_delete = ['display_limit']
+                [filter_params.pop(i, None) for i in bigpanda_params_to_delete]
+            else:
+                filter_params = {}
+
+            filter_params['fulllist'] = 'true'
+            data = PandaReader().get_jobs_data_by_url(filter_params=filter_params)
     else:
         logger.error('{0} Request parameters are incorrect: {1}'.
                      format(err_msg_subj, json.dumps(request.GET)))

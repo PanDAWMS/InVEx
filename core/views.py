@@ -114,6 +114,7 @@ def visualization_init(request):
             except Exception as exc:
                 logger.error('{0} Remote data are not accessible: {1}'.
                              format(err_msg_subj, exc))
+
     if not datasetid is None:
         return redirect(reverse('regular_visualization_data', kwargs={'maindatasetuid': datasetid, 'groups': ''}))
     data['type'] = 'datavisualization'
