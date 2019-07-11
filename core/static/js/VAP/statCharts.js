@@ -2,6 +2,25 @@
  * Created by Maria on 05.03.2019.
  */
 
+$.fn.dataTable.Api.register('row().show()', function () {
+    var page_info = this.table().page.info();
+    // Get row index
+    var new_row_index = this.index();
+    // Row position
+    var row_position = this.table().rows()[0].indexOf(new_row_index);
+    // Already on right page ?
+    if (row_position >= page_info.start && row_position < page_info.end) {
+        // Return row object
+        return this;
+    }
+    // Find page number
+    var page_to_display = Math.floor(row_position / this.table().page.len());
+    // Go to that page
+    this.table().page(page_to_display);
+    // Return row object
+    return this;
+});
+
 function getClusterMeans(data, clusters_list, cluster_number) {
     // generate list of indexes for current cluster number
     var cluster_indexes = [];
@@ -95,7 +114,9 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
 }
 
 function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames) {
-    var _dimensions = dimNames.map((dim, index) => {
+    var plot = document.getElementById(element_id),
+
+    _dimensions = dimNames.map((dim, index) => {
         var _values = real_data.map((row) => { return row[1][index]; });
 
         return {
@@ -114,24 +135,25 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         Object.keys(clusters_color_scheme).
             map((x) => {
                 return [(x - color_min) / (color_max - color_min),
-                    rgbToHex(clusters_color_scheme[x])];
+                rgbToHex(clusters_color_scheme[x])];
             })),
 
     _color = clusters_list.map((x) => { return x; }),
 
-    data = [{
+    _parcoords = {
         type: 'parcoords',
         line: {
             showscale: true,
             colorscale: _colorscale,
             color: _color
         },
-
         dimensions: _dimensions
-    }],
+    },
+
+    data = [_parcoords],
 
     layout = {
-        width: 80 * dimNames.length,
+        width: dimNames.length > 7 ? 80 * dimNames.length : 600,
         height: 500,
         annotations: {
             visible: false
@@ -147,12 +169,73 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
     };
     
     Plotly.newPlot(element_id, data, layout, config);
-
+    
     d3.select("#" + element_id)
         .style("overflow", "auto");
 
     d3.selectAll("#" + element_id + " .axis-title")
         .style("transform", "translate(0, -28px) rotate(-9deg)");
+
+
+
+
+    d3.select("#" + element_id)
+        .append("label")
+        .attr("id", "hoverInfo1");
+
+    d3.select("#" + element_id)
+        .append("table")
+        .attr("id", "t" + element_id)
+        .attr("class", "table table-sm table-hover display compact");
+    var __theader_array = dimNames.slice();
+    __theader_array.unshift('ID');
+    var __theader = __theader_array.map(row => { return { title: row }; });
+
+    var __tcells = real_data.map(row => [row[0]].concat(row[1].map(String)));
+
+       
+
+    $('#t' + element_id).DataTable({
+        data: __tcells,
+        columns: __theader
+    });
+
+
+    plot.on('plotly_hover', function (data) {
+        var infotext = "id: " + data.curveNumber;
+
+        //console.log(data);
+
+        d3.select("#hoverInfo1")
+            .style("position", "absolute")
+            .style("left", (data.clientX - 26) + "px")
+            .style("top", (data.clientY + 50) + "px")
+            .style("background", "#ddd")
+            .html(infotext);
+
+        //console.log($($('#t' + element_id).DataTable().row(data.curveNumber).data()));
+
+        $('#t' + element_id).DataTable().row(data.curveNumber).show().draw(false);
+
+        $('#t' + element_id).DataTable().rows(data.curveNumber).nodes()
+        .to$()
+        .toggleClass('selected');
+            
+    })
+    .on('plotly_unhover', function (data) {
+        d3.select("#hoverInfo1").html('<br/>');
+
+        $('#t' + element_id).DataTable().rows(data.curveNumber).nodes()
+            .to$()
+            .removeClass('selected');
+    });
+
+
+    //var table = document.createElement("table");
+    //table.id = ID;
+    //table.classList.add("table", "table-sm", "table-hover", "display", "compact");
+    //__tcells = __tcells_transposed[0].map((col, i) => __tcells_transposed.map(row => row[i]));
+
 }
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
