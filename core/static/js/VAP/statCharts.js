@@ -113,18 +113,11 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     Plotly.plot(element_id, data, layout);
 }
 
-function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames) {
+function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, skipClust=[]) {
+    //console.log(clusters_list);
+
+
     var plot = document.getElementById(element_id),
-
-    _dimensions = dimNames.map((dim, index) => {
-        var _values = real_data.map((row) => { return row[1][index]; });
-
-        return {
-            label: dim,
-            range: [Math.min(..._values), Math.max(..._values)],
-            values: _values
-        };
-    }),
 
     color_max = Math.max(...Object.keys(clusters_color_scheme)),
     color_min = Math.min(...Object.keys(clusters_color_scheme)),
@@ -132,13 +125,25 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
 
     _colorscale = ((Object.keys(clusters_color_scheme).length === 1) ?
         [["0.0", zero_color], ["1.0", zero_color]] :
-        Object.keys(clusters_color_scheme).
-            map((x) => {
+        Object.keys(clusters_color_scheme)
+            .filter(x => { console.log(x, skipClust, skipClust.indexOf(x) === -1); return skipClust.indexOf(x) === -1; })
+            .map((x) => {
                 return [(x - color_min) / (color_max - color_min),
                 rgbToHex(clusters_color_scheme[x])];
             })),
 
-    _color = clusters_list.map((x) => { return x; }),
+    _color = clusters_list.filter((x) => { return skipClust.indexOf(x) === -1; }),//  map((x) => { return x; }),
+
+    _dimensions = dimNames.map((dim, index) => {
+        var _values = real_data.filter((elem, i) => { return skipClust.indexOf(clusters_list[i]) === -1; })
+            .map((row) => { return row[1][index]; });
+
+        return {
+            label: dim,
+            range: [Math.min(..._values), Math.max(..._values)],
+            values: _values
+        };
+    }),
 
     _parcoords = {
         type: 'parcoords',
@@ -168,74 +173,63 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         }
     };
     
-    Plotly.newPlot(element_id, data, layout, config);
-    
+    var graph = Plotly.newPlot(element_id, data, layout, config);
+    //console.log(graph);
+
     d3.select("#" + element_id)
         .style("overflow", "auto");
 
     d3.selectAll("#" + element_id + " .axis-title")
         .style("transform", "translate(0, -28px) rotate(-9deg)");
 
+    d3.selectAll(".plot-container")
+        .attr('title', '');
 
-
-
-    d3.select("#" + element_id)
-        .append("label")
-        .attr("id", "hoverInfo1");
+    $(".plot-container").tooltip({
+            track: true
+        });
 
     d3.select("#" + element_id)
         .append("table")
         .attr("id", "t" + element_id)
         .attr("class", "table table-sm table-hover display compact");
+
     var __theader_array = dimNames.slice();
     __theader_array.unshift('ID');
-    var __theader = __theader_array.map(row => { return { title: row }; });
 
-    var __tcells = real_data.map(row => [row[0]].concat(row[1].map(String)));
-
-       
+    var __theader = __theader_array.map(row => { return { title: row }; }),
+        __tcells = real_data.map((row, i) => [row[0]].concat(row[1].map(String)).concat([rgbToHex(clusters_color_scheme[_color[i]])]));   
 
     $('#t' + element_id).DataTable({
         data: __tcells,
-        columns: __theader
+        columns: __theader,
+        "rowCallback": (row, data) => {
+            $(row).css('background-color', data[data.length - 1]);
+        }      
     });
 
-
     plot.on('plotly_hover', function (data) {
-        var infotext = "id: " + data.curveNumber;
+        var infotext = "id: " + scene.realData[data.curveNumber][0];
 
-        //console.log(data);
-
-        d3.select("#hoverInfo1")
-            .style("position", "absolute")
-            .style("left", (data.clientX - 26) + "px")
-            .style("top", (data.clientY + 50) + "px")
-            .style("background", "#ddd")
-            .html(infotext);
-
-        //console.log($($('#t' + element_id).DataTable().row(data.curveNumber).data()));
+        $(".plot-container").tooltip("option", "content", infotext);
 
         $('#t' + element_id).DataTable().row(data.curveNumber).show().draw(false);
 
-        $('#t' + element_id).DataTable().rows(data.curveNumber).nodes()
-        .to$()
-        .toggleClass('selected');
-            
-    })
-    .on('plotly_unhover', function (data) {
-        d3.select("#hoverInfo1").html('<br/>');
+        $('#t' + element_id).DataTable().rows().nodes()
+            .to$()
+            .removeClass('selected');
 
         $('#t' + element_id).DataTable().rows(data.curveNumber).nodes()
             .to$()
-            .removeClass('selected');
+            .toggleClass('selected');
+
     });
-
-
-    //var table = document.createElement("table");
-    //table.id = ID;
-    //table.classList.add("table", "table-sm", "table-hover", "display", "compact");
-    //__tcells = __tcells_transposed[0].map((col, i) => __tcells_transposed.map(row => row[i]));
-
+    /*.on('plotly_unhover', function (data) {
+        d3.select("#radar_chart_all")
+            //.style("left", (data.clientX - 26) + "px")
+            //.style("top", (data.y + 130) + "px")
+            .attr('title', '');
+    });*/
 }
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
