@@ -1,9 +1,8 @@
-import os
 import pandas as pd
+from sklearn import preprocessing
 
 
-def import_csv_file(path_to_file, index=False, column_names=False):
-
+def import_csv_file(path_to_file, index=False, column_names=False, use_cols=False):
     if index:
         index = 0
     else:
@@ -13,7 +12,15 @@ def import_csv_file(path_to_file, index=False, column_names=False):
         column_names = 0
     else:
         column_names = None
-    return pd.read_csv(path_to_file, index_col=index, header=column_names)
+    if use_cols == False:
+        return pd.read_csv(path_to_file, index_col=index, header=column_names)
+    else:
+        return pd.read_csv(path_to_file, index_col=index, header=column_names, usecols=use_cols)
+
+def scaler(df):
+    scaler = preprocessing.MinMaxScaler()
+    scaled_df = scaler.fit_transform(df)
+    return pd.DataFrame(scaled_df, index=df.index, columns=df.columns).multiply(100)
 
 
 def normalization(df, cols_to_norm):
@@ -21,12 +28,12 @@ def normalization(df, cols_to_norm):
 
 
 def dropNA(df):
-    df.dropna(axis=1, how='any', inplace=True)
     df.dropna(axis=0, how='any', inplace=True)
+
 
 def numeric_columns(df):
     aux = []
     for item in df:
-        if df[item].dtypes in ['int64','float'] :
+        if df[item].dtypes in ['int64', 'float64','int32','float32','int','float']:
             aux.append(item)
     return aux

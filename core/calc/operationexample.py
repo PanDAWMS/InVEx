@@ -8,6 +8,7 @@ class OperationExample(baseoperationclass.BaseOperationClass):
     _operation_name = "OperationExample"
 
     def __init__(self):
+        super().__init__()
         self.parameter1 = DEFAULT_PARAMETER1
         self.parameter2 = DEFAULT_PARAMETER2
         self.parameter3 = None

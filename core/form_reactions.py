@@ -1,520 +1,482 @@
 """
-Basic methods to react to different forms
+Basic methods to process requests for data visualization.
 """
-from core import calc
+
 import io
-import os.path
-from datetime import datetime
-import pandas as pd
 import json
-from core.settings.base import BASE_DIR
 import logging
+import os.path
 
-SAVED_FILES_PATH = BASE_DIR + '/datafiles/'
-DATASET_FILES_PATH = BASE_DIR + '/datasets/'
+import pandas as pd
+
+from datetime import datetime
+from urllib.parse import urlparse
+
+from django.conf import settings
+
+from core.settings.base import BASE_DIR
+from core import calc
+
+from .calc.handlers import DatasetHandler, ViewDataHandler
+from .calc.handlers.viewdata import list_csv_data_files, DATASET_FILES_PATH
+from .providers import LocalReader
+
 SITE_SITE_DATASET_FILES_PATH = BASE_DIR + '/site_site_datasets/'
-TEST_DATASET_FILES_PATH = BASE_DIR + '/test_datasets/'
-FILES_LIST_NAME = 'files_list.json'
-BACKUP_FILE = '_backup'
 
-# Get an instance of a logger
 logger = logging.getLogger(__name__)
+local_reader = LocalReader()
 
 
-def list_csv_data_files(directory):
+def create_dataset_storage(dataset_id):
     """
-    Get the list of CSV data files.
-    :param directory: 
-    :return: 
-    """
-    if not os.path.isfile(directory + FILES_LIST_NAME):
-        return None
-    file = open(directory + FILES_LIST_NAME, 'r')
-    csv_data_files = json.loads(file.read())
-    return csv_data_files
+    Create directory for service files related to analyzed dataset sample.
 
-def save_data(original_dataset, norm_dataset, auxiliary_dataset, op_history, lod, lod_metadata, filename=None):
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :return: Full path for dataset storage.
+    :rtype: str
     """
-    Saving data to the operations history file.
-    1st line - original dataset
-    2nd line - normalized datasample
-    3rd line - operations history (list of clusterizations)
-    4th line - auxiliary data (not numeric values)
-    5th line - value of Level-of-Detail Generator
-    6th line - groups metadata
-    :param original_dataset: 
-    :param norm_dataset: 
-    :param auxiliary_dataset: 
-    :param op_history: 
-    :param lod:
-    :param filename: 
-    :return: 
-    """
-    if (filename is None):
-        filename = str(datetime.now().timestamp())
-        while os.path.isfile(SAVED_FILES_PATH + filename):
-            filename = filename + 't'
-    else:
-        if os.path.isfile(SAVED_FILES_PATH + filename + BACKUP_FILE):
-            try:
-                os.remove(SAVED_FILES_PATH + filename + BACKUP_FILE)
-            except Exception as exc:
-                logger.error('!form_reactions.save_data!: Failed to remove the backup file. \nFilename:'
-                             + SAVED_FILES_PATH + filename + '\n' + str(exc))
-                raise
-        if os.path.isfile(SAVED_FILES_PATH + filename):
-            try:
-                os.rename(SAVED_FILES_PATH + filename, SAVED_FILES_PATH + filename + BACKUP_FILE)
-            except Exception as exc:
-                logger.error('!form_reactions.save_data!: Failed to rename the backup file. \nFilename:'
-                             + SAVED_FILES_PATH + filename + '\n' + str(exc))
-                raise
-        if os.path.isfile(SAVED_FILES_PATH + filename):
-            try:
-                os.remove(SAVED_FILES_PATH + filename)
-            except Exception as exc:
-                logger.error('!form_reactions.save_data!: Failed to remove the original file. \nFilename:'
-                             + SAVED_FILES_PATH + filename + '\n' + str(exc))
-                raise
+    output = os.path.join(settings.MEDIA_ROOT, str(dataset_id))
+
     try:
-        file = open(SAVED_FILES_PATH + filename, "w")
-        file.write(original_dataset.to_json(orient='table'))
-        file.write('\n')
-        file.write(norm_dataset.to_json(orient='table'))
-        file.write('\n')
-        file.write(op_history.save_to_json())
-        file.write('\n')
-        file.write(auxiliary_dataset.to_json(orient='table'))
-        file.write('\n')
-        file.write(lod)
-        file.write('\n')
-        file.write(str(lod_metadata))
-        file.close()
-        return filename
-    except Exception as exc:
-        logger.error('!form_reactions.save_data!: Failed to save the data. \nFilename:'
-                     + SAVED_FILES_PATH + filename + '\n' + str(exc))
-        raise
+        os.mkdir(output)
+    except OSError as e:
+        logger.error('[form_reactions.create_dataset_storage] '
+                     'Failed to create dataset storage: {}'.format(e))
+
+    return output
 
 
-def load_data(filename):
+def _process_input_data(source_type, source_data, **kwargs):
     """
-    Loading data from the operations history file.
-    The file is reading line by line:
-    1st line - original dataset
-    2nd line - normalized datasample
-    3rd line - operations history (list of clusterizations)
-    4th line - auxiliary data (not numeric values)
-    5th line - value of Level-of-Detail Generator
-    6th line - groups metadata
-    :param filename: 
-    :return: 
+    Get and process data to prepare data sample (i.e., store at the server).
+
+    :param source_type: Type of the source: file, dataframe, json.
+    :type source_type: str
+    :param source_data: Source data.
+    :type source_data: dict/pandas.DataFrame/json
+
+    :keyword index_name: Column name that would be used as an index.
+
+    :return: Dataset sample id.
+    :rtype: str
     """
-    if not os.path.isfile(SAVED_FILES_PATH + filename):
-        logger.error('!form_reactions.load_data!: File is missing. Couldn\'t load the file. \nFilename:'
-                     + SAVED_FILES_PATH + filename)
-        return [None, None, None, None]
+    err_msg_subj = '[form_reactions._process_input_data]'
+
+    output = str(datetime.now().timestamp())
+    dataset_path = os.path.join(create_dataset_storage(output),
+                                '{}.csv'.format(output))
     try:
-        file = open(SAVED_FILES_PATH + filename, "r")
-        data = file.readline()
-        original_dataset = calc.data_converters.table_to_df(data)
-        data = file.readline()
-        norm_dataset = calc.data_converters.table_to_df(data)
-        data = file.readline()
-        op_history = calc.operationshistory.OperationHistory()
-        op_history.load_from_json(data)
-        data = file.readline()
-        aux_dataset = calc.data_converters.table_to_df(data)
-        lod_value = int(file.readline())
-        groups_metadata = file.readline()
-        file.close()
-        return [original_dataset, norm_dataset, op_history, aux_dataset, lod_value, groups_metadata]
-    except Exception as exc:
-        logger.error('!form_reactions.load_data!: Failed to load the data. \nFilename:'
-                     + SAVED_FILES_PATH + filename + '\n' + str(exc))
-        raise
+        if source_type == 'file':
+            with open(dataset_path, 'wb+') as f:
+                for chunk in source_data.chunks():
+                    f.write(chunk)
 
-def prepare_data_object(norm_dataset, real_dataset, auxiliary_dataset, op_history):
+        elif source_type == 'dataframe':
+            source_data.to_csv(dataset_path)
+
+        elif source_type == 'json' and 'index_name' in kwargs:
+            df = pd.read_json(json.dumps(source_data))
+            df.set_index(kwargs['index_name'], inplace=True)
+            df.to_csv(dataset_path)
+    except Exception as e:
+        logger.error('{} Failed to prepare dataset sample: {}'.
+                     format(err_msg_subj, e))
+
+    return output
+
+
+def set_csv_file_from_server(request):
     """
-    Preparing data object for the client. 
-    This object includes all information about data sample:
-    - initial data sample (numerical) 
-    - normalized data sample
-    - auxiliary data sample
-    - names of numerical features (columns)
-    - names of auxiliary features (columns)
-    - data sample index
-    - statistics for the initial data sample
-    - operations history data file
-    - array for the correlation matrix
-    :param norm_dataset: 
-    :param real_dataset: 
-    :param auxiliary_dataset: 
-    :param op_history: 
-    :return: 
+    Prepare dataset sample from the server file (test dataset samples).
+
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :return: Dataset sample id.
+    :rtype: int/str
     """
-    try:
-        if norm_dataset.index.name is None:
-            idx = ['id']
-        else:
-            idx = [norm_dataset.index.name]
-        columns = norm_dataset.columns.tolist()
+    err_msg_subj = '[form_reactions.set_csv_file_from_server]'
 
-        metrics = calc.basicstatistics.BasicStatistics()
-        real_dataset_stats_or = metrics.process_data(real_dataset)
-        real_dataset_stats = []
-        for i in range(len(real_dataset_stats_or)):
-            real_dataset_stats.append(real_dataset_stats_or[i].tolist())
-
-        corr_matrix = real_dataset.corr()
-
-        aux_columns = auxiliary_dataset.columns.tolist()
-
-        data = {
-            'norm_dataset': calc.data_converters.pandas_to_js_list(norm_dataset),
-            'real_dataset': calc.data_converters.pandas_to_js_list(real_dataset),
-            'aux_dataset': calc.data_converters.pandas_to_js_list(auxiliary_dataset),
-            'data_is_ready': True,
-            'cluster_ready': False,
-            'lod_activated': False,
-            'algorithm': False,
-            'visualparameters': False,
-            'lod_data': False,
-            'algorithm': False,
-            'dim_names': columns,
-            'aux_names': aux_columns,
-            'index': idx,
-            'filename': False,
-            'real_metrics': [calc.basicstatistics.DESCRIPTION, real_dataset_stats],
-            'operation_history': op_history,
-            'corr_matrix': corr_matrix.values.tolist(),
-            'type': 'datavisualization',
-            'group_vis': False
-        }
-        return data
-    except Exception as exc:
-        logger.error('!form_reactions.prepare_data_object!: Failed to prepare basics of the data. \n' + str(exc))
-        raise
-
-def data_preparation(dataset, request):
-    """
-    Data Preparation includes:
-    - cleaning data sample from NaNs
-    - data sample normalization
-    - splitting data sample into 2 parts: numeric and auxiliary.
-    Numeric part contains only numerical data and is used for clustering.
-    Auxiliary part contains objects, strings, datetime etc. and can be used for data grouping
-    - calculating statistics for the normalized data sample
-    - saving information about normalized data sample and statistics in the operations history file with the unique ID
-    :param dataset: 
-    :param request: 
-    :return: 
-    """
-    calc.importcsv.dropNA(dataset)
-    numeric_columns = calc.importcsv.numeric_columns(dataset)
-    numeric_dataset = dataset[numeric_columns]
-    norm_dataset = calc.importcsv.normalization(numeric_dataset, numeric_columns)
-    calc.importcsv.dropNA(norm_dataset)
-    columns = norm_dataset.columns.tolist()
-    numeric_dataset = numeric_dataset[columns]
-    auxiliary_dataset = dataset.drop(numeric_columns, 1)
-    if ('activated' in request.POST and request.POST['lod_value'] != ''):
-        lod = int(request.POST['lod_value'])
-        lod_data = calc.lod_generator.LoDGenerator(numeric_dataset, lod)
-        norm_lod_dataset = calc.importcsv.normalization(lod_data.grouped_dataset, columns)
-        aux_lod_dataset = lod_data.grouped_dataset.drop(columns, 1)
-        op_history = calc.operationshistory.OperationHistory()
-        metrics = calc.basicstatistics.BasicStatistics()
-        metrics.process_data(norm_lod_dataset)
-        op_history.append(norm_lod_dataset, metrics)
-        data = prepare_data_object(norm_lod_dataset, lod_data.grouped_dataset, aux_lod_dataset, op_history)
-        data['lod_data'] = lod_data.groups_metadata
-        data['lod_value'] = request.POST['lod_value']
-        data['lod_activated'] = True
-        groupedData = calc.grouped.GroupedData()
-        groupedData.get_groups(dataset, lod_data.groups_metadata)
-        data['saveid'] = save_data(lod_data.grouped_dataset, norm_lod_dataset, aux_lod_dataset, op_history, str(lod), lod_data.groups_metadata)
-        groupedData.set_fname(SAVED_FILES_PATH + data['saveid'] + '_group')
-        groupedData.save_to_file()
-    else:
-        op_history = calc.operationshistory.OperationHistory()
-        metrics = calc.basicstatistics.BasicStatistics()
-        metrics.process_data(norm_dataset)
-        op_history.append(norm_dataset, metrics)
-        data = prepare_data_object(norm_dataset, numeric_dataset, auxiliary_dataset, op_history)
-        data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history, '0', '0')
-    data['request'] = request
-    return data
-
-def new_csv_file_upload(request):
-    """
-    Donwload CSV file from the remote location.
-    :param request: 
-    :return: 
-    """
-    if 'customFile' in request.FILES:
-        try:
-            dataset = calc.importcsv.import_csv_file(io.StringIO(request.FILES['customFile'].read().decode('utf-8')),
-                                                     True, True)
-        except Exception as exc:
-            logger.error(
-                '!form_reactions.new_csv_file_upload!: Failed to load data from the uploaded csv file. \n' + str(exc))
-            raise
-    else:
-        logger.error('!form_reactions.new_csv_file_upload!: Failed to load data. There is no file to read.\nRequest: '
-                     + json.dumps(request.POST))
-        return {}
-    try:
-        data = data_preparation(dataset, request)
-        data['filename'] = request.FILES['customFile']
-        return data
-    except Exception as exc:
-        logger.error(
-            '!form_reactions.new_csv_file_upload!: Failed to prepare data after uploading from file. \n' + str(exc))
-        raise
-
-
-def csv_file_from_server(request):
-    """
-    Download CSV file from server.
-    :param request: 
-    :return: 
-    """
-    list_of_files = list_csv_data_files(DATASET_FILES_PATH)
-    dataset = None
-    if ('filename' in request.POST) and (list_of_files is not None):
-        for file in list_of_files:
-            if request.POST['filename'] == file['value']:
-                if os.path.isfile(DATASET_FILES_PATH + file['filename']):
-                    dataset = calc.importcsv.import_csv_file(DATASET_FILES_PATH + file['filename'], True, True)
+    output = None
+    list_of_files = list_csv_data_files()
+    if 'filename' in request.POST and list_of_files is not None:
+        for f in list_of_files:
+            if f['value'] == request.POST['filename']:
+                full_file_name = os.path.join(DATASET_FILES_PATH, f['filename'])
+                if os.path.isfile(full_file_name):
+                    output = _process_input_data(
+                        source_type='dataframe',
+                        source_data=local_reader.read_df(
+                            file_path=full_file_name,
+                            file_format='csv',
+                            **{'index_col': 0,
+                               'header': 0}))
                 else:
-                    logger.error('!form_reactions.csv_file_from_server!: Failed to read file.\nFilename: ' +
-                                 DATASET_FILES_PATH + file['filename'])
-                    return {}
+                    logger.error('{} Failed to read data from server ({})'.
+                                 format(err_msg_subj, full_file_name))
     else:
-        logger.error(
-            '!form_reactions.csv_file_from_server!: Wrong request.\nRequest parameters: ' + json.dumps(request.POST))
-        return {}
-    if dataset is None:
-        logger.error(
-            '!form_reactions.csv_file_from_server!: Failed to get the dataset. \nRequest parameters: ' + json.dumps(
-                request.POST))
-        return {}
-    try:
-        data = data_preparation(dataset, request)
-        data['filename'] = request.POST['filename']
-        return data
-    except Exception as exc:
-        logger.error(
-            '!form_reactions.csv_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
-            + json.dumps(request.POST['filename']) + '\n' + str(exc))
-        raise
+        logger.error('{} Request parameters are incorrect: {}'.
+                     format(err_msg_subj, json.dumps(request.POST)))
+
+    return output
 
 
-def csv_test_file_from_server(request):
+def set_new_csv_file(request):
     """
-    Download test CSV file from server.
-    :param request: 
-    :return: 
+    Upload new CSV data file.
+
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :return: Dataset sample id.
+    :rtype: int/str
     """
-    list_of_files = list_csv_data_files(TEST_DATASET_FILES_PATH)
-    dataset = None
-    if ('filename' in request.POST) and (list_of_files is not None):
-        for file in list_of_files:
-            if request.POST['filename'] == file['value']:
-                if os.path.isfile(TEST_DATASET_FILES_PATH + file['filename']):
-                    filename = file['filename']
-                    dataset = calc.importcsv.import_csv_file(TEST_DATASET_FILES_PATH + file['filename'], True, True)
-                else:
-                    logger.error('!form_reactions.csv_test_file_from_server!: Could not read file.\n' +
-                                 TEST_DATASET_FILES_PATH + file['filename'])
-                    return {}
-            else:
-                logger.error('!form_reactions.csv_test_file_from_server!: File not found.\n' + TEST_DATASET_FILES_PATH
-                             + request.POST['filename'] + '\nRequest: ' + json.dumps(request.POST))
-                return {}
-    else:
-        logger.error('!form_reactions.csv_test_file_from_server!: Wrong request')
-        return {}
-    if dataset is None:
-        logger.error('!form_reactions.csv_test_file_from_server!: Could not find file. \n' + json.dumps(request.POST)
-                     + '\nFile name: ' + TEST_DATASET_FILES_PATH + filename)
-        return {}
-    try:
-        return data_preparation(dataset, request)
-    except Exception as exc:
-        logger.error(
-            '!form_reactions.csv_test_file_from_server!: Failed to prepare data after parsing the file. \nRequest.POST filename: '
-            + json.dumps(request.POST['filename']) + '\n' + str(exc))
-        raise
+    return _process_input_data(source_type='file',
+                               source_data=request.FILES.get('customFile'))
 
 
-def get_jobs_from_panda(request):
+def set_jobs_data_from_panda(request):
     """
     Get jobs data from PanDA system (by using providers.panda reader-client).
 
     :param request: HTTP [user] request.
     :type request: django.http.HttpRequest
-    :return: Data for analysis (pre-processed by the preparation method).
-    :rtype: dict
+    :return: Dataset sample id.
+    :rtype: int/str
     """
-    output = {}
-    err_msg_subj = '[get_jobs_from_panda]'
+    err_msg_subj = '[form_reactions.set_jobs_data_from_panda]'
 
-    dataset = None
-    if 'taskid' in request.GET:
+    output = None
+    if request.GET['remotesrc'] == 'pandajobs':
         try:
             from .providers import PandaReader
-        except ImportError as exc:
-            logger.error('{0} {1}'.format(err_msg_subj, exc))
-        else:
-            dataset = PandaReader().read_jobs_df(task_id=request.GET['taskid'],
-                                                 filter_params={'days': 365})
-            if not dataset.empty:
-                dataset.set_index('pandaid', inplace=True)
-    else:
-        logger.error('{0} Request parameters are incorrect: {1}'.
-                     format(err_msg_subj, json.dumps(request.GET)))
-
-    if dataset is not None:
-        try:
-            output = data_preparation(dataset, request)
-            output['filename'] = "taskid_" + request.GET['taskid']
-        except Exception as exc:
-            logger.error('{0} Failed to prepare data: {1}'.
-                         format(err_msg_subj, exc))
-            # TODO: check that the raise of the Exception is needed.
+        except ImportError as e:
+            logger.error('{} {}'.format(err_msg_subj, e))
             raise
+
+        source_data = None
+
+        if 'taskid' in request.GET:
+            filter_params = {}
+            if 'days' in request.GET:
+                filter_params['days'] = request.GET['days']
+            else:
+                filter_params['fulllist'] = 'true'
+
+            source_data = PandaReader().get_jobs_data_by_task(
+                task_id=request.GET['taskid'],
+                filter_params=filter_params)
+
+        elif 'bigpandaUrl' in request.GET:
+            try:
+                parsed_url = urlparse(request.GET['bigpandaUrl'])
+            except ValueError as e:
+                logger.error('{} No URL provided or provided str is not URL: '
+                             '{}'.format(err_msg_subj, e))
+                raise
+
+            if parsed_url.path != '/jobs/':
+                logger.error('{} Provided BigPanDA URL is incorrect: {}'.
+                             format(err_msg_subj, json.dumps(request.GET)))
+                raise
+
+            filter_params = {'fulllist': 'true'}
+            if len(parsed_url.query) > 0 and '=' in parsed_url.query:
+                filter_params.update(dict(query_param.split('=') for query_param
+                                          in parsed_url.query.split('&')))
+                bigpanda_params_to_delete = ['display_limit']
+                [filter_params.pop(i, None) for i in bigpanda_params_to_delete]
+
+            source_data = PandaReader().get_jobs_data_by_url(
+                filter_params=filter_params)
+
+        if source_data:
+            output = _process_input_data(
+                source_type='json',
+                source_data=source_data,
+                **{'index_name': 'pandaid'})
+        else:
+            logger.error('{} Data from BigPanDA was not collected: {}'.
+                         format(err_msg_subj, json.dumps(request.GET)))
+            raise
+
+    else:
+        logger.error('{} Request parameters are incorrect: {}'.
+                     format(err_msg_subj, json.dumps(request.GET)))
 
     return output
 
 
-def clusterize(request):
+def get_empty_view_data(mode=None):
     """
-    Implement clusterization.
-    :param request: 
-    :return: 
+    Get view data for UI representation (with default values).
+
+    :param mode: Mode of the visualization process.
+    :type mode: str/None
+    :return: Key-value pairs for UI representation.
+    :rtype: dict
     """
-    if 'fdid' not in request.POST:
-        logger.error('!form_reactions.clusterize!: There was no file name in the request. \nRequest parameters: '
-                     + json.dumps(request.POST))
-        return {}
-    original, dataset, op_history, aux_dataset, lod_value, lod_metadata = load_data(request.POST['fdid'])
-    if dataset is None:
-        return {}
-    data = prepare_data_object(dataset, original, aux_dataset, op_history)
-    if lod_value > 0:
-        data['lod_data'] = lod_metadata
-    data['request'] = request
+    return ViewDataHandler(mode=mode).context_data
+
+
+def get_initial_view_data(dataset_id, group_ids=None, **kwargs):
+    """
+    Get view data for loaded dataset sample (with corresponding initial values).
+
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :param group_ids: Group ids (if dataset groups were created).
+    :type group_ids: list/None
+    :return: Key-value pairs for UI representation.
+    :rtype: dict
+    """
+    viewdata_hdlr = ViewDataHandler(dataset_handler=DatasetHandler(
+        did=dataset_id, group_ids=group_ids, load_initial_dataset=True))
+    viewdata_hdlr.set_dataset_description(with_full_set=False)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    return viewdata_hdlr.context_data
+
+
+def _get_dataset_handler_by_request_data(request, dataset_id, group_ids=None):
+    """
+    Create DatasetHandler by input parameters from the request.
+
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :param group_ids: Group ids (if dataset groups were created).
+    :type group_ids: list/None
+    :return: DatasetHandler object.
+    :rtype: handlers.dataset.DatasetHandler
+    """
+    features, lod_features = [], []
+    for feature in json.loads(request.POST['features']):
+        if feature['enabled'] == 'true':
+            features.append(feature['feature_name'])
+        if feature.get('lod_enabled') == 'true':
+            lod_features.append(feature['feature_name'])
+
+    lod_data = None
+    if request.POST['lod_activated'] == 'true':
+        lod_data = {'mode': request.POST['lod_mode'],
+                    'value': int(request.POST['lod_value']),
+                    'features': lod_features}
+
+    return DatasetHandler(did=dataset_id, group_ids=group_ids,
+                          features=features, lod_data=lod_data,
+                          process_initial_dataset=True)
+
+
+def get_processed_view_data(request, dataset_id, group_ids=None, **kwargs):
+    """
+    Process provided dataset sample and get view data for UI representation.
+
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :param group_ids: Group ids (if dataset groups were created).
+    :type group_ids: list/None
+    :return: Key-value pairs for UI representation.
+    :rtype: dict
+    """
+    viewdata_hdlr = ViewDataHandler(
+        dataset_handler=_get_dataset_handler_by_request_data(
+            request=request, dataset_id=dataset_id, group_ids=group_ids))
+    viewdata_hdlr.set_dataset_description(with_full_set=True)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    return viewdata_hdlr.context_data
+
+
+def set_processed_view_data(request, dataset_id, group_ids=None, **kwargs):
+    """
+    Save processed data and get view data for UI representation.
+
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :param group_ids: Group ids (if dataset groups were created).
+    :type group_ids: list/None
+    :return: Key-value pairs for UI representation.
+    :rtype: dict
+    """
+    dataset_hdlr = _get_dataset_handler_by_request_data(
+        request=request, dataset_id=dataset_id, group_ids=group_ids)
+    dataset_hdlr.save()
+
+    viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
+    viewdata_hdlr.set_dataset_description(with_full_set=True)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    viewdata_hdlr.set_data_readiness()
+    return viewdata_hdlr.context_data
+
+
+def get_operational_view_data(dataset_id, group_ids, op_number, **kwargs):
+    """
+    Prepare view data for UI [initial page load and with applied operations].
+
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :param group_ids: Group ids (if dataset groups were created).
+    :type group_ids: list/None
+    :param op_number: [Current] operation number.
+    :type op_number: int
+    :return: Key-value pairs for UI representation.
+    :rtype: dict
+    """
+    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
+                                  load_history_data=True)
+
+    op_history = dataset_hdlr.operation_history
+    if op_number >= op_history.length():
+        op_number = op_history.length() - 1
+
+    operation, _, camera_params = op_history.get_step(op_number)
+    if operation._type_of_operation != 'cluster':
+        logger.error('[form_reactions.get_operational_view_data] '
+                     'The type of the operation is not "cluster": type={}'.
+                     format(operation._type_of_operation))
+
+    viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
+    viewdata_hdlr.set_dataset_description(with_full_set=True)
+    viewdata_hdlr.set_clustering_data(operation=operation,
+                                      camera_params=camera_params)
+    if 'preview_url' in kwargs:
+        viewdata_hdlr.set_preview_url(kwargs['preview_url'])
+    viewdata_hdlr.set_data_readiness()
+    return viewdata_hdlr.context_data
+
+
+def clusterize(request, dataset_id, group_ids=None):
+    """
+    Clustering of data objects/records from the provided dataset sample.
+
+    :param request: HTTP [user] request.
+    :type request: django.http.HttpRequest
+    :param dataset_id: Dataset sample id.
+    :type dataset_id: int/str
+    :param group_ids: Group ids (if dataset groups were created).
+    :type group_ids: list/None
+    :return: Number/id of the current operation.
+    :rtype: int
+    """
+    err_msg_subj = '[form_reactions.clusterize]'
+
     operation = None
     if 'algorithm' in request.POST:
-        if request.POST['algorithm'] == 'KMeans' and 'numberofcl' in request.POST:
-            try:
-                operation = calc.KMeansClustering.KMeansClustering()
-                operation.set_parameters(int(request.POST['numberofcl']))
-                result = operation.process_data(dataset)
-            except Exception as exc:
-                logger.error(
-                    '!form_reactions.clusterize!: Failed to perform KMean clusterization. \nRequest parameters: '
-                    + json.dumps(request.POST) + '\n' + str(exc))
-                raise
-            if result is not None:
-                try:
-                    op_history.append(dataset, operation)
-                    data['clusters'] = result.tolist()
-                    data['count_of_clusters'] = int(request.POST['numberofcl'])
-                    data['cluster_ready'] = True
-                except Exception as exc:
-                    logger.error(
-                        '!form_reactions.clusterize!: Failed to perform KMean clusterization. \nOperation parameters:'
-                        + json.dumps(operation.save_parameters()) + '\nOperation results: '
-                        + json.dumps(operation.save_results()) + '\nRequest parameters: '
-                        + json.dumps(request.POST) + '\n' + str(exc))
-                    raise
-            else:
-                logger.error(
-                    '!form_reactions.clusterize!: Failed to perform KMean clusterization. \nOperation parameters:'
-                    + json.dumps(operation.save_parameters()) + '\nRequest parameters: ' + json.dumps(request.POST))
-        elif request.POST['algorithm'] == 'DBSCAN' and 'min_samples' in request.POST and 'eps' in request.POST:
-            try:
-                operation = calc.DBScanClustering.DBScanClustering()
-                operation.set_parameters(int(request.POST['min_samples']), float(request.POST['eps']))
-                result = operation.process_data(dataset)
-            except Exception as exc:
-                logger.error(
-                    '!form_reactions.clusterize!: Failed to perform DBScan clusterization. \nRequest parameters: '
-                    + json.dumps(request.POST) + '\n' + str(exc))
-                raise
-            if result is not None:
-                try:
-                    op_history.append(dataset, operation)
-                    data['clusters'] = result.tolist()
-                    data['count_of_clusters'] = len(set(result.tolist()))
-                    data['min_samples'] = int(request.POST['min_samples'])
-                    data['eps'] = float(request.POST['eps'])
-                    data['cluster_ready'] = True
-                except Exception as exc:
-                    logger.error(
-                        '!form_reactions.clusterize!: Failed to perform DBScan clusterization. \nOperation parameters:'
-                        + json.dumps(operation.save_parameters()) + '\nOperation results: '
-                        + json.dumps(operation.save_results()) + '\nRequest parameters: '
-                        + json.dumps(request.POST) + '\n' + str(exc))
-                    raise
-            else:
-                logger.error(
-                    '!form_reactions.clusterize!: Failed to perform DBScan clusterization. \nOperation parameters:'
-                    + json.dumps(operation.save_parameters()) + '\nRequest parameters: ' + json.dumps(request.POST))
+        if (request.POST['algorithm'] == 'KMeans' and
+                'numberofclKMeans' in request.POST):
+
+            clusters_list = [] if request.POST['clustering_list_json'] == '' \
+                else json.loads(request.POST['clustering_list_json'])
+
+            operation = calc.KMeansClustering.KMeansClustering()
+            operation.set_parameters(int(request.POST['numberofclKMeans']),
+                                     clusters_list)
+
+        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
+                'numberofcl' in request.POST and 'batch_size' in request.POST):
+
+            operation = calc.MiniBatchKMeansClustering.\
+                MiniBatchKMeansClustering()
+            operation.set_parameters(int(request.POST['numberofcl']),
+                                     int(request.POST['batch_size']))
+
+        elif (request.POST['algorithm'] == 'DBSCAN' and
+                'min_samples' in request.POST and 'eps' in request.POST):
+
+            operation = calc.DBScanClustering.DBScanClustering()
+            operation.set_parameters(int(request.POST['min_samples']),
+                                     float(request.POST['eps']))
+
         else:
-            logger.error('!form_reactions.clusterize!: The requested algorithm was not found. \nRequest parameters: '
-                         + json.dumps(request.POST))
+            logger.error('{} Requested algorithm is not found: {}'.
+                         format(err_msg_subj, json.dumps(request.POST)))
     else:
-        logger.error('!form_reactions.clusterize!: The request was wrong. \nRequest parameters: ' + json.dumps(request.POST))
-    data['saveid'] = save_data(original, dataset, aux_dataset, op_history, str(lod_value), lod_metadata, request.POST['fdid'])
-    data['visualparameters'] = request.POST['visualparameters']
-    data['algorithm'] = request.POST['algorithm']
-    data['parameters'] = operation.print_parameters()
-    data['filename'] = request.POST['fname']
-    return data
+        logger.error('{} Request is incorrect: {}'.
+                     format(err_msg_subj, json.dumps(request.POST)))
+
+    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
+                                  load_history_data=True)
+
+    output_op_number = None
+    if operation is not None:
+        try:
+            clusters = operation.process_data(dataset_hdlr.clustering_dataset)
+        except Exception as e:
+            logger.error('{} Failed to perform data clustering: {} - {}'.
+                         format(err_msg_subj, json.dumps(request.POST), e))
+            raise
+        else:
+            if clusters is not None:
+                op_history = dataset_hdlr.operation_history
+                op_history.append(dataset_hdlr.clustering_dataset,
+                                  operation,
+                                  request.POST['visualparameters'])
+                dataset_hdlr.operation_history = op_history
+                dataset_hdlr.save()
+
+                output_op_number = op_history.length() - 1
+            else:
+                logger.error('{} No clusters were created: {}'.format(
+                    err_msg_subj, json.dumps(operation.save_parameters())))
+
+    return output_op_number
 
 
-def predict_cluster(request):
+# TODO: Re-check/re-work this method (!), it might work incorrectly.
+def predict_cluster(request, dataset_id=None, group_ids=None, op_number=None):
     """
-    Predict cluster for the data object. 
-    :param request: 
-    :return: 
+    Predict cluster for the data object.
     """
-    if ('fdid' not in request.POST) or ('data' not in request.POST):
-        logger.error('!form_reactions.predict_cluster!: There was no file name in the request. \nRequest parameters: '
-                     + json.dumps(request.POST))
-        return {}
-    original, dataset, op_history, aux_dataset = load_data(request.POST['fdid'])
-    if op_history is None:
-        logger.error('!form_reactions.predict_cluster!: There was no operations in the history. \nRequest parameters: '
-                     + json.dumps(request.POST))
-        return {}
-    data = {}
-    operation = op_history.get_previous_step()[0]
-    if (operation._type_of_operation != 'cluster'):
-        logger.error(
-            '!form_reactions.predict_cluster!: Previous operation was not a clusterization method. \nRequest parameters: '
-            + json.dumps(request.POST))
-        return {}
+    err_msg_subj = '[form_reactions.predict_cluster]'
+
+    output = {}
+    if 'data' not in request.POST:
+        logger.error('{} No corresponding data in request: {}'.
+                     format(err_msg_subj, json.dumps(request.POST)))
+
     try:
-        result = operation.predict([json.loads(request.POST['data'])]).tolist()
-        data['results'] = result
-        data['clustertype'] = operation._operation_name
-        return data
-    except Exception as exc:
-        logger.error(
-            '!form_reactions.predict_cluster!: Failed to perform prediction. \nOperation parameters:'
-            + json.dumps(operation.save_parameters()) + '\nOperation results: '
-            + json.dumps(operation.save_results()) + '\nRequest parameters: '
-            + json.dumps(request.POST) + '\n' + str(exc))
-        raise
+        op_number = int(op_number)
+    except (TypeError, ValueError):
+        op_number = None
+
+    if op_number:
+
+        ds_handler = DatasetHandler(did=dataset_id, group_ids=group_ids,
+                                    load_history_data=True)
+        op_history = ds_handler.operation_history
+        if op_number >= op_history.length():
+            op_number = op_history.length() - 1
+
+        operation = op_history.get_step(op_number)[0]
+        if operation[0]._type_of_operation != 'cluster':
+            logger.error('{} The type of the operation is not "cluster": {}'.
+                         format(err_msg_subj, operation[0]._type_of_operation))
+        try:
+            output.update({
+                'results': operation[0].predict(
+                    [json.loads(request.POST['data'])]).tolist(),
+                'clustertype': operation[0]._operation_name})
+        except Exception as e:
+            logger.error('{} Failed to perform clusters re-build (): {}'.format(
+                err_msg_subj, json.dumps(operation.save_parameters()), e))
+            raise
+
+    return output
+
+# ------------------------------
 
 # SITE TO SITE VISUALIZATION FUNCTIONS
-def read_site_to_site_json(filename):
-    file = open(filename)
+def read_site_to_site_json(filename, is_file=False):
+    if is_file:
+        file = filename
+    else:
+        file = open(filename)
     data = json.load(file)
     if 'columns' in data['transfers']:
         columns = data['transfers']['columns']
@@ -591,8 +553,7 @@ def prepare_basic_s2s(norm_dataset, real_dataset, auxiliary_dataset, numcols, op
 def load_json_site_to_site(request):
     if 'customFile' in request.FILES:
         try:
-            dataset = read_site_to_site_json(io.StringIO(request.FILES['customFile'].read().decode('utf-8')),
-                                             True, True)
+            dataset = read_site_to_site_json(io.StringIO(request.FILES['customFile'].read().decode('utf-8')), True)
         except Exception as exc:
             logger.error(
                 '!form_reactions.load_json_site_to_site!: Failed to load data from the uploaded csv file. \n' + str(
@@ -634,25 +595,8 @@ def load_json_site_to_site(request):
         op_history = calc.operationshistory.OperationHistory()
         data = prepare_basic_s2s(norm_dataset, numeric_dataset, auxiliary_dataset, numeric_columns, op_history)
         data['request'] = request
-        # data['saveid'] = save_data(numeric_dataset, norm_dataset, auxiliary_dataset, op_history)
         return data
     except Exception as exc:
         logger.error(
             '!form_reactions.load_json_site_to_site!: Failed to prepare data after uploading from file. \n' + str(exc))
         raise
-
-def get_group_data(request):
-    group = calc.grouped.GroupedData()
-    if (request.method == 'POST'):
-        request_dict = dict(request.POST.items())
-    elif (request.method == 'GET'):
-        request_dict = dict(request.GET.items())
-    result = group.load_from_file(int(request_dict['group_id']), SAVED_FILES_PATH + request_dict['fdid']+'_group')
-    data = {}
-    data['group_data'] = calc.data_converters.pandas_to_js_list(result)
-    data['group_data_df'] = result.to_json(orient='table')
-    data['headers'] = result.columns.tolist()
-    data['index_name'] = result.index.name
-    data['group_id'] = request_dict['group_id']
-    data['fdid'] = request_dict['fdid']
-    return data

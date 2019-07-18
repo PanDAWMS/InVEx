@@ -1,6 +1,9 @@
 class BaseOperationClass:
+
     _operations_dictionary = {}
     _operation_name = 'Operation basis'
+    _operation_code_name = 'OpBasic'
+    # "operation_code_name" should correspond to html parameter "algorithm"
 
     def _get_name(self):
         return self._operation_name
@@ -14,27 +17,27 @@ class BaseOperationClass:
         operation_queue.append(dataset, self)
         return True
 
-    #All next functions are overloaded in classes
+    # All next functions are overloaded in classes
     def process_data(self, dataset):
         return None
 
     def save_parameters(self):
         return {}
 
-    #Parameters is a collection of parameters
+    # Parameters is a collection of parameters
     def load_parameters(self, parameters):
         return True
 
     def save_results(self):
         return {'results': self.results}
 
-    #results_dict is a collection of all the results got from previous
+    # results_dict is a collection of all the results got from previous
     def load_results(self, results_dict):
         if 'results' in results_dict and results_dict['results'] is not None:
             self.results = results_dict['results']
         return True
 
-    def set_parameters(self):
+    def set_parameters(self, **kwargs):
         return True
 
 

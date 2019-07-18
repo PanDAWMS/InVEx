@@ -96,15 +96,21 @@ out
 .LSOverride
 *.log
 .idea/
+.vs/
 
 # Project stuff
 core/settings/base.py
 core/settings/config.py
 core/settings/local.py
+core/settings/django-sensitive-data
 core/datafiles/*
 !core/datafiles/.keep
+core/uploaded
+!core/uploaded/.keep
 core/logs/*
 !core/logs/.keep
 private/*
+
+start.bat
 
 db.sqlite3

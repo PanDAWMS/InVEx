@@ -93,7 +93,7 @@ class LocalReader(BaseReader):
         if kwargs.get('orient'):
             # used if the original DatFrame was saved with "df.to_json"
             try:
-                output = pd.read_json(file_path, orient=kwargs['orient'])
+                output = pd.read_json(file_path, orient=kwargs.get('orient'))
             except:
                 pass
 

@@ -209,7 +209,7 @@
 		window.addEventListener( "resize", onSceneResize, false );
 
 		function init() {
-            clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],
+            var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'number', 'attributes':[['placeholder', '5']]}],
                                     ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'number', 'attributes':[['placeholder', '5']]},
                                                          {'name':'eps', 'label':'eps','type':'number', 'attributes':[['placeholder','0.5']]}
                                                          ]]

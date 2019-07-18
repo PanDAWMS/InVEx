@@ -66,7 +66,10 @@ class RemoteJSONReader(object):
         # note: ignore verifying the SSL certificate (applies to host certs)
 
         if response.status_code == requests.codes.ok:
-            output = json.loads(response.content)
+            if isinstance(response.content, str):
+                output = json.loads(response.content)
+            else:
+                output = json.loads(response.content.decode('latin1'))
 
             if self.verbose:
                 print('Data is collected successfully | response code: {0}'.
@@ -119,7 +122,6 @@ class PandaReader(RemoteJSONReader, BaseReader):
         :type task_id: int
         :param filter_params: Parameters to filter the request (e.g., days).
         :type filter_params: dict/None
-
         :return: Jobs data.
         :rtype: list
         """
@@ -128,6 +130,23 @@ class PandaReader(RemoteJSONReader, BaseReader):
         if task_id:
             filter_params = dict(filter_params) or {}
             filter_params.update({'jeditaskid': task_id})
+            output = self.get(url_path='jobs/',
+                              filter_params=filter_params).get('jobs', [])
+
+        return output
+
+    def get_jobs_data_by_url(self, filter_params=None):
+        """
+        Get jobs data from BigPanDA by URL.
+
+        :param filter_params: Parameters to filter the request provided in URL.
+        :type filter_params: dict/None
+        :return: Jobs data
+        :rtype: list
+        """
+        output = []
+
+        if filter_params:
             output = self.get(url_path='jobs/',
                               filter_params=filter_params).get('jobs', [])
 

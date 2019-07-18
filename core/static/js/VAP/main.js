@@ -40,12 +40,13 @@ class Scene {
 			this.scene.add(this.groupOfGrid);
 
 			// init camera
-			this.camera = new THREE.PerspectiveCamera( 50, mainDiv.clientWidth / mainDiv.clientHeight, 1, 1000 );
-			this.camera.position.set(100, 100, 100);
-			this.camera.lookAt( this.scene.position );
+			this.camera = new THREE.PerspectiveCamera( 50, 2, 1, 1000 );
+			this.camera.position.set(120, 120, 120);
+			this.camera.lookAt( 0, 0, 0 );
 
 			this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
-			this.controls.enableRotate = true;
+        this.controls.enableRotate = true;
+        this.controls.target = new THREE.Vector3(0, 0, 0);
 			this.controls.saveState();
 			
 			this.grid = undefined;
@@ -75,13 +76,33 @@ class Scene {
             this.initLight();
 			this.createGui();
 			this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
+
+        this.resizeCanvasToDisplaySize();
+    }
+
+    resizeCanvasToDisplaySize() {
+        const canvas = this.renderer.domElement;
+        // look up the size the canvas is being displayed
+        const width = this.mainDiv.clientWidth - 30;
+        const height = this.mainDiv.clientHeight - 20;
+
+        // adjust displayBuffer size to match
+        if (canvas.width !== width || canvas.height !== height) {
+            // you must pass false here or three.js sadly fights the browser
+            this.renderer.setSize(width, height);
+            this.camera.aspect = width / height;
+            this.camera.updateProjectionMatrix();
+        }
+    }
+
+	saveVisualParameters(){
+		return {'camerapos': this.camera.position,
+			'camerarot': this.camera.rotation,
+			'subspace': this.proectionSubSpace,
+			'sphrad': this.defaultSpRad};
 	}
 	
-	saveParameters(){
-		return {'camerapos': this.camera.position, 'camerarot': this.camera.rotation, 'subspace': this.proectionSubSpace, 'sphrad': this.defaultSpRad};
-	}
-	
-	loadParameters(parametersDict){
+	loadVisualParameters(parametersDict){
 		if ('camerapos' in parametersDict){
 			this.camera.position.x = parametersDict['camerapos'].x;
 			this.camera.position.y = parametersDict['camerapos'].y;
@@ -115,8 +136,8 @@ class Scene {
 		this.dimNames = dims;
 	}
 
-	setSource(fdid){
-		this.fdid = fdid;
+	setSource(dsID){
+		this.dsID = dsID;
 	}
 
 	// #endregion
@@ -172,10 +193,10 @@ class Scene {
             }
 		}
 		
-        var changeDimBtn = document.createElement('button'); //Create button to change the dimension
+        var changeDimBtn = document.createElement('input'); //Create button to change the dimension
 		changeDimBtn.id = 'button' + dimensionControlID;
 		changeDimBtn.setAttribute('type', 'button');
-		changeDimBtn.innerText = 'Change Dimensions';
+		changeDimBtn.value = 'Change Dimensions';
 		changeDimBtn.title = 'This may take some time';
 		changeDimBtn.classList.add('button', 'small');
         changeDimBtn.sceneObject = this;
@@ -184,6 +205,8 @@ class Scene {
 			this.sceneObject.setNewSubSpace(parseInt(this.dimsSelectArray[0].value),
 											parseInt(this.dimsSelectArray[1].value),
 											parseInt(this.dimsSelectArray[2].value));
+			this.sceneObject.renderer.render(this.sceneObject.scene,
+											 this.sceneObject.camera);
 		};
 		form.appendChild(changeDimBtn);
 
@@ -198,11 +221,11 @@ class Scene {
 
 		var form = createControlBasics('form' + resetID);
 		
-		var resetCameraBtn = document.createElement('button');
+		var resetCameraBtn = document.createElement('input');
 		resetCameraBtn.id = resetID;
 		resetCameraBtn.classList.add('button', 'small');
 		resetCameraBtn.setAttribute('type', 'button');
-		resetCameraBtn.innerText = 'Reset Camera'
+		resetCameraBtn.value = 'Reset Camera';
 		resetCameraBtn.sceneObject = this;
 		resetCameraBtn.onclick = function() {
 			this.sceneObject.resetCamera();
@@ -242,10 +265,10 @@ class Scene {
 		form.groupDiv.appendChild(selectbox);
 		form.createNewLine();
 		//Button to change the quality.
-		var button = document.createElement('button');
+		var button = document.createElement('input');
 		button.id = 'button' + changeQualityID;
 		button.setAttribute('type', 'button');
-		button.innerText = 'Change Quality';
+		button.value = 'Change Quality';
 		button.title = 'This may take some time';
 		button.qualitybox = selectbox;
 		button.classList.add('button', 'small');
@@ -340,15 +363,14 @@ class Scene {
 	}
 
 	// Function that is called to render the scene.
-	animate() {
-		this.renderer.render( this.scene, this.camera );
+    render() {
+        this.resizeCanvasToDisplaySize();
+        this.renderer.render( this.scene, this.camera );
 	}
 
 	// Recalculates everything needed after window resize.
 	onResize() {
-		this.camera.aspect = this.mainDiv.clientWidth / this.mainDiv.clientHeight;
-		this.camera.updateProjectionMatrix();
-		this.renderer.setSize( this.mainDiv.clientWidth, this.mainDiv.clientHeight );
+        this.render();
 	}
 
 	redrawScene(){
