@@ -113,10 +113,185 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     Plotly.plot(element_id, data, layout);
 }
 
-function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, skipClust=[]) {
+function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, skipClust = []) {
     //console.log(clusters_list);
+    d3.select("#" + element_id)
+        .style("overflow", "auto");
+
+    var margin = { top: 30, right: 10, bottom: 10, left: 10 },
+        width = (dimNames.length > 7 ? 80 * dimNames.length : 600) - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var x = d3.scale.ordinal().rangePoints([0, width], 1),
+        y = {},
+        dragging = {};
+
+    var line = d3.svg.line().interpolate("monotone"),
+        axis = d3.svg.axis().orient("left"),
+        background,
+        foreground;
+
+    var svg = d3.select("#" + element_id).append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    $("#" + element_id + ".svg")
+        .tooltip({
+        track: true
+        });
+
+    var _values = [];
+
+    // Extract the list of dimensions and create a scale for each.
+    x.domain(dimensions = dimNames.map((dim, index) => {
+        _values.push(real_data//.filter((elem, i) => { return skipClust.indexOf(clusters_list[i]) === -1; })
+            .map((row) => { return row[1][index]; }));
+
+        y[dim] = d3.scale.linear()
+            .domain([Math.min(..._values[index]), Math.max(..._values[index])])
+            .range([height, 0]);
+
+        return dim;
+    }));
+
+    var _line_data = [];
+    for (var i = 0; i < _values[0].length; i++) {
+        var _tmp = {};
+        for (var j = 0; j < _values.length; j++) _tmp[dimNames[j]] = _values[j][i];
+        _line_data.push(_tmp);
+    }
 
 
+
+    // Add grey background lines for context.
+    background = svg.append("g")
+        .attr("class", "background")
+        .selectAll("path")
+        .data(_line_data)
+        .enter().append("path")
+            .attr("d", path);
+
+    //console.log(background);
+
+    // Add blue foreground lines for focus.
+    foreground = svg.append("g")
+        .attr("class", "foreground")
+        .selectAll("path")
+        .data(_line_data)
+        .enter().append("path")
+            .attr("d", path)
+            .attr("stroke", (d, i) => rgbToHex(clusters_color_scheme[clusters_list[i]]))
+            .on("mouseover", function (d, i) {
+                d3.select(this).attr('stroke-width', 3);
+
+                $('#t' + element_id).DataTable().row(i).show().draw(false);
+
+                $('#t' + element_id).DataTable().rows().nodes()
+                    .to$()
+                    .removeClass('selected');
+
+                $('#t' + element_id).DataTable().rows(i).nodes()
+                    .to$()
+                    .toggleClass('selected');
+            })
+            .on("mouseout", function (d) {
+                d3.select(this).attr('stroke-width', 1);
+            });
+
+    // Add a group element for each dimension.
+    var g = svg.selectAll(".dimension")
+        .data(dimensions)
+        .enter().append("g")
+        .attr("class", "dimension")
+        .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
+        .call(d3.behavior.drag()
+            .origin(function (d) { return { x: x(d) }; })
+            .on("dragstart", function (d) {
+                dragging[d] = x(d);
+                background.attr("visibility", "hidden");
+            })
+            .on("drag", function (d) {
+                dragging[d] = Math.min(width, Math.max(0, d3.event.x));
+                foreground.attr("d", path);
+                dimensions.sort(function (a, b) { return position(a) - position(b); });
+                x.domain(dimensions);
+                g.attr("transform", function (d) { return "translate(" + position(d) + ")"; });
+            })
+            .on("dragend", function (d) {
+                delete dragging[d];
+                transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+                transition(foreground).attr("d", path);
+                background
+                    .attr("d", path)
+                    .transition()
+                    .delay(500)
+                    .duration(0)
+                    .attr("visibility", null);
+            }));
+
+    // Add an axis and title.
+    g.append("g")
+        .attr("class", "axis")
+        .each(function (d) { d3.select(this).call(axis.scale(y[d])); })
+        .append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .text(function (d) { return d; });
+
+    // Add and store a brush for each axis.
+    g.append("g")
+        .attr("class", "brush")
+        .each(function (d) {
+            d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brushstart", brushstart).on("brush", brush));
+        })
+        .selectAll("rect")
+        .attr("x", -8)
+        .attr("width", 16);
+
+    function position(d) {
+        var v = dragging[d];
+        return v == null ? x(d) : v;
+    }
+
+    function transition(g) {
+        return g.transition().duration(500);
+    }
+
+    // Returns the path for a given data point.
+    function path(d) {
+        return line(dimensions.map(function (p) { return [position(p), y[p](d[p])]; }));
+    }
+
+    function brushstart() {
+        d3.event.sourceEvent.stopPropagation();
+    }
+
+    // Handles a brush event, toggling the display of foreground lines.
+    function brush() {
+        var actives = dimensions.filter(function (p) { return !y[p].brush.empty(); }),
+            extents = actives.map(function (p) { return y[p].brush.extent(); }),
+            visible = [];
+
+        foreground.style("display", function (d, j) {
+            return actives.every(function (p, i) { 
+                var isVisible = (extents[i][0] <= d[p] && d[p] <= extents[i][1]);
+                if (isVisible) visible.push(real_data[j][0]);
+                return isVisible;
+            }) ? null : "none";
+        });
+        if (actives.length === 0) visible.push("all");
+
+        $('#t' + element_id).data('visible', visible);
+        $('#t' + element_id).DataTable().draw();
+    }
+
+
+
+    var _color = clusters_list.filter((x) => { return skipClust.indexOf(x) === -1; });
+
+    /*
     var plot = document.getElementById(element_id),
 
     color_max = Math.max(...Object.keys(clusters_color_scheme)),
@@ -188,6 +363,9 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
     $(".plot-container").tooltip({
             track: true
         });
+    */
+
+
 
     d3.select("#" + element_id)
         .append("table")
@@ -204,11 +382,43 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         data: __tcells,
         columns: __theader,
         "rowCallback": (row, data) => {
-            $(row).css('background-color', data[data.length - 1]);
+            $(row).children().css('background', data[data.length - 1] + "33");
         }      
     });
 
-    plot.on('plotly_hover', function (data) {
+    $('#t' + element_id).data('visible', ["all"]);
+
+    $('#t' + element_id + ' tbody').on("mouseover", 'tr', function (d, i) {
+                //console.log($('#t' + element_id).DataTable().row(this)[0][0]);
+                //console.log(foreground);
+                //$(this).css('background', "red");
+        d3.select(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]]).attr('stroke-width', 3);
+        console.log(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]], d);
+            })
+        .on("mouseout", 'tr', function (d) {
+            console.log(this);
+            d3.select(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]]).attr('stroke-width', 1);
+        });
+
+
+
+     /*   on('click', 'tr', function () {
+        var data = table.row(this).data();
+        alert('You clicked on ' + data[0] + '\'s row');
+    });
+
+    
+
+    console.log(foreground);*/
+
+    $.fn.dataTable.ext.search.push(
+        function (settings, data, dataIndex) {
+            if ($('#t' + element_id).data('visible')[0] === "all") return true;
+            else return $('#t' + element_id).data('visible').includes(data[0]);
+        }
+    );
+
+    /*plot.on('plotly_hover', function (data) {
         var infotext = "id: " + scene.realData[data.curveNumber][0];
 
         $(".plot-container").tooltip("option", "content", infotext);
