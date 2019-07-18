@@ -64,9 +64,11 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         for index, column in enumerate(dataset.columns):
             if dataset[column].dtype.name in ('category', 'object'):
                 categorical_indices.append(index)
-                print(f"categorical index = {index}")
+            elif float(dataset[column].nunique()) / dataset[column].count() < 0.1:
+                categorical_indices.append(index)
         return tuple(categorical_indices)
 
+    # TODO: Initialisation error
     # By default, K-Prototypes uses euclidean distance for numerical data and Hamming distance for categorical data
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
     # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
