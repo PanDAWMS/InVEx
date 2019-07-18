@@ -73,12 +73,20 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
     # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
     def process_data(self, dataset):
+
         self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init='Cao', n_init=10, gamma=self.categorical_weight, n_jobs=1)
-        categorical_indices = self.get_categorical_indices(dataset)
-        dataset = dataset.to_numpy()
-        self.model.fit(dataset, categorical=categorical_indices)
-        self.results = self.model.predict(dataset, categorical=categorical_indices)
-        self.cent = self.model.cluster_centroids_
+        try:
+            categorical_indices = self.get_categorical_indices(dataset)
+            dataset = dataset.to_numpy()
+            self.model.fit(dataset, categorical=categorical_indices)
+            self.results = self.model.predict(dataset, categorical=categorical_indices)
+            self.cent = self.model.cluster_centroids_
+        except NotImplementedError:
+            from . import KMeansClustering
+            model = KMeansClustering.KMeansClustering()
+            model.clust_numbers, model.clust_array = self.cluster_number, []
+            self.results = model.process_data(dataset)
+            self.cent = model.cluster_centers_
         return self.results
 
     def predict(self, dataset):
