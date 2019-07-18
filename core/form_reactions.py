@@ -368,7 +368,7 @@ def clusterize(request, dataset_id, group_ids=None):
 
     operation = None
     if 'algorithm' in request.POST:
-        if (request.POST['algorithm'] == 'KMeans' and
+        if (request.POST['algorithm'] == 'KMeans' and \
                 'numberofclKMeans' in request.POST):
 
             clusters_list = [] if request.POST['clustering_list_json'] == '' \
@@ -378,7 +378,7 @@ def clusterize(request, dataset_id, group_ids=None):
             operation.set_parameters(int(request.POST['numberofclKMeans']),
                                      clusters_list)
 
-        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
+        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and \
                 'numberofcl' in request.POST and 'batch_size' in request.POST):
 
             operation = calc.MiniBatchKMeansClustering.\
@@ -386,7 +386,15 @@ def clusterize(request, dataset_id, group_ids=None):
             operation.set_parameters(int(request.POST['numberofcl']),
                                      int(request.POST['batch_size']))
 
-        elif (request.POST['algorithm'] == 'DBSCAN' and
+        elif (request.POST['algorithm'] == 'KPrototypes' and \
+                'cluster_number' in request.POST and \
+                'categorical_data_weight' in request.POST):
+
+            operation = calc.KPrototypesClustering.KPrototypesClustering()
+            operation.set_parameters(int(request.POST['cluster_number']),
+                                     int(request.POST['categorical_data_weight']))
+
+        elif (request.POST['algorithm'] == 'DBSCAN' and \
                 'min_samples' in request.POST and 'eps' in request.POST):
 
             operation = calc.DBScanClustering.DBScanClustering()
@@ -471,6 +479,7 @@ def predict_cluster(request, dataset_id=None, group_ids=None, op_number=None):
 
 # ------------------------------
 
+
 # SITE TO SITE VISUALIZATION FUNCTIONS
 def read_site_to_site_json(filename, is_file=False):
     if is_file:
@@ -483,7 +492,7 @@ def read_site_to_site_json(filename, is_file=False):
     else:
         columns = ['source', 'destination']
         for i in range(2, len(data['transfers']['rows'][0])):
-            columns.append('p'+str(i))
+            columns.append('p' + str(i))
     dataset = pd.DataFrame.from_records(data['transfers']['rows'], columns=columns,
                                         coerce_float=True)
     file.close()
@@ -568,7 +577,7 @@ def load_json_site_to_site(request):
                     if os.path.isfile(SITE_SITE_DATASET_FILES_PATH + file['filename']):
                         dataset = read_site_to_site_json(SITE_SITE_DATASET_FILES_PATH + file['filename'])
                     else:
-                        logger.error('!form_reactions.load_json_site_to_site!: Failed to read file.\nFilename: ' +
+                        logger.error('!form_reactions.load_json_site_to_site!: Failed to read file.\nFilename: ' + \
                                      SITE_SITE_DATASET_FILES_PATH + file['filename'])
                         return {}
         else:
