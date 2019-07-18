@@ -59,22 +59,30 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         result = {'cluster_number': self.cluster_number, 'categorical_data_weight': self.categorical_weight}
         return result
 
-    # TODO: Check for numpy array to be correct
-    # TODO: Verify method calls and model parameters
+    def get_categorical_indices(self, dataset):
+        categorical_indices = []
+        for index, column in enumerate(dataset.columns):
+            if dataset[column].dtype.name in ('category', 'object'):
+                categorical_indices.append(index)
+                print(f"categorical index = {index}")
+        return tuple(categorical_indices)
+
     # By default, K-Prototypes uses euclidean distance for numerical data and Hamming distance for categorical data
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
     # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
     def process_data(self, dataset):
         self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init='Cao', n_init=10, gamma=self.categorical_weight, n_jobs=1)
+        categorical_indices = self.get_categorical_indices(dataset)
         dataset = dataset.to_numpy()
-        self.model.fit(dataset)
-        self.results = self.model.predict(dataset)
-        self.cent = self.model.cluster_centers_
+        self.model.fit(dataset, categorical=categorical_indices)
+        self.results = self.model.predict(dataset, categorical=categorical_indices)
+        self.cent = self.model.cluster_centroids_
         return self.results
 
-    # TODO: Verify correctness
     def predict(self, dataset):
-        return self.model.predict(dataset)
+        categorical_indices = self.get_categorical_indices(dataset)
+        dataset = dataset.to_numpy()
+        return self.model.predict(dataset, categorical=categorical_indices)
 
 
 try:

@@ -190,8 +190,7 @@ class ViewDataHandler(BaseDataHandler):
                 'feature_name': column,
                 'feature_type': df[column].dtype.name,
                 'percentage_missing':
-                    (np.count_nonzero(df[column].isnull()) * 100.) /
-                    len(df[column]),
+                    (np.count_nonzero(df[column].isnull()) * 100.) / len(df[column]),
                 'measure_type': 'unknown'}
             # TODO: Re-check the formula for percentage_missing
 

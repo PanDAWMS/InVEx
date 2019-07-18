@@ -35,7 +35,7 @@ class BasicStatistics(baseoperationclass.BaseOperationClass):
                                 pd.read_json(results_dict['results'][4], typ='series'),
                                 pd.read_json(results_dict['results'][5], typ='series'),
                                 pd.read_json(results_dict['results'][6], typ='series')]
-            except:
+            except Exception:
                 self.results = [pd.read_json(results_dict['results']['0'], typ='series'),
                                 pd.read_json(results_dict['results']['1'], typ='series'),
                                 pd.read_json(results_dict['results']['2'], typ='series'),
