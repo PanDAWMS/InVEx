@@ -81,12 +81,14 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
             self.model.fit(dataset, categorical=categorical_indices)
             self.results = self.model.predict(dataset, categorical=categorical_indices)
             self.cent = self.model.cluster_centroids_
+            for index, cat_index in enumerate(categorical_indices):
+                self.cent = np.insert(self.cent[0], cat_index, values=self.cent[1].transpose()[index], axis=1)
         except NotImplementedError:
             from . import KMeansClustering
-            model = KMeansClustering.KMeansClustering()
-            model.clust_numbers, model.clust_array = self.cluster_number, []
-            self.results = model.process_data(dataset)
-            self.cent = model.cluster_centers_
+            fallback_algorithm = KMeansClustering.KMeansClustering()
+            fallback_algorithm.clust_numbers, fallback_algorithm.clust_array = self.cluster_number, []
+            self.results = fallback_algorithm.process_data(dataset)
+            self.cent = fallback_algorithm.model.cluster_centers_
         return self.results
 
     def predict(self, dataset):
