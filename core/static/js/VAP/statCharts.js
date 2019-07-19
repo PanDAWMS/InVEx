@@ -142,12 +142,16 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         track: true
         });
 
-    var _values = [];
+    var _values = [],
+        _ids = real_data.map((row) => row[0]);
+
+    function _tableToParcoords(index) { return _ids.indexOf(index); }
+    function _parcoordsToTable(index) { return _ids[index]; }
 
     // Extract the list of dimensions and create a scale for each.
     x.domain(dimensions = dimNames.map((dim, index) => {
         _values.push(real_data//.filter((elem, i) => { return skipClust.indexOf(clusters_list[i]) === -1; })
-            .map((row) => { return row[1][index]; }));
+            .map((row) => row[1][index]));
 
         y[dim] = d3.scale.linear()
             .domain([Math.min(..._values[index]), Math.max(..._values[index])])
@@ -163,7 +167,7 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         _line_data.push(_tmp);
     }
 
-
+   // console.log('ids', _ids);
 
     // Add grey background lines for context.
     background = svg.append("g")
@@ -186,13 +190,13 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
             .on("mouseover", function (d, i) {
                 d3.select(this).attr('stroke-width', 3);
 
-                $('#t' + element_id).DataTable().row(i).show().draw(false);
+                datatable.row((idx, data) => data[0] === _parcoordsToTable(i)).show().draw(false);
 
-                $('#t' + element_id).DataTable().rows().nodes()
+                datatable.rows().nodes()
                     .to$()
                     .removeClass('selected');
 
-                $('#t' + element_id).DataTable().rows(i).nodes()
+                datatable.rows(i).nodes()
                     .to$()
                     .toggleClass('selected');
             })
@@ -365,51 +369,61 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         });
     */
 
-
-
     d3.select("#" + element_id)
         .append("table")
         .attr("id", "t" + element_id)
-        .attr("class", "table table-sm table-hover display compact");
+        .attr("class", "table table-sm table-hover display compact");    
 
     var __theader_array = dimNames.slice();
     __theader_array.unshift('ID');
 
     var __theader = __theader_array.map(row => { return { title: row }; }),
-        __tcells = real_data.map((row, i) => [row[0]].concat(row[1].map(String)).concat([rgbToHex(clusters_color_scheme[_color[i]])]));   
-
-    $('#t' + element_id).DataTable({
-        data: __tcells,
-        columns: __theader,
-        "rowCallback": (row, data) => {
-            $(row).children().css('background', data[data.length - 1] + "33");
-        }      
-    });
-
-    $('#t' + element_id).data('visible', ["all"]);
-
-    $('#t' + element_id + ' tbody').on("mouseover", 'tr', function (d, i) {
-                //console.log($('#t' + element_id).DataTable().row(this)[0][0]);
-                //console.log(foreground);
-                //$(this).css('background', "red");
-        d3.select(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]]).attr('stroke-width', 3);
-        console.log(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]], d);
-            })
-        .on("mouseout", 'tr', function (d) {
-            console.log(this);
-            d3.select(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]]).attr('stroke-width', 1);
+        __tcells = real_data.map((row, i) => [row[0]].concat(row[1].map(String)).concat([rgbToHex(clusters_color_scheme[_color[i]])])),
+        table = $('#t' + element_id),
+        datatable = table.DataTable({
+            data: __tcells,
+            columns: __theader,
+            "rowCallback": (row, data) => {
+                $(row).children().css('background', data[data.length - 1] + "33");
+            }      
         });
 
+    table.data('visible', ["all"]);
 
+    $('#t' + element_id + ' tbody').on("mouseover", 'tr', function (d, i) {
+        //console.log(_tableToParcoords(datatable.row(this).data()[0]), _tableToParcoords(_parcoordsToTable(_tableToParcoords(datatable.row(this).data()[0]))));
+               // console.log(foreground);
+                //$(this).css('background', "red");
+            d3.select(foreground[0][_tableToParcoords(datatable.row(this).data()[0])]).attr('stroke-width', 3);
+                //console.log(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]], d);
+            })
+        .on("mouseout", 'tr', function (d) {
+            //console.log(this);
+            d3.select(foreground[0][datatable.row(this)[0][0]]).attr('stroke-width', 1);
+        });
 
-     /*   on('click', 'tr', function () {
-        var data = table.row(this).data();
-        alert('You clicked on ' + data[0] + '\'s row');
+    table.append(
+        $('<tfoot/>').append($('#t' + element_id + ' thead tr').clone())
+    );
+
+    $('#t' + element_id + ' tfoot th').each(function () {
+        var title = $(this).text();
+        $(this).html('<input type="text" placeholder="Search" />');
     });
 
-    
+    // Apply the search
+    datatable.columns().every(function () {
+        var that = this;
 
-    console.log(foreground);*/
+        $('input', this.footer()).on('keyup change', function () {
+            if (that.search() !== this.value) {
+                that
+                    .search(this.value)
+                    .draw();
+            }
+            //console.log( this.value);
+        });
+    });
 
     $.fn.dataTable.ext.search.push(
         function (settings, data, dataIndex) {

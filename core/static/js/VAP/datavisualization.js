@@ -16,50 +16,68 @@ function sendAjaxPredictRequest(selectedObject, otherData, sceneObj){
 }
 
 //calculates a color scheme for clusters. Clusters have to be an array, the result is a dictionary
-function getColorScheme( clusters, theme='black' ) {
-	var clusters_unique = Array.from(new Set(clusters));
-	var len = clusters_unique.length;
-	var results = {};
-	if (len==1){
-		if (theme=='white')
-			results[clusters_unique[0]] = new THREE.Color(0,0,0);
-		else
-			results[clusters_unique[0]] = new THREE.Color(1,1,1);
-	}
+function getColorScheme(clusters, theme = 'black') {
+
+    /* colors: (230, 25, 75), (60, 180, 75), (0, 130, 200),
+        (245, 130, 48), (145, 30, 180), (70, 240, 240), (240, 50, 230),
+        (210, 245, 60), (250, 190, 190), (0, 128, 128), (230, 190, 255),
+        (170, 110, 40), (255, 250, 200), (128, 0, 0), (170, 255, 195),
+        (128, 128, 0), (255, 215, 180), (0, 0, 128), (255, 225, 25)*/
+
+    var _red = [230, 60, 0, 245, 145, 70, 240, 210, 250, 0, 230, 170, 255, 128, 170, 128, 255, 0, 255, 0],
+        _green = [25, 180, 130, 130, 30, 240, 50, 245, 190, 128, 190, 110, 250, 0, 255, 128, 215, 0, 225, 128],
+        _blue = [75, 75, 200, 48, 180, 240, 230, 60, 190, 128, 255, 40, 200, 0, 195, 0, 180, 128, 25, 64];
+
+    var clusters_unique = [...new Set(clusters)].sort((a, b) => a - b),
+        len = clusters_unique.length,
+        results = {};
+
+    //console.log(clusters, clusters_unique, len);
+
+    if (len === 1) 
+        results[clusters_unique[0]] = theme === 'white' ?
+            new THREE.Color(0, 0, 0) :
+            new THREE.Color(1, 1, 1);
 	else
-		if ( len == 2 ) {
-			results[clusters_unique[0]] = new THREE.Color(1,0,0);
-			results[clusters_unique[1]] = new THREE.Color(0,0,1);
-		} else {
-			// code the clusters as a 3-digits number in base-base number system. 
-			var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
-			var count_of_encoded_colors = Math.pow(parts, 3);
-			if (parts+len > count_of_encoded_colors)
-				parts = parts + 1;
-			var base = parts - 1;
-			if (base == 0)
-				base = 1;
-			var red, green, blue, skipped=0;
-			console.log({'parts':parts, 'base':base, 'count_of_encoded_colors':count_of_encoded_colors});
-			for( var i = 0; i < len; i++ ) {
-				if (theme=='white'){
-					red = (~~((i+skipped)/(parts*parts)))%parts/base*0.8;
-					green = (~~((i+skipped)/parts))%parts/base*0.8;
-					blue = (i+skipped)%parts/base*0.8;
-				}
-				else{
-					red = 1-(~~((i+skipped)/(parts*parts)))%parts/base;
-					green = 1-(~~((i+skipped)/parts))%parts/base;
-					blue = 1-(i+skipped)%parts/base;
-				}
-				if (red==green && green==blue){
-					i--;
-					skipped++;
-				}
-				else
-					results[clusters_unique[i]] = new THREE.Color(red, green, blue);
-			}
-		}
+        if (len === 2) {
+            results[clusters_unique[0]] = new THREE.Color(1, 0, 0);
+            results[clusters_unique[1]] = new THREE.Color(0, 0, 1);
+        } else
+            if (len < 21) 
+                for (var i = 0; i < len; i++)
+                    results[clusters_unique[i]] =
+                            new THREE.Color("rgb(" + _red[i] + ', ' + _green[i] + ', ' + _blue[i] + ")");
+            else {
+                // code the clusters as a 3-digits number in base-base number system. 
+                var parts = Math.round(Math.log(len)/Math.log(3)+0.5);
+                var count_of_encoded_colors = Math.pow(parts, 3);
+                if (parts+len > count_of_encoded_colors)
+                    parts = parts + 1;
+                var base = parts - 1;
+                if (base == 0)
+                    base = 1;
+                var red, green, blue, skipped=0;
+                //console.log({'parts':parts, 'base':base, 'count_of_encoded_colors':count_of_encoded_colors});
+                for( var i = 0; i < len; i++ ) {
+                    if (theme=='white'){
+                        red = (~~((i+skipped)/(parts*parts)))%parts/base*0.8;
+                        green = (~~((i+skipped)/parts))%parts/base*0.8;
+                        blue = (i+skipped)%parts/base*0.8;
+                    }
+                    else {
+                        red = 1-(~~((i+skipped)/(parts*parts)))%parts/base;
+                        green = 1-(~~((i+skipped)/parts))%parts/base;
+                        blue = 1-(i+skipped)%parts/base;
+                    }
+                    if (red==green && green==blue){
+                        i--;
+                        skipped++;
+                    }
+                    else
+                       results[clusters_unique[i]] = new THREE.Color(red, green, blue);
+                }
+        }
+    //console.log(results);
 	return results;
 }
 
