@@ -2,6 +2,7 @@
  * Created by Maria on 05.03.2019.
  */
 
+// This function allows to jump to a certain row in a DataTable
 $.fn.dataTable.Api.register('row().show()', function () {
     var page_info = this.table().page.info();
     // Get row index
@@ -20,6 +21,23 @@ $.fn.dataTable.Api.register('row().show()', function () {
     // Return row object
     return this;
 });
+
+// This is used to manipulate d3 objects
+// e.g., to move a line on a graph to the front
+// https://github.com/wbkd/d3-extended
+d3.selection.prototype.moveToFront = function () {
+    return this.each(function () {
+        this.parentNode.appendChild(this);
+    });
+};
+d3.selection.prototype.moveToBack = function () {
+    return this.each(function () {
+        var firstChild = this.parentNode.firstChild;
+        if (firstChild) {
+            this.parentNode.insertBefore(this, firstChild);
+        }
+    });
+};
 
 function getClusterMeans(data, clusters_list, cluster_number) {
     // generate list of indexes for current cluster number
@@ -113,44 +131,81 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     Plotly.plot(element_id, data, layout);
 }
 
+// This function draws the Parallel Coordinates graph
+// --------------
+// Inputs:
+//  element_id - id of DOM element where to put ParCoords
+//  real_data - data to visualize, array format: [0: [0: id, 1: [array of values]], ... ]
+//  clusters_list - array of ints with cluster numbers, format: [0, 0, 2, 3, ...]
+//  clusters_color_scheme - array of cluster colors, format: [0: {r: float, g: float, b: float}, ...]
+//  dimNames - array of dimention names, format: [0: "name", ...]
+//  ??
+//
 function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, skipClust = []) {
-    //console.log(clusters_list);
+    // Add overflow from the start
     d3.select("#" + element_id)
         .style("overflow", "auto");
 
+    // Sizes of the graph
     var margin = { top: 30, right: 10, bottom: 10, left: 10 },
         width = (dimNames.length > 7 ? 80 * dimNames.length : 600) - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+        height = 500 - margin.top - margin.bottom,
 
-    var x = d3.scale.ordinal().rangePoints([0, width], 1),
+    // Arrays for x and y data, and brush dragging
+        x = d3.scale.ordinal().rangePoints([0, width], 1),
         y = {},
-        dragging = {};
+        dragging = {},
 
-    var line = d3.svg.line().interpolate("monotone"),
+    // Line and axis parameters, arrays with lines (gray and colored)
+        line = d3.svg.line().interpolate("monotone"),
         axis = d3.svg.axis().orient("left"),
         background,
         foreground;
 
-    var svg = d3.select("#" + element_id).append("svg")
+    // Append an SVG to draw lines on
+    graph = d3.select("#" + element_id).append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .attr("height", height + margin.top + margin.bottom);
 
-    $("#" + element_id + ".svg")
-        .tooltip({
-        track: true
-        });
+    // Fancy glowing filter
+    var filter = `
+            <filter id="blur">
+                <!-- Tweak colors in original image -->
+                <feComponentTransfer in="SourceGraphic" result="components">
+                    <feFuncR type="linear" slope="2"/>
+                    <feFuncG type="linear" slope="2"/>
+                    <feFuncB type="linear" slope="2"/>
+                </feComponentTransfer>
 
-    var _values = [],
+                <!-- Apply blur -->
+                <feGaussianBlur stdDeviation="4" result="blurring"></feGaussianBlur>              
+
+                <!-- Mix those two -->
+                <feMerge>
+                    <feMergeNode in="blurring"/>
+                    <feMergeNode in="components"/>
+                </feMerge>
+            </filter>`;
+
+    // Place the filter on place
+    graph.append("defs")
+        .html(filter);
+
+    // Shift the draw space
+    var svg = graph.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")"),
+
+    // Arrays with line pos values and array (line id)<->(id in real_data)
+        _values = [],
         _ids = real_data.map((row) => row[0]);
 
+    // Functions to perform id transformation
     function _tableToParcoords(index) { return _ids.indexOf(index); }
     function _parcoordsToTable(index) { return _ids[index]; }
 
-    // Extract the list of dimensions and create a scale for each.
+    // Extract the list of dimensions and create a scale for each
     x.domain(dimensions = dimNames.map((dim, index) => {
-        _values.push(real_data//.filter((elem, i) => { return skipClust.indexOf(clusters_list[i]) === -1; })
+        _values.push(real_data //.filter((elem, i) => { return skipClust.indexOf(clusters_list[i]) === -1; })
             .map((row) => row[1][index]));
 
         y[dim] = d3.scale.linear()
@@ -160,16 +215,15 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         return dim;
     }));
 
+    // Array to make brushes
     var _line_data = [];
     for (var i = 0; i < _values[0].length; i++) {
-        var _tmp = {};
+        let _tmp = {};
         for (var j = 0; j < _values.length; j++) _tmp[dimNames[j]] = _values[j][i];
         _line_data.push(_tmp);
     }
 
-   // console.log('ids', _ids);
-
-    // Add grey background lines for context.
+    // Grey background lines for context
     background = svg.append("g")
         .attr("class", "background")
         .selectAll("path")
@@ -177,34 +231,38 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         .enter().append("path")
             .attr("d", path);
 
-    //console.log(background);
-
-    // Add blue foreground lines for focus.
+    // Foreground lines
     foreground = svg.append("g")
         .attr("class", "foreground")
         .selectAll("path")
         .data(_line_data)
         .enter().append("path")
             .attr("d", path)
-            .attr("stroke", (d, i) => rgbToHex(clusters_color_scheme[clusters_list[i]]))
-            .on("mouseover", function (d, i) {
-                d3.select(this).attr('stroke-width', 3);
 
-                datatable.row((idx, data) => data[0] === _parcoordsToTable(i)).show().draw(false);
+            // Cluster color scheme is applied to the stroke color 
+            .attr("stroke", (d, i) => rgbToHex(clusters_color_scheme[clusters_list[i]]))
+
+            // When mouse is over the line, make it glow, move to the front
+            // and select a correspoding line in the table below
+            .on("mouseover", function (d, i) {
+                $(this).addClass("glowing");
+                d3.select(this).moveToFront();
 
                 datatable.rows().nodes()
-                    .to$()
-                    .removeClass('selected');
+                    .to$().removeClass('selected');
 
-                datatable.rows(i).nodes()
-                    .to$()
-                    .toggleClass('selected');
+                let row = datatable.row((idx, data) => data[0] === _parcoordsToTable(i));
+
+                row.show().draw(false);
+                datatable.rows(row).nodes().to$().addClass('selected');
             })
+
+            // When mouse is away, clear the glowing effect
             .on("mouseout", function (d) {
-                d3.select(this).attr('stroke-width', 1);
+                $(this).removeClass("glowing");
             });
 
-    // Add a group element for each dimension.
+    // Add a group element for each dimension
     var g = svg.selectAll(".dimension")
         .data(dimensions)
         .enter().append("g")
@@ -235,7 +293,7 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
                     .attr("visibility", null);
             }));
 
-    // Add an axis and title.
+    // Add an axis and titles
     g.append("g")
         .attr("class", "axis")
         .each(function (d) { d3.select(this).call(axis.scale(y[d])); })
@@ -244,7 +302,7 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         .attr("y", -9)
         .text(function (d) { return d; });
 
-    // Add and store a brush for each axis.
+    // Add and store a brush for each axis
     g.append("g")
         .attr("class", "brush")
         .each(function (d) {
@@ -254,6 +312,7 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         .attr("x", -8)
         .attr("width", 16);
 
+    // Functions for lines and brushes
     function position(d) {
         var v = dragging[d];
         return v == null ? x(d) : v;
@@ -263,16 +322,16 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         return g.transition().duration(500);
     }
 
-    // Returns the path for a given data point.
-    function path(d) {
-        return line(dimensions.map(function (p) { return [position(p), y[p](d[p])]; }));
-    }
-
     function brushstart() {
         d3.event.sourceEvent.stopPropagation();
     }
 
-    // Handles a brush event, toggling the display of foreground lines.
+    // Returns the path for a given data point
+    function path(d) {
+        return line(dimensions.map(function (p) { return [position(p), y[p](d[p])]; }));
+    }
+
+    // Handles a brush event, toggling the display of foreground lines
     function brush() {
         var actives = dimensions.filter(function (p) { return !y[p].brush.empty(); }),
             extents = actives.map(function (p) { return y[p].brush.extent(); }),
@@ -280,7 +339,8 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
 
         foreground.style("display", function (d, j) {
             return actives.every(function (p, i) { 
-                var isVisible = (extents[i][0] <= d[p] && d[p] <= extents[i][1]);
+                var isVisible = extents[i][0] <= d[p] && d[p] <= extents[i][1];
+
                 if (isVisible) visible.push(real_data[j][0]);
                 return isVisible;
             }) ? null : "none";
@@ -291,140 +351,76 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         $('#t' + element_id).DataTable().draw();
     }
 
-
-
+    // Cluster list
     var _color = clusters_list.filter((x) => { return skipClust.indexOf(x) === -1; });
 
-    /*
-    var plot = document.getElementById(element_id),
-
-    color_max = Math.max(...Object.keys(clusters_color_scheme)),
-    color_min = Math.min(...Object.keys(clusters_color_scheme)),
-    zero_color = rgbToHex(clusters_color_scheme[color_min]),
-
-    _colorscale = ((Object.keys(clusters_color_scheme).length === 1) ?
-        [["0.0", zero_color], ["1.0", zero_color]] :
-        Object.keys(clusters_color_scheme)
-            .filter(x => { console.log(x, skipClust, skipClust.indexOf(x) === -1); return skipClust.indexOf(x) === -1; })
-            .map((x) => {
-                return [(x - color_min) / (color_max - color_min),
-                rgbToHex(clusters_color_scheme[x])];
-            })),
-
-    _color = clusters_list.filter((x) => { return skipClust.indexOf(x) === -1; }),//  map((x) => { return x; }),
-
-    _dimensions = dimNames.map((dim, index) => {
-        var _values = real_data.filter((elem, i) => { return skipClust.indexOf(clusters_list[i]) === -1; })
-            .map((row) => { return row[1][index]; });
-
-        return {
-            label: dim,
-            range: [Math.min(..._values), Math.max(..._values)],
-            values: _values
-        };
-    }),
-
-    _parcoords = {
-        type: 'parcoords',
-        line: {
-            showscale: true,
-            colorscale: _colorscale,
-            color: _color
-        },
-        dimensions: _dimensions
-    },
-
-    data = [_parcoords],
-
-    layout = {
-        width: dimNames.length > 7 ? 80 * dimNames.length : 600,
-        height: 500,
-        annotations: {
-            visible: false
-        }
-    },
-
-    config = {
-        toImageButtonOptions: {
-            format: 'png', // one of png, svg, jpeg, webp
-            filename: 'parallel_coordinates',
-            scale: 1 // Multiply title/legend/axis/canvas sizes by this factor
-        }
-    };
-    
-    var graph = Plotly.newPlot(element_id, data, layout, config);
-    //console.log(graph);
-
-    d3.select("#" + element_id)
-        .style("overflow", "auto");
-
-    d3.selectAll("#" + element_id + " .axis-title")
-        .style("transform", "translate(0, -28px) rotate(-9deg)");
-
-    d3.selectAll(".plot-container")
-        .attr('title', '');
-
-    $(".plot-container").tooltip({
-            track: true
-        });
-    */
-
+    // Add table below the ParCoords
     d3.select("#" + element_id)
         .append("table")
         .attr("id", "t" + element_id)
         .attr("class", "table table-sm table-hover display compact");    
 
-    var __theader_array = dimNames.slice();
-    __theader_array.unshift('ID');
+    // Array with headers
+    var _theader_array = dimNames.slice();
+    _theader_array.unshift('ID');
 
-    var __theader = __theader_array.map(row => { return { title: row }; }),
-        __tcells = real_data.map((row, i) => [row[0]].concat(row[1].map(String)).concat([rgbToHex(clusters_color_scheme[_color[i]])])),
+    // Map headers for the tables
+    var _theader = _theader_array.map(row => { return { title: row }; }),
+
+    // Array with table cell data
+        _tcells = real_data.map((row, i) =>
+            [row[0]]
+                .concat(row[1].map(String))
+                .concat([rgbToHex(clusters_color_scheme[_color[i]])])
+        ),
+
+    // Vars for table and its datatable
         table = $('#t' + element_id),
         datatable = table.DataTable({
-            data: __tcells,
-            columns: __theader,
+            data: _tcells,
+            columns: _theader,
+
+            // Make colors lighter for readability
             "rowCallback": (row, data) => {
                 $(row).children().css('background', data[data.length - 1] + "33");
             }      
         });
 
+    // 'visible' data array with lines on foreground (not filtered by a brush)
+    //  possible values: ["all"] or ["id in real_data", ...]
     table.data('visible', ["all"]);
 
+    // Add glow to lines when a line is hovered over in the table
     $('#t' + element_id + ' tbody').on("mouseover", 'tr', function (d, i) {
-        //console.log(_tableToParcoords(datatable.row(this).data()[0]), _tableToParcoords(_parcoordsToTable(_tableToParcoords(datatable.row(this).data()[0]))));
-               // console.log(foreground);
-                //$(this).css('background', "red");
-            d3.select(foreground[0][_tableToParcoords(datatable.row(this).data()[0])]).attr('stroke-width', 3);
-                //console.log(foreground[0][$('#t' + element_id).DataTable().row(this)[0][0]], d);
-            })
+            let line = foreground[0][_tableToParcoords(datatable.row(this).data()[0])];
+            $(line).addClass("glowing");
+            d3.select(line).moveToFront();
+        })
         .on("mouseout", 'tr', function (d) {
-            //console.log(this);
-            d3.select(foreground[0][datatable.row(this)[0][0]]).attr('stroke-width', 1);
+            $(foreground[0][_tableToParcoords(datatable.row(this).data()[0])]).removeClass("glowing");
         });
 
+    // Add footer elements
     table.append(
         $('<tfoot/>').append($('#t' + element_id + ' thead tr').clone())
     );
 
-    $('#t' + element_id + ' tfoot th').each(function () {
-        var title = $(this).text();
-        $(this).html('<input type="text" placeholder="Search" />');
+    // Add inputs to those elements
+    $('#t' + element_id + ' tfoot th').each(function (i, x) {
+        $(this).html('<input type="text" placeholder="Search" id="tableInput' + i + '"/>');
     });
 
     // Apply the search
-    datatable.columns().every(function () {
-        var that = this;
-
-        $('input', this.footer()).on('keyup change', function () {
-            if (that.search() !== this.value) {
-                that
-                    .search(this.value)
-                    .draw();
-            }
-            //console.log( this.value);
+    datatable.columns().every(function (i, x) {
+        $('#tableInput'+i).on('keyup change', function () {
+            datatable
+                .columns(i)
+                .search(this.value)
+                .draw();
         });
     });
 
+    // When a brush filteres lines, this is the callback in the table
     $.fn.dataTable.ext.search.push(
         function (settings, data, dataIndex) {
             if ($('#t' + element_id).data('visible')[0] === "all") return true;
@@ -432,28 +428,15 @@ function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_
         }
     );
 
-    /*plot.on('plotly_hover', function (data) {
-        var infotext = "id: " + scene.realData[data.curveNumber][0];
 
-        $(".plot-container").tooltip("option", "content", infotext);
 
-        $('#t' + element_id).DataTable().row(data.curveNumber).show().draw(false);
+    // trash bin :)
 
-        $('#t' + element_id).DataTable().rows().nodes()
-            .to$()
-            .removeClass('selected');
-
-        $('#t' + element_id).DataTable().rows(data.curveNumber).nodes()
-            .to$()
-            .toggleClass('selected');
-
-    });
-    /*.on('plotly_unhover', function (data) {
-        d3.select("#radar_chart_all")
-            //.style("left", (data.clientX - 26) + "px")
-            //.style("top", (data.y + 130) + "px")
-            .attr('title', '');
-    });*/
+/* $("#" + element_id + ".svg")
+        .tooltip({
+        track: true
+        });*/
+   // console.log('ids', _ids);
 }
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {

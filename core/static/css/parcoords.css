@@ -1,0 +1,46 @@
+/* Fonts, lines and brushes */
+
+svg {
+    font: 10px sans-serif;
+}
+
+.background path {
+    fill: none;
+    stroke: #ddd;
+    shape-rendering: crispEdges;
+}
+
+.foreground path {
+    fill: none;
+}
+
+.brush .extent {
+    fill-opacity: .3;
+    stroke: #fff;
+    shape-rendering: crispEdges;
+}
+
+.axis line,
+.axis path {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+    cursor: move;
+}
+
+/* Glowing animation */
+
+@keyframes glowing {
+    0% { stroke-width: 3 }
+    50% { stroke-width: 5 }
+    100% { stroke-width: 3 }
+}
+
+.glowing {
+    animation: glowing 1500ms infinite;
+    filter: url(#blur);
+}
