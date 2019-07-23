@@ -72,6 +72,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
         return self.model.predict(dataset_cut)
 
+
 try:
     baseoperationclass.register(KMeansClustering)
 except ValueError as error:

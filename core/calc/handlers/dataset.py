@@ -51,11 +51,11 @@ class DatasetHandler(BaseDataHandler):
         self._modifications = {}
         self._property_set = {}
 
-        if (isinstance(kwargs.get('dataset'), pd.DataFrame) and
+        if (isinstance(kwargs.get('dataset'), pd.DataFrame) and \
                 not kwargs['dataset'].empty):
             self._origin = kwargs['dataset']
 
-        elif (kwargs.get('load_initial_dataset', False) or
+        elif (kwargs.get('load_initial_dataset', False) or \
                 kwargs.get('process_initial_dataset', False)):
 
             features = kwargs.get('features') or []
@@ -277,6 +277,6 @@ class DatasetHandler(BaseDataHandler):
         """
         Public method to save changes into the history file.
         """
-        if (self._origin is not None and
+        if (self._origin is not None and \
                 self._modifications and self._property_set):
             self._save_history_data()
