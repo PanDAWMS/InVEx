@@ -59,7 +59,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         result = {'cluster_number': self.cluster_number, 'categorical_data_weight': self.categorical_weight}
         return result
 
-    def get_categorical_indices(self, dataset):
+    def _get_categorical_indices(self, dataset):
         categorical_indices = []
         for index, column in enumerate(dataset.columns):
             if dataset[column].dtype.name in ('category', 'object'):
@@ -68,31 +68,43 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
                 categorical_indices.append(index)
         return tuple(categorical_indices)
 
+    # Just a random sample at the moment. TODO: Optimize if necessary
+    def _get_initial_centers(self, dataset, categorical_indices):
+        initial_centers = dataset.sample(n=self.cluster_number)
+        initial_centers_cat = initial_centers.take(categorical_indices, axis=1).to_numpy()
+        initial_centers_num = initial_centers.drop(categorical_indices, axis=1).to_numpy()
+        return [initial_centers_num, initial_centers_cat]
+
+    # Used if there's no categorical properties in the dataset
+    def _fallback_algorithm(self, dataset):
+        from . import KMeansClustering
+        self.model = KMeansClustering.KMeansClustering()
+        self.model.clust_numbers, self.model.clust_array = self.cluster_number, []
+        self.results = self.model.process_data(dataset)
+        self.cent = self.model.model.cluster_centers_
+        return self.results
+
     # TODO: Initialisation error
     # By default, K-Prototypes uses euclidean distance for numerical data and Hamming distance for categorical data
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
     # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
     def process_data(self, dataset):
+        categorical_indices = self._get_categorical_indices(dataset)
+        if not categorical_indices:
+            return self._fallback_algorithm(dataset)
 
-        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init='Cao', n_init=10, gamma=self.categorical_weight, n_jobs=1)
-        try:
-            categorical_indices = self.get_categorical_indices(dataset)
-            dataset = dataset.to_numpy()
-            self.model.fit(dataset, categorical=categorical_indices)
-            self.results = self.model.predict(dataset, categorical=categorical_indices)
-            self.cent = self.model.cluster_centroids_
-            for index, cat_index in enumerate(categorical_indices):
-                self.cent = np.insert(self.cent[0], cat_index, values=self.cent[1].transpose()[index], axis=1)
-        except NotImplementedError:
-            from . import KMeansClustering
-            fallback_algorithm = KMeansClustering.KMeansClustering()
-            fallback_algorithm.clust_numbers, fallback_algorithm.clust_array = self.cluster_number, []
-            self.results = fallback_algorithm.process_data(dataset)
-            self.cent = fallback_algorithm.model.cluster_centers_
+        initial_centers = self._get_initial_centers(dataset, categorical_indices)
+        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, n_jobs=1)
+        dataset = dataset.to_numpy()
+        self.model.fit(dataset, categorical=categorical_indices)
+        self.results = self.model.predict(dataset, categorical=categorical_indices)
+        self.cent = self.model.cluster_centroids_
+        for index, cat_index in enumerate(categorical_indices):
+            self.cent = np.insert(self.cent[0], cat_index, values=self.cent[1].transpose()[index], axis=1)
         return self.results
 
     def predict(self, dataset):
-        categorical_indices = self.get_categorical_indices(dataset)
+        categorical_indices = self._get_categorical_indices(dataset)
         dataset = dataset.to_numpy()
         return self.model.predict(dataset, categorical=categorical_indices)
 
