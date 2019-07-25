@@ -262,6 +262,7 @@
                 {% if type == "site2site" %}
                     scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
                 {% elif type == "datavisualization" %}
+                  document.getElementById('group_color_changer').appendChild(scene.displayCategoricalSelector(auxNames.length));
                   var temp=scene.createNewGroupElement();
                   document.getElementById('color_changer').appendChild(temp);
                   var history_form = document.createElement("form");

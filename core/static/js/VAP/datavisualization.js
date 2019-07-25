@@ -64,6 +64,7 @@ function getColorScheme( clusters, theme='black' ) {
 }
 
 function prepareUniqueData(data){
+	// select unique values for categorical feature
 	var setarr=[];
 	for(var i=0; i<data[0][1].length; ++i){
 		setarr.push(new Set());
@@ -643,6 +644,53 @@ class DataVisualization extends Scene{
 			else
 				element_div.classList.remove('hide');
 		}
+	}
+
+	get_categorical_features() {
+		return features_stat.features.filter(function(obj) {
+		  return (['nominal','ordinal'].indexOf(obj.measure_type) >= 0);
+		});
+	}
+
+	get_feature_number(feature_name) {
+		return this.dimNames.concat(this.auxNames).indexOf(feature_name);
+	}
+	
+	displayCategoricalSelector(startvalueindex) {
+		var features = this.get_categorical_features();
+		var newGroupID = 'categorical';
+		while(document.getElementById(newGroupID)!==null)
+			newGroupID += (Math.random()*10).toString().slice(-1);
+		var form = createControlBasics('form' + newGroupID);
+		form.sceneObject = this;
+		var selector = document.createElement('select');
+		selector.classList.add('form-control', 'form-control-sm');
+		selector.id = newGroupID;
+		selector.name = 'categorical';
+		
+		for ( var i = 0; i < features.length; i++ ) {
+			var option = document.createElement('option');
+			option.innerText = features[i]["feature_name"];
+			option.value = this.get_feature_number(features[i]["feature_name"]);
+			option.feature_name = features[i]["feature_name"];
+			option.unique_values = features[i]["unique_values"];
+			selector.appendChild(option);
+		}
+		form.appendChild(selector);
+
+		var button = document.createElement('input');
+		button.id = 'groupColorButton' + newGroupID;
+		button.classList.add('button', 'small');
+		button.value = 'Group Data';
+		button.setAttribute('type', 'button');
+		button.selector = selector;
+		button.self = this;
+		button.onclick = function(event) {
+			var option = event.target.selector.selectedOptions[0];
+			console.log(option);
+		};
+		form.appendChild(button);
+		return form;
 	}
 	
 	createNewGroupElement(){

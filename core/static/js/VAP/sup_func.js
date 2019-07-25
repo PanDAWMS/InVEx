@@ -544,7 +544,7 @@ function printDataset(element, headers, dataset, num_rows, id_num=0){
     return table;
 }
 
-//Creates a basic GUI form
+//Creates a basic GUI for a form
 function createControlBasics(formID){
     while(document.getElementById(formID)!==null)
         formID+=(Math.random()*10).toString().slice(-1);
