@@ -10,15 +10,14 @@ class GroupData(baseoperationclass.BaseOperationClass):
     _operation_code_name = 'GroupData'
     _type_of_operation = 'grouping'
 
-    def __init__(self, feature_name):
+    def __init__(self):
         super().__init__()
-        self.feature_name = feature_name
         self.group_array = GROUP_ARRAY
         self.results = None
 
-    def set_parameters(self, group_array):
-        if group_array is not None:
-            self.group_array = group_array
+    def set_parameters(self, feature_name):
+        if feature_name is not None:
+            self.feature_name = feature_name
         return True
 
     def save_parameters(self):
@@ -48,13 +47,18 @@ class GroupData(baseoperationclass.BaseOperationClass):
         return result
 
     def process_data(self, dataset):
+        res = []
         grouped_dataset = dataset.groupby(self.feature_name)
-        group_number = -1
+        idx = dataset.index.tolist()
         for name, group in grouped_dataset:
-            group_number += 1
             for i in group.index.tolist():
-                if dataset.index(i) >= 0:
-                    self.results[dataset.index(i)] = group_number
+                try:
+                    res.append([idx.index(i), name])
+                except:
+                    pass
+        from operator import itemgetter
+        res = np.array(sorted(res, key=itemgetter(0)))
+        self.results = res[:, 1]
         return self.results
 
 try:
