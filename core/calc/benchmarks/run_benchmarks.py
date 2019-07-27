@@ -1,4 +1,6 @@
 from . import benchmark
-import cProfile
+# import cProfile
 
-cProfile.run('benchmark.run_benchmarks()')
+
+benchmark.run_benchmarks()
+# cProfile.run('benchmark.run_benchmarks()')

@@ -1,9 +1,10 @@
 import numpy as np
 import pickle
+from random import choice
 
 from kmodes.kprototypes import KPrototypes
-from kmodes.util.dissim import cat_dissim
 from kmodes.kmodes import init_cao
+from kmodes.util.dissim import matching_dissim
 from . import baseoperationclass
 
 CLUSTER_NUMBER = 5
@@ -70,6 +71,26 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
                 categorical_indices.append(index)
         return tuple(categorical_indices)
 
+    # TODO: Try not using categorical initialisation, just using kpp points
+    def _kmeans_plusplus_initialisation(self, dataset, categorical_indices):
+        dataset_cat = dataset.take(categorical_indices, axis=1).to_numpy()
+        initial_centroids_cat = init_cao(dataset_cat, self.cluster_number, matching_dissim)
+
+        categorical_labels = [column for index, column in enumerate(dataset.columns) if index in categorical_indices]
+        dataset_num = dataset.drop(categorical_labels, axis=1).to_numpy()
+        initial_centroids_num = np.zeros((self.cluster_number, dataset_num.shape[1]))
+        initial_centroids_num[0] = choice(dataset_num)
+        for i in range(1, self.cluster_number):
+            distances = np.array([])
+            for data_point in dataset_num:
+                distances = np.append(distances, np.min(np.sum((data_point - initial_centroids_num) ** 2)))
+            probabilities = distances / np.sum(distances)
+            chosen_point = np.random.choice(range(0, dataset_num.shape[0]), p=probabilities)
+            initial_centroids_num[i] = dataset_num[chosen_point]
+
+        initial_centroids = [initial_centroids_num, initial_centroids_cat]
+        return initial_centroids
+
     # Just a random sample at the moment. TODO: Optimize
     def _get_initial_centers(self, dataset, categorical_indices):
         initial_centers = dataset.sample(n=self.cluster_number)
@@ -95,7 +116,8 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         if not categorical_indices:
             return self._fallback_algorithm(dataset)
 
-        initial_centers = self._get_initial_centers(dataset, categorical_indices)
+        initial_centers = self._kmeans_plusplus_initialisation(dataset, categorical_indices)
+        # initial_centers = self._get_initial_centers(dataset, categorical_indices)
         self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, n_jobs=1)
         dataset = dataset.to_numpy()
         self.model.fit(dataset, categorical=categorical_indices)
