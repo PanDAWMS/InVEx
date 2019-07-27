@@ -2,6 +2,8 @@ import numpy as np
 import pickle
 
 from kmodes.kprototypes import KPrototypes
+from kmodes.util.dissim import cat_dissim
+from kmodes.kmodes import init_cao
 from . import baseoperationclass
 
 CLUSTER_NUMBER = 5
@@ -68,11 +70,12 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
                 categorical_indices.append(index)
         return tuple(categorical_indices)
 
-    # Just a random sample at the moment. TODO: Optimize if necessary
+    # Just a random sample at the moment. TODO: Optimize
     def _get_initial_centers(self, dataset, categorical_indices):
         initial_centers = dataset.sample(n=self.cluster_number)
         initial_centers_cat = initial_centers.take(categorical_indices, axis=1).to_numpy()
-        initial_centers_num = initial_centers.drop(categorical_indices, axis=1).to_numpy()
+        categorical_labels = [column for index, column in enumerate(dataset.columns) if index in categorical_indices]
+        initial_centers_num = initial_centers.drop(categorical_labels, axis=1).to_numpy()
         return [initial_centers_num, initial_centers_cat]
 
     # Used if there's no categorical properties in the dataset
@@ -84,7 +87,6 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         self.cent = self.model.model.cluster_centers_
         return self.results
 
-    # TODO: Initialisation error
     # By default, K-Prototypes uses euclidean distance for numerical data and Hamming distance for categorical data
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
     # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
@@ -99,8 +101,9 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         self.model.fit(dataset, categorical=categorical_indices)
         self.results = self.model.predict(dataset, categorical=categorical_indices)
         self.cent = self.model.cluster_centroids_
+        centers = self.cent[0]
         for index, cat_index in enumerate(categorical_indices):
-            self.cent = np.insert(self.cent[0], cat_index, values=self.cent[1].transpose()[index], axis=1)
+            centers = np.insert(centers, cat_index, values=self.cent[1].transpose()[index], axis=1)
         return self.results
 
     def predict(self, dataset):
