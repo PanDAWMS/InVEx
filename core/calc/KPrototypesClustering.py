@@ -127,6 +127,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         centers = self.cent[0]
         for index, cat_index in enumerate(categorical_indices):
             centers = np.insert(centers, cat_index, values=self.cent[1].transpose()[index], axis=1)
+        self.cent = centers
         return self.results
 
     def predict(self, dataset):
