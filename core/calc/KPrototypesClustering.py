@@ -6,6 +6,8 @@ from kmodes.kprototypes import KPrototypes
 from kmodes.kmodes import init_cao
 from kmodes.util.dissim import matching_dissim
 from . import baseoperationclass
+from .util.dissimilarity import euclidean
+
 
 CLUSTER_NUMBER = 5
 CATEGORICAL_WEIGHT = None
@@ -118,7 +120,8 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
 
         initial_centers = self._kmeans_plusplus_initialisation(dataset, categorical_indices)
         # initial_centers = self._get_initial_centers(dataset, categorical_indices)
-        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, n_jobs=1)
+        # self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, n_jobs=1)
+        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=euclidean, n_jobs=1)
         dataset = dataset.to_numpy()
         self.model.fit(dataset, categorical=categorical_indices)
         self.results = self.model.predict(dataset, categorical=categorical_indices)
