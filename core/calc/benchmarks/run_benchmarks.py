@@ -1,6 +1,5 @@
 from . import benchmark
-# import cProfile
 
 
-benchmark.run_benchmarks()
-# cProfile.run('benchmark.run_benchmarks()')
+benchmark.run_benchmarks(n_runs=1)
+# benchmark.profile_algorithm("KPrototypesClustering")
