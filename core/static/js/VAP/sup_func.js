@@ -40,6 +40,9 @@ function validate_field(input){
             console.log(result);
             alert(result);
             return false;
+        case 'list':
+            // TODO: it's s stub.
+            return true;
     }
     return true;
 }
@@ -68,6 +71,25 @@ function removeElement(id) {
 //
 //    [button "Clusterize"]
 //
+
+function get_categorical_features() {
+		return features_stat.features.filter(function(obj) {
+		  return (['nominal','ordinal'].indexOf(obj.measure_type) >= 0);
+		});
+}
+
+function get_categorical_features_names() {
+    var names = [];
+    var features = get_categorical_features();
+    for ( var i = 0; i < features.length; i++ )
+        names.push(features[i]["feature_name"]);
+    return names;
+}
+
+function get_feature_number(feature_name) {
+    return scene.dimNames.concat(scene.auxNames).indexOf(feature_name);
+}
+
 function createClusterElements(divElement, formElement, cluster_params, curr_algorithm, curr_values) {
     // The clustering algorithm selector
     var select_element = document.createElement('select');
@@ -113,35 +135,63 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             var form_group = document.createElement("div");
             form_group.classList.add("form-group");
 
-            // The number of clusters input
-            var input = document.createElement("input");
-            input.classList.add("form-control-sm");
-            input.classList.add("mr-4");
-            input.setAttribute("type", "text");
+            if (el[i]['type'] == 'list') {
+                var selector = document.createElement('select');
+                selector.classList.add('form-control', 'form-control-sm');
+                selector.id = 'inp' + ("00000" + Math.random() * 100000).slice(-5);
+                selector.setAttribute("name", el[i]['name']);
+                var values = el[i]['values'];
+                for ( var val = 0; val < values.length; val++ ) {
+                    var option = document.createElement('option');
+                    option.innerText = values[val];
+                    option.value = values[val];
+                    selector.appendChild(option);
+                }
+                element_div.inputElements.push(selector);
+                form_group.appendChild(selector);
+            } else {
+                // The number of clusters input
+                var input = document.createElement("input");
+                input.classList.add("form-control-sm");
+                input.classList.add("mr-4");
+                input.setAttribute("type", "text");
 
-            for (var j = 0; j < el[i].attributes.length; j++)
-                input.setAttribute(el[i].attributes[j][0], el[i].attributes[j][1]);
+                for (var j = 0; j < el[i].attributes.length; j++)
+                    input.setAttribute(el[i].attributes[j][0], el[i].attributes[j][1]);
 
-            input.id = 'inp' + ("00000" + Math.random() * 100000).slice(-5);
-            input.setAttribute("name", el[i]['name']);
+                input.id = 'inp' + ("00000" + Math.random() * 100000).slice(-5);
+                input.setAttribute("name", el[i]['name']);
 
-            // Default parameters
-            if (curr_values !== undefined && el[0] === curr_algorithm)
-                input.value = el[i]['defvalue'] = curr_values[el[i]['name']];
-            else
-                if ('defvalue' in el[i])
-                    input.value = el[i]['defvalue'];
+                // Default parameters
+                if (curr_values !== undefined && el[0] === curr_algorithm)
+                    input.value = el[i]['defvalue'] = curr_values[el[i]['name']];
+                else
+                    if ('defvalue' in el[i])
+                        input.value = el[i]['defvalue'];
 
-            if ('type' in el[i])
-                input.typeOfField = el[i]['type'];
+                if ('type' in el[i])
+                    input.typeOfField = el[i]['type'];
 
-            if ('min' in el[i])
-                input.minInputValue = el[i]['min'];
+                if ('min' in el[i])
+                    input.minInputValue = el[i]['min'];
 
-            if ('max' in el[i])
-                input.maxInputValue = el[i]['max'];
+                if ('max' in el[i])
+                    input.maxInputValue = el[i]['max'];
 
-			element_div.inputElements.push(input);
+                element_div.inputElements.push(input);
+
+                // Labels for each input field
+                if ('label' in el[i]) {
+                    var label = document.createElement('label');
+                    label.setAttribute("for", input.id);
+                    label.textContent = el[i]['label'];
+                    label.classList.add("control-label");
+                    form_group.appendChild(label);
+                    input.labelText = el[i]['label'];
+                }
+
+                form_group.appendChild(input);
+            }
             element_div.validateFields = function () {
                 for (var i = 0; i < this.inputElements.length; i++)
                     if (!validate_field(this.inputElements[i]))
@@ -149,17 +199,6 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                 return true;
             };
 
-            // Labels for each input field
-            if ('label' in el[i]) {
-                var label = document.createElement('label');
-                label.setAttribute("for", input.id);
-                label.textContent = el[i]['label'];
-                label.classList.add("control-label");
-                form_group.appendChild(label);
-                input.labelText = el[i]['label'];
-            }
-
-            form_group.appendChild(input);
             element_div.appendChild(form_group);
         }
 
@@ -312,7 +351,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
 
         divElement.appendChild(element_div);
 
-        // Make the right element visible
+        //Make the right element visible
         if (curr_algorithm === undefined && k === 0) {
             element_div.style.display = 'block';
             select_element.element_div = element_div;
@@ -544,7 +583,7 @@ function printDataset(element, headers, dataset, num_rows, id_num=0){
     return table;
 }
 
-//Creates a basic GUI form
+//Creates a basic GUI for a form
 function createControlBasics(formID){
     while(document.getElementById(formID)!==null)
         formID+=(Math.random()*10).toString().slice(-1);

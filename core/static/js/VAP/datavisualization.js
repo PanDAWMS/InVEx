@@ -64,6 +64,7 @@ function getColorScheme( clusters, theme='black' ) {
 }
 
 function prepareUniqueData(data){
+	// select unique values for categorical feature
 	var setarr=[];
 	for(var i=0; i<data[0][1].length; ++i){
 		setarr.push(new Set());
@@ -704,25 +705,6 @@ class DataVisualization extends Scene{
 		};
 		form.appendChild(changeColorBtn);
 
-		// var undoColorBtn = document.createElement('button');
-		// undoColorBtn.id = 'undoButton' + newGroupID;
-		// undoColorBtn.classList.add('button', 'small', 'hide');
-		// undoColorBtn.innerText = 'Undo Color';
-		// undoColorBtn.setAttribute('type', 'button');
-		// undoColorBtn.sceneObject = this;
-		// undoColorBtn.onclick = function(event) {
-		// 	event.preventDefault();
-		// 	if (self.constructor.name != 'MeshVisualization')
-		// 		self.cleanElement("history");
-		// 	if (this.sceneObject.undoColorGroup()){
-		// 		this.classList.add('hide');
-		// 		return false;
-		// 	}
-		// 	return false;
-		// };
-		// form.appendChild(document.createElement('br'));
-		// form.appendChild(undoColorBtn);
-		// changeColorBtn.undoButton=undoColorBtn;
 		form.ready=function(){
 			$('#'+this.color_picker.id).spectrum({showPalette: true,
 				palette: ["red", "green", "blue", "orange", "yellow", "violet" ],
