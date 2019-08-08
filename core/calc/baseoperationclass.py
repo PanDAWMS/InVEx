@@ -1,6 +1,9 @@
 class BaseOperationClass:
+
     _operations_dictionary = {}
     _operation_name = 'Operation basis'
+    _operation_code_name = 'OpBasic'
+    # "operation_code_name" should correspond to html parameter "algorithm"
 
     def _get_name(self):
         return self._operation_name

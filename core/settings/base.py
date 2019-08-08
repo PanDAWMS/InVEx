@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 import core
 from os.path import join, dirname
+import mimetypes
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -131,3 +132,8 @@ STATICFILES_DIRS = (
 MEDIA_ROOT = join(dirname(core.__file__), 'uploaded')
 
 MEDIA_URL = '/uploaded/'
+
+mimetypes.add_type("text/javascript", ".js", True)
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 157286400
+FILE_UPLOAD_MAX_MEMORY_SIZE = 157286400

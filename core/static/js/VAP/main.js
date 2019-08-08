@@ -40,12 +40,13 @@ class Scene {
 			this.scene.add(this.groupOfGrid);
 
 			// init camera
-			this.camera = new THREE.PerspectiveCamera( 50, mainDiv.clientWidth / mainDiv.clientHeight, 1, 1000 );
-			this.camera.position.set(100, 100, 100);
-			this.camera.lookAt( this.scene.position );
+			this.camera = new THREE.PerspectiveCamera( 50, 2, 1, 1000 );
+			this.camera.position.set(120, 120, 120);
+			this.camera.lookAt( 0, 0, 0 );
 
 			this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
-			this.controls.enableRotate = true;
+        this.controls.enableRotate = true;
+        this.controls.target = new THREE.Vector3(0, 0, 0);
 			this.controls.saveState();
 			
 			this.grid = undefined;
@@ -75,7 +76,24 @@ class Scene {
             this.initLight();
 			this.createGui();
 			this.csrf = document.getElementsByName("csrfmiddlewaretoken")[0].getAttribute("value");
-	}
+
+        this.resizeCanvasToDisplaySize();
+    }
+
+    resizeCanvasToDisplaySize() {
+        const canvas = this.renderer.domElement;
+        // look up the size the canvas is being displayed
+        const width = this.mainDiv.clientWidth - 30;
+        const height = this.mainDiv.clientHeight - 20;
+
+        // adjust displayBuffer size to match
+        if (canvas.width !== width || canvas.height !== height) {
+            // you must pass false here or three.js sadly fights the browser
+            this.renderer.setSize(width, height);
+            this.camera.aspect = width / height;
+            this.camera.updateProjectionMatrix();
+        }
+    }
 
 	saveVisualParameters(){
 		return {'camerapos': this.camera.position,
@@ -345,15 +363,14 @@ class Scene {
 	}
 
 	// Function that is called to render the scene.
-	animate() {
-		this.renderer.render( this.scene, this.camera );
+    render() {
+        this.resizeCanvasToDisplaySize();
+        this.renderer.render( this.scene, this.camera );
 	}
 
 	// Recalculates everything needed after window resize.
 	onResize() {
-		this.camera.aspect = this.mainDiv.clientWidth / this.mainDiv.clientHeight;
-		this.camera.updateProjectionMatrix();
-		this.renderer.setSize( this.mainDiv.clientWidth, this.mainDiv.clientHeight );
+        this.render();
 	}
 
 	redrawScene(){

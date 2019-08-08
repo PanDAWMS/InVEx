@@ -8,19 +8,17 @@
     {% csrf_token %}
     <div class="vap_container">
         <div class="grid-container fluid">
-          <div class="grid-x grid-padding-x">
-            <div class="cell">
-                {% include "_topmenu.html" %}
+            <div class="grid-x grid-padding-x">
+                <div class="cell">
+                    {% include "_topmenu.html" %}
+                </div>
             </div>
-          </div>
         </div>
-          <div class="row">
+        <div class="row">
             <br/>
-          </div>
         </div>
             <div class="grid-x grid-padding-x">
                   {% include "_leftsidemenu.html" %}
-            </div>
             <div class="cell auto">
                 <div class="grid-y">
                     <div class="cell mainPicture" id="picture">
@@ -31,13 +29,9 @@
 
             </div>
 
-
-            </div>
-            </div>
-        </div>
-	</div>
 {% block extra_js %}
 <script src="{% static "js/three.js" %}"></script>
+<script src="{% static "js/Chart.bundle.min.js" %}"></script>
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/controls/DragControls.js" %}"></script>
 <script src="{% static "js/VAP/sup_func.js" %}"></script>
@@ -55,6 +49,7 @@
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
 <script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/plotly-latest.min.js" %}"></script>
 {% endblock %}
@@ -73,7 +68,8 @@
     var scene = new MeshVisualization(document.getElementById("picture"), 0.75, 2, [], []);
     {% endif %}
 
-		animate();
+        function render() { scene.render(); }
+
 		init();
 
 		window.addEventListener( "resize", onSceneResize, false );
@@ -82,7 +78,7 @@
 
             {% if type == "datavisualization" %}
             {% if data_is_ready %}
-                var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofcl', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
+                var clustering_parameters=[['KMeans', 'KMeans', {'name':'numberofclKMeans', 'label':'Number of clusters', 'type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 20}],
                                     ['DBSCAN', 'DBSCAN', {'name':'min_samples', 'label':'min_samples','type':'integer', 'attributes':[['placeholder', '5']], 'defvalue':'5', 'min': 1, 'max': 200},
                                                          {'name':'eps', 'label':'epsilon','type':'float', 'attributes':[['placeholder','0.5']], 'defvalue':'0.5', 'min': 0, 'max': 50}
                                                          ]]
@@ -130,13 +126,11 @@
 
             {% if corr_matrix %}
             var corr_matrix = {{ corr_matrix|safe }};
-			Matrix({
-				container : '#corr-matrix',
-				data      : corr_matrix,
-				labels    : dimNames,
-				start_color : '#ffffff',
-				end_color : '#3498db'
-			});
+                MatrixPlotly({
+                    container : 'corr-matrix',
+                    data      : corr_matrix,
+                    labels    : dimNames
+                });
             {% endif %}
 
             {% if visualparameters %}
@@ -175,7 +169,10 @@
             
                 {% if type == "site2site" %}
                 scene.createCoordinatesTables(document.getElementById('xcoord'), document.getElementById('ycoord'));
+                scene.createCancelDefaultColorButton(document.getElementById('data_on_scene'));
                 scene.createDataOnSceneElements(document.getElementById('data_on_scene'));
+                scene.createPlotlyCharts(document.getElementById('groups'));
+                document.getElementById('groups').appendChild(scene.createChartjsCharts());
                 {% endif %}
                 var temp=scene.createNewGroupElement();
                 document.getElementById('color_changer').appendChild(temp);
@@ -193,11 +190,7 @@
             {% endif %}
 
 		}
-
-		function animate() {
-			scene.animate();
-			requestAnimationFrame( animate );
-		}
+        scene.controls.addEventListener('change', render);
 	</script>
 {% endblock %}
 

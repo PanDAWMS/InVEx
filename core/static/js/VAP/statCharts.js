@@ -80,18 +80,79 @@ function drawMultipleGroupRadarChart(element_id, groups_data, selections_history
 
 function drawMultipleClusterRadarChart(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
 
-    var data = dataClustersRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
+    var data2 = dataClustersRadarChart(norm_data, real_data, clusters_list, clusters_color_scheme, dimNames);
 
     layout = {
-      polar: {
-        radialaxis: {
-          visible: true,
-          range: [0, 100]
+        polar: {
+            radialaxis: {
+                visible: true,
+                range: [0, 100]
+            }
         }
-      }
     };
 
     Plotly.plot(element_id, data, layout);
+}
+
+function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames) {
+    var _dimensions = dimNames.map((dim, index) => {
+        var _values = real_data.map((row) => { return row[1][index]; });
+
+        return {
+            label: dim,
+            range: [Math.min(..._values), Math.max(..._values)],
+            values: _values
+        };
+    }),
+
+    color_max = Math.max(...Object.keys(clusters_color_scheme)),
+    color_min = Math.min(...Object.keys(clusters_color_scheme)),
+    zero_color = rgbToHex(clusters_color_scheme[color_min]),
+
+    _colorscale = ((Object.keys(clusters_color_scheme).length === 1) ?
+        [["0.0", zero_color], ["1.0", zero_color]] :
+        Object.keys(clusters_color_scheme).
+            map((x) => {
+                return [(x - color_min) / (color_max - color_min),
+                    rgbToHex(clusters_color_scheme[x])];
+            })),
+
+    _color = clusters_list.map((x) => { return x; }),
+
+    data = [{
+        type: 'parcoords',
+        line: {
+            showscale: true,
+            colorscale: _colorscale,
+            color: _color
+        },
+
+        dimensions: _dimensions
+    }],
+
+    layout = {
+        width: 80 * dimNames.length,
+        height: 500,
+        annotations: {
+            visible: false
+        }
+    },
+
+    config = {
+        toImageButtonOptions: {
+            format: 'png', // one of png, svg, jpeg, webp
+            filename: 'parallel_coordinates',
+            scale: 1 // Multiply title/legend/axis/canvas sizes by this factor
+        }
+    };
+    
+    Plotly.newPlot(element_id, data, layout, config);
+
+    d3.select("#" + element_id)
+        .style("overflow", "auto");
+
+    d3.selectAll("#" + element_id + " .axis-title")
+        .style("transform", "translate(0, -28px) rotate(-9deg)");
 }
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
