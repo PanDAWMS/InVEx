@@ -4,6 +4,7 @@ from . import KMeansClustering
 from . import KPrototypesClustering
 from . import MiniBatchKMeansClustering
 from . import DBScanClustering
+from . import GroupData
 from . import operationshistory
 from . import importcsv
 from . import lod_generator

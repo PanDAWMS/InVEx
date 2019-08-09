@@ -367,6 +367,7 @@ def clusterize(request, dataset_id, group_ids=None):
     err_msg_subj = '[form_reactions.clusterize]'
 
     operation = None
+    mode = None
     if 'algorithm' in request.POST:
         if (request.POST['algorithm'] == 'KMeans' and \
                 'numberofclKMeans' in request.POST):
@@ -377,8 +378,9 @@ def clusterize(request, dataset_id, group_ids=None):
             operation = calc.KMeansClustering.KMeansClustering()
             operation.set_parameters(int(request.POST['numberofclKMeans']),
                                      clusters_list)
+            mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and \
+        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
                 'numberofcl' in request.POST and 'batch_size' in request.POST):
 
             operation = calc.MiniBatchKMeansClustering.\
@@ -393,13 +395,24 @@ def clusterize(request, dataset_id, group_ids=None):
             operation = calc.KPrototypesClustering.KPrototypesClustering()
             operation.set_parameters(int(request.POST['cluster_number']),
                                      int(request.POST['categorical_data_weight']))
+            mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'DBSCAN' and \
+        elif (request.POST['algorithm'] == 'DBSCAN' and
                 'min_samples' in request.POST and 'eps' in request.POST):
 
             operation = calc.DBScanClustering.DBScanClustering()
             operation.set_parameters(int(request.POST['min_samples']),
                                      float(request.POST['eps']))
+
+            mode = 'numeric'
+
+        elif (request.POST['algorithm'] == 'GroupData' and
+                      'feature_name' in request.POST):
+
+            operation = calc.GroupData.GroupData()
+            operation.set_parameters(request.POST['feature_name'])
+
+            mode = 'all'
 
         else:
             logger.error('{} Requested algorithm is not found: {}'.
@@ -411,10 +424,13 @@ def clusterize(request, dataset_id, group_ids=None):
     dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
                                   load_history_data=True)
 
+    dataset_hdlr._mode = mode
+    clustering_dataset = dataset_hdlr.clustering_dataset
+
     output_op_number = None
     if operation is not None:
         try:
-            clusters = operation.process_data(dataset_hdlr.clustering_dataset)
+            clusters = operation.process_data(clustering_dataset)
         except Exception as e:
             logger.error('{} Failed to perform data clustering: {} - {}'.
                          format(err_msg_subj, json.dumps(request.POST), e))
@@ -422,7 +438,7 @@ def clusterize(request, dataset_id, group_ids=None):
         else:
             if clusters is not None:
                 op_history = dataset_hdlr.operation_history
-                op_history.append(dataset_hdlr.clustering_dataset,
+                op_history.append(clustering_dataset,
                                   operation,
                                   request.POST['visualparameters'])
                 dataset_hdlr.operation_history = op_history

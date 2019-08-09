@@ -2,6 +2,7 @@
 {% load staticfiles %}
 
 {% block extra_css %}
+    <!-- for minified version add this -->
     <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">
@@ -208,7 +209,16 @@
                                 'defvalue': '0.5',
                                 'min': 0,
                                 'max': 50
-                            }]
+                            }],
+                          ['GroupData',
+                            'GroupData',
+                              {
+                                  'name': 'feature_name',
+                                  'label': 'feature name',
+                                  'type': 'list',
+                                  'attributes': [['placeholder', '']],
+                                  'values': get_categorical_features_names()
+                              }]
                     ];
 
                     var curr_algorithm;

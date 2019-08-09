@@ -149,13 +149,15 @@ class DatasetHandler(BaseDataHandler):
             logger.error('[DatasetHandler.clustering_dataset] '
                          'Dataset for clustering is not prepared')
             raise
-
-        _set = set(self._origin.columns.tolist())
-        _features = [x for x in self._property_set['features'] if x in _set]
-        # TODO: Re-check that feature selection is needed here
-        #  (it was processed at _form_dataset_modifications for _origin dataset)
-        #  (Note: for LoD _origin dataset it might behave differently)
-        return self._origin.loc[:, _features]
+        if (self._mode == 'numeric'):
+            _set = set(self._origin.columns.tolist())
+            _features = [x for x in self._property_set['features'] if x in _set]
+            # TODO: Re-check that feature selection is needed here
+            #  (it was processed at _form_dataset_modifications for _origin dataset)
+            #  (Note: for LoD _origin dataset it might behave differently)
+            return self._origin.loc[:, _features]
+        elif (self._mode == 'all'):
+            return pd.concat([self._origin, self._auxiliary], sort=True)
 
     @property
     def operation_history(self):

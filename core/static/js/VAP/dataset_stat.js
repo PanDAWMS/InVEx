@@ -447,10 +447,7 @@ class DatasetStats {
                     if (feature[name] === undefined)
                         td.textContent = '';
                     else {
-                        if (["mean"].includes(name))
-                            this.draw_slider(td, feature, name);
-                        else {
-                            var value = feature[name];
+                        var value = feature[name];
                             if (this.isNumber(value)) {
                                 if (name == "percentage_missing")
                                     td.textContent = this.formatNumber(value.toFixed(2)) + "%";
@@ -458,7 +455,6 @@ class DatasetStats {
                                     td.textContent = this.formatNumber(value.toFixed(2));
                             }
                             else td.textContent = value;
-                        }
                     }
                     tr.appendChild(td);
                 }
@@ -638,20 +634,6 @@ class DatasetStats {
             fieldset.appendChild(div);
         }
         return fieldset;
-    }
-    
-    draw_slider(td, item, q) {
-        var slider = document.createElement("input");
-        slider.type = "range";
-        slider.setAttribute("min", item["min"]);
-        slider.setAttribute("max", item["max"]);
-        slider.value = item[q];
-        slider.disabled = "true";
-        var div = document.createElement("div");
-        div.textContent = this.formatNumber(item[q].toFixed(2));
-        div.style.marginLeft = "10px";
-        td.appendChild(slider);
-        td.appendChild(div);
     }
     
     print_selector(idx, type) {

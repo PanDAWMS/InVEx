@@ -10,137 +10,18 @@
 <title>{% block page_title %}{{ PAGE_TITLE }}{% endblock %}</title>
 
 <!-- Included base CSS Files -->
+<link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Montserrat:400,600,700,800,900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">
 <link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">
 <link rel="stylesheet" href="{% static "css/main-nav.css" %}">
 <link rel="stylesheet" href="{% static "css/accordion-override.css" %}">
+<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}">
 <!-- Bootstrap -->
 {#<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.css"/>#}
 
 <!-- Include all compiled plugins (below), or include individual files as needed -->
-
-<style>
-    .vap_container {
-        font-size: 12px !important;
-    }
-    form {
-        font-size: 12px !important;
-    }
-    input {
-        font-size: 12px !important;
-    }
-    select {
-        font-size: 12px !important;
-    }
-    #selected_group {
-        font-size: 12px !important;
-    }
-    .container {
-        margin-left: 10px !important;
-        margin-right: 10px !important;
-    }
-    .row {
-        flex-wrap: nowrap !important;
-    }
-    .mainPicture {
-        min-height: 600px;
-        min-width: 300px;
-        max-height: 99vh;
-    }
-    .vap-controllers {
-        margin-bottom: 0 !important;
-    }
-    .vap-controllers label {
-        margin-right: 5px;
-        font-weight: 600;
-    }
-    button.vap-controllers {
-        margin-top: 5px;
-        margin-bottom: 5px !important;
-    }
-    #gui_container {
-        position: absolute;
-    }
-    #gui{
-      transform:translate(0, 0);
-    }
-    .dg.main .close-button.close-bottom {
-        right: 0;
-        top: 0;
-        font-size: 12px;
-    }
-    .dg .has-slider input[type=text] {
-        width: 50% !important;
-        line-height: 10px !important;
-    }
-    .dg .slider {
-        width: 50% !important;
-    }
-    .dg .c input[type=text] {
-        line-height: 10px !important;
-    }
-
-    .dg .cr.string input[type=text] {
-        font-size: x-small;
-        padding-bottom: 20px;
-    }
-
-    .dg .cr.number input[type=text] {
-        font-size: x-small;
-        padding-bottom: 20px !important;
-    }
-
-    #legend {
-        float:right;
-    }​
-
-    .hist_row {
-        display : flex;
-        align-items : left;
-        margin-bottom: 10px;
-    }
-
-    .hist_box {
-      height: 10px;
-      width: 10px;
-      border: 1px solid black;
-      margin-right : 5px;
-    }
-
-    #features_panel {
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      margin: auto;
-      padding-top: 40px;
-      position: relative;
-      width: 960px;
-    }
-
-    #controllers {
-        min-width: 320px;
-        max-width: 350px;
-        float: left;
-    }
-
-    #legend {
-        float: right;
-    }
-
-    #invex_logo {
-        min-width: 300px;
-    }
-
-    @media (max-width: 700px), only screen and (orientation: landscape) and (max-device-width:900px) {
-        #controllers {
-            flex: auto;
-            max-width: none;
-        }
-
-        .mainPicture {
-            min-width: 320px;
-        }
-    }
-
-</style>
 
 <!-- sub-title and bread-crumbs -->
 {#<div class="top-subbar">#}
@@ -163,26 +44,28 @@
 
 {% block extra_css %}{% endblock %}
 
+<div class="top_bg_image"></div>
+<hr class="top_hr"/>
+
 <div class="large-12 columns" id="content">
 	<div class="grid-x grid-padding-x">
 		<div class="cell">
-			<div class="grid-x">
-				<div class="cell small-2">
-					<img src="{% static "img/Original/Original.jpg" %}" id="invex_logo"/>
-				</div>
-				<div class="cell auto">
-				</div>
+			<div class="grid-y">
+                <div class="cell">
+                    <h3>InVEx</h3>
+                </div>
+                <div class="cell">
+                    <hr class="header_hr"/>
+                </div>
+                <div class="cell">
+                    <h5>Interactive Visual Explorer</h5>
+                </div>
 			</div>
 		</div>
 	</div>
+
 	{% block body %} {% endblock %}
 </div>
-
-{#{% block extra_js %}#}
-{#<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>#}
-{#<script src="{% static "js/bootstrap.min.js" %}"></script>#}
-{#{% endblock %}#}
-{##}
 
 <script>
     $(document).foundation();
