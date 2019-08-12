@@ -13,7 +13,8 @@ class DatasetStats {
         this.lod_mode = lod_mode;
         this.lod_value =  lod_value;
         this.MEASURES = [{'type':'continuous',
-                          'columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
+                          'columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing",
+                          "q10","q25","q50","q75","q90"]},
                          {'type':'ordinal',
                           'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
                          {'type':'nominal',
@@ -368,7 +369,7 @@ class DatasetStats {
             var th = document.createElement("th");
             th.textContent = value;
             // add none class to elements which should be displayed as detailed
-            if (['distribution','unique_values','std','measure_type'].includes(value))
+            if (['distribution','unique_values','std','measure_type',"q10","q25","q50","q75","q90"].includes(value))
                 th.classList.add("none");
             tr.appendChild(th);
         }
