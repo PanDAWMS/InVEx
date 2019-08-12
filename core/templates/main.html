@@ -47,8 +47,9 @@
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
+{#<script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>#}
 <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 <script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
 <script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/plotly-1.47.4.min.js" %}"></script>
@@ -129,9 +130,9 @@
             {% if real_metrics %}
                 var statistics_real = {{ real_metrics|safe }};
                 scene.setRealStats(statistics_real);
-                {% if data_is_ready %}
-                    printStats(statistics_real, dimNames, "stats");
-                {% endif %}
+{#                {% if data_is_ready %}#}
+{#                    printStats(statistics_real, dimNames, "stats");#}
+{#                {% endif %}#}
             {% endif %}
 
             {% if type == "datavisualization" %}

@@ -12,11 +12,17 @@ class DatasetStats {
         this.lod_activated = lod_activated;
         this.lod_mode = lod_mode;
         this.lod_value =  lod_value;
-        this.MEASURES = [{'type':'continuous','columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
-                         {'type':'ordinal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
-                         {'type':'nominal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
-                         {'type':'range','columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
-                         {'type':'non-categorical','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
+        this.MEASURES = [{'type':'continuous',
+                          'columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing",
+                          "q10","q25","q50","q75","q90"]},
+                         {'type':'ordinal',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
+                         {'type':'nominal',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
+                         {'type':'range',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
+                         {'type':'non-categorical',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
         this.lods = [
               {
                 'idx': 0,
@@ -266,11 +272,28 @@ class DatasetStats {
             _labels.push(k.toString());
             _data.push(distribution_data[k]);
         }
-        var data = [{x: _labels, y: _data, type: 'bar'}];
-        var layout = {
-           xaxis: { type: 'category' }
+
+        var trace = {
+            s: _data,
+            y: _labels,
+            type: 'bar',
+            orientation: 'h',
+            marker: {
+                color: '#99aac9'
+            }
         };
-        Plotly.newPlot(domElement, data, layout, {displayModeBar: false});
+        var data = [trace];
+        var layout = {
+           yaxis: { type: 'category' },
+           autosize: true,
+           showlegend: false,
+          yaxis: {
+            zeroline: false,
+            gridwidth: 2
+          },
+          bargap :0.05
+        };
+        Plotly.newPlot(domElement, data, layout, {displayModeBar: false, responsive: true});
         return domElement;
     }
 
@@ -346,7 +369,7 @@ class DatasetStats {
             var th = document.createElement("th");
             th.textContent = value;
             // add none class to elements which should be displayed as detailed
-            if (['distribution','unique_values'].includes(value))
+            if (['distribution','unique_values','std','measure_type',"q10","q25","q50","q75","q90"].includes(value))
                 th.classList.add("none");
             tr.appendChild(th);
         }
@@ -391,8 +414,9 @@ class DatasetStats {
                         if (name == "distribution") {
                             if (feature["unique_number"] == 1)
                                 td.appendChild(this.values_frequency(feature));
-                            else
-                               td.appendChild(this.generate_chart(feature["distribution"], name));
+                            else {
+                                td.appendChild(this.generate_chart(feature["distribution"], feature["feature_name"]));
+                            }
                         }
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
@@ -481,15 +505,39 @@ class DatasetStats {
         });
 
         var available_measures = this.available_measures();
+
+        // create tabs
+        var accordion_ul = document.createElement("ul");
+        accordion_ul.classList.add("accordion");
+        accordion_ul.setAttribute("data-multi-expand","true");
+        accordion_ul.setAttribute("data-allow-all-closed","true");
+        accordion_ul.setAttribute("data-accordion","");
+        accordion_ul.setAttribute("id","measurement-accordion");
+        root.appendChild(accordion_ul);
+
         for (var i=0;i<this.MEASURES.length;i++) {
             var type = this.MEASURES[i]['type'];
             if (available_measures.includes(type)) {
+                var accordion_li = document.createElement("li");
+                accordion_li.classList.add("accordion-item","text-center");
+                accordion_li.setAttribute("data-accordion-item","");
+                var title_href = document.createElement("a");
+                title_href.classList.add("accordion-title");
+                title_href.setAttribute("href",type);
+                title_href.innerText = type;
+                accordion_li.appendChild(title_href);
+                var accordion_div = document.createElement("div");
+                accordion_div.classList.add("accordion-content");
+                accordion_div.setAttribute("data-tab-content","");
+                accordion_div.setAttribute("id",type);
                 var table = document.createElement("table");
                 table.classList.add("display", "compact");
                 table.setAttribute("id", "features_table_" + type);
                 table.appendChild(this._headers(type));
                 table.appendChild(this._rows(type));
-                root.appendChild(table);
+                accordion_div.appendChild(table);
+                accordion_li.appendChild(accordion_div);
+                accordion_ul.appendChild(accordion_li);
                 $("#features_table_" + type).DataTable({
                     searching: false,
                     paging: false,

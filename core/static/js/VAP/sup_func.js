@@ -550,7 +550,13 @@ function createDataTableDynamic(parentElement, ID, headers, numofheadrows=1, id_
     table.dataTableObj = $('#'+table.id).DataTable({
         "columnDefs": columndef,
         "rowId": id_num,
-        "deferRender": true});
+        "deferRender": true,
+        "scrollY":        "300px",
+        "scrollX":        true,
+        "scrollCollapse": true,
+        "fixedColumns":   {
+            leftColumns: 1
+        }});
     return table;
 }
 
@@ -579,7 +585,15 @@ function printDataset(element, headers, dataset, num_rows, id_num=0){
     for(var i = 0; i<num_rows; ++i){
         addElementToDataTable(table, [dataset[i][0]].concat(dataset[i][1]), dataset[i][0], 1, false);
     }
-    table.dataTableObj = $('#'+table.id).DataTable();
+    table.dataTableObj = $('#'+table.id).DataTable({
+        scrollY:        "300px",
+        scrollX:        true,
+        scrollCollapse: true,
+        paging:         true,
+        fixedColumns:   {
+            leftColumns: 1
+        }
+    });
     return table;
 }
 
