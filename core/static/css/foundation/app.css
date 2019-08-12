@@ -1,7 +1,8 @@
 .tabs {
   margin: 0;
   border: 1px solid #e6e6e6;
-  background: #fe8a0f;
+  /*background: #fe8a0f;*/
+  background: #606c8882;
   list-style-type: none; }
   .tabs::before, .tabs::after {
     display: table;
@@ -28,19 +29,23 @@
   .tabs-title > a {
     display: block;
     padding: 1.25rem 1.5rem;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     line-height: 1;
     font-weight: 600;
     color: #010508; }
     [data-whatinput='mouse'] .tabs-title > a {
       outline: 0; }
     .tabs-title > a:hover {
-      background: #b7accc;
+      background: #99aac9;
       color: #010508;
       outline-style: none;}
     .tabs-title > a:focus, .tabs-title > a[aria-selected='true'] {
-      background: rgba(129, 119, 150, 0.99);
-      color: #010508;
+      /*background: rgba(129, 119, 150, 0.99);*/
+      color: white;
+      background: #606c88;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #3f4c6b, #606c88);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #3f4c6b, #606c88);
+      /*color: #010508;*/
     outline-style: none;}
 
 button:hover, button:focus, .button:hover, .button:focus {
@@ -48,27 +53,37 @@ button:hover, button:focus, .button:hover, .button:focus {
 }
 
 .button {
-  background-color: #27096b;
+  /*background-color: #27096b;*/
+  background: #606c88;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #3f4c6b, #606c88);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #3f4c6b, #606c88);
   color: #fefefe;
   font-weight: 600;
   font-size: 0.85rem;
 }
 
   .button:hover, .button:focus {
-    background-color: rgba(129, 119, 150, 0.99);
+    background: #99aac9;
     color: #fefefe; }
 
 .accordion-title {
   color: #010508;
-  background-color: #fe8a0f;
+  /*background-color: rgba(6, 2, 2, 0.25);*/
+  /*background: #C3BCBF;*/
+  background: #606c8882;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
 }
   :last-child:not(.is-active) > .accordion-title {
     border-bottom: 1px solid #e6e6e6;
     border-radius: 0 0 0 0; }
   .accordion-title:hover, .accordion-title:focus {
-    background-color: rgba(129, 119, 150, 0.99); }
+    color: white;
+    /*background-color: rgba(129, 119, 150, 0.99); */
+    background: #606c88;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #3f4c6b, #606c88);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #3f4c6b, #606c88); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  }
   .accordion-title::before {
     position: absolute;
     top: 50%;
@@ -83,7 +98,7 @@ button:hover, button:focus, .button:hover, .button:focus {
   padding: 1rem;
   border: 1px solid #e6e6e6;
   border-bottom: 0;
-  background-color: rgba(254, 154, 42, 0.26);
+  /*background-color: rgba(254, 154, 42, 0.26);*/
   /*background-color: rgba(254, 154, 42, 0);*/
   color: #0a0a0a; }
   :last-child > .accordion-content:last-child {
@@ -100,3 +115,6 @@ input {
 select {
   font-weight: 600;
 }
+
+
+

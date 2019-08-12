@@ -1,9 +1,11 @@
 body {
-    font-family: 'Roboto', Georgia, sans-serif !important;
+    /*font-family: 'Roboto', Georgia, sans-serif !important;*/
+    /*font-family: 'Lexend Deca', sans-serif !important;*/
+    font-family: 'Quicksand', sans-serif !important;;
 }
 
 .top_bg_image {
-    height: 7px;
+    height: 5px;
     width: 100%;
     box-shadow: 0 2px 4px 0 rgba(0,0,0,.25);
     background-image: linear-gradient(to right,#ff9e00 0,#ff4f00 100%);
@@ -19,7 +21,8 @@ body {
 }
 
 h1,h2,h3,h4,h5,h6 {
-    font-family: 'Montserrat', sans-serif !important;
+    font-family: 'Saira Stencil One' !important;
+    /*font-family: 'Montserrat', sans-serif !important;*/
     font-weight: 700 !important;
     color: #1D2136 !important;
 }
@@ -146,7 +149,7 @@ button.vap-controllers {
 }
 
 .header_hr {
-    width: 278px;
+    width: 312px;
     background-color:#1D2136;
     border: 0 none;
     margin: 0;

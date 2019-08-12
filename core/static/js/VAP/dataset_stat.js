@@ -346,7 +346,7 @@ class DatasetStats {
             var th = document.createElement("th");
             th.textContent = value;
             // add none class to elements which should be displayed as detailed
-            if (['distribution','unique_values'].includes(value))
+            if (['distribution','unique_values','std','measure_type'].includes(value))
                 th.classList.add("none");
             tr.appendChild(th);
         }
@@ -481,15 +481,39 @@ class DatasetStats {
         });
 
         var available_measures = this.available_measures();
+
+        // create tabs
+        var accordion_ul = document.createElement("ul");
+        accordion_ul.classList.add("accordion");
+        accordion_ul.setAttribute("data-multi-expand","true");
+        accordion_ul.setAttribute("data-allow-all-closed","true");
+        accordion_ul.setAttribute("data-accordion","");
+        accordion_ul.setAttribute("id","measurement-accordion");
+        root.appendChild(accordion_ul);
+
         for (var i=0;i<this.MEASURES.length;i++) {
             var type = this.MEASURES[i]['type'];
             if (available_measures.includes(type)) {
+                var accordion_li = document.createElement("li");
+                accordion_li.classList.add("accordion-item","text-center");
+                accordion_li.setAttribute("data-accordion-item","");
+                var title_href = document.createElement("a");
+                title_href.classList.add("accordion-title");
+                title_href.setAttribute("href",type);
+                title_href.innerText = type;
+                accordion_li.appendChild(title_href);
+                var accordion_div = document.createElement("div");
+                accordion_div.classList.add("accordion-content");
+                accordion_div.setAttribute("data-tab-content","");
+                accordion_div.setAttribute("id",type);
                 var table = document.createElement("table");
                 table.classList.add("display", "compact");
                 table.setAttribute("id", "features_table_" + type);
                 table.appendChild(this._headers(type));
                 table.appendChild(this._rows(type));
-                root.appendChild(table);
+                accordion_div.appendChild(table);
+                accordion_li.appendChild(accordion_div);
+                accordion_ul.appendChild(accordion_li);
                 $("#features_table_" + type).DataTable({
                     searching: false,
                     paging: false,
@@ -505,6 +529,31 @@ class DatasetStats {
                 });
             }
         }
+        // create tabs content
+        // for (var i=0;i<this.MEASURES.length;i++) {
+        //     var type = this.MEASURES[i]['type'];
+        //     if (available_measures.includes(type)) {
+        //         var table = document.createElement("table");
+        //         table.classList.add("display", "compact");
+        //         table.setAttribute("id", "features_table_" + type);
+        //         table.appendChild(this._headers(type));
+        //         table.appendChild(this._rows(type));
+        //         root.appendChild(table);
+        //         $("#features_table_" + type).DataTable({
+        //             searching: false,
+        //             paging: false,
+        //             info: false,
+        //             responsive: {
+        //                 details: {type: 'inline'}
+        //             },
+        //             columnDefs: [{
+        //                 targets: [1, 2],
+        //                 visible: true,
+        //                 orderable: false
+        //             }]
+        //         });
+        //     }
+        // }
 
         var csrf = document.createElement("input");
         csrf.setAttribute("type", "hidden");
