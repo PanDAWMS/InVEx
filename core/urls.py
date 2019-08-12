@@ -19,8 +19,7 @@ from django.urls import path, include, re_path
 from core import views as core_views
 
 
-urlpatterns = [ 
-    path('admin/', admin.site.urls),
+urlpatterns = [
     path('', core_views.main, name='main'),
     path('v/', core_views.visualization_init, name='regular_visualization_init'),
     re_path('^v/(?P<maindatasetuid>[0-9]+.?[0-9]*)/(?P<groups>(g/[0-9]+/)*)(o/(?P<operationnumber>[0-9]+)/)?$', core_views.visualization_data, name='regular_visualization_data'),
