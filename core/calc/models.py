@@ -29,7 +29,7 @@ class DataSampleModel(models.Model):
 class BaseOperationModel(models.Model):
     operation_id = models.AutoField(primary_key=True)
     creation_date = models.DateTimeField(auto_now_add=True)
-    input_data_sample_id = models.ForeignKey(DataSampleModel, blank=False, null=True, on_delete=models.CASCADE)
+    input_data_sample = models.ForeignKey(DataSampleModel, blank=False, null=True, on_delete=models.CASCADE)
     class Meta:
        db_table = 'operations'
 
@@ -38,22 +38,22 @@ class GroupingOperationModel(models.Model):
     grouping_type = models.CharField(max_length=45, blank=True, null=True, default="")
     grouping_value = models.CharField(max_length=45, blank=True, null=True, default="")
     grouping_features = models.BinaryField(blank=False, null=True)
-    operation_id = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.Case)
-    output_data_sample_id = models.ForeignKey(DataSampleModel, null=True, on_delete=models.CASCADE)
+    operation = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.Case)
+    output_data_sample = models.ForeignKey(DataSampleModel, null=True, on_delete=models.CASCADE)
     class Meta:
        db_table = 'grouping_operation'
 
 class OutputGroups(models.Model):
     outpur_group_id = models.AutoField(primary_key=True)
     output_group_name = models.CharField(max_length=45, null=True)
-    data_sample_id = models.ForeignKey(DataSampleModel, null=True, on_delete=models.CASCADE)
-    grouping_operation_id = models.ForeignKey(GroupingOperationModel, null=True, on_delete=models.CASCADE)
+    data_sample = models.ForeignKey(DataSampleModel, null=True, on_delete=models.CASCADE)
+    grouping_operation = models.ForeignKey(GroupingOperationModel, null=True, on_delete=models.CASCADE)
     class Meta:
        db_table = 'output_groups'
 
 class DirectOperationModel(models.Model):
     direct_operation_id = models.AutoField(primary_key=True)
-    operation_id = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.CASCADE)
+    operation = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.CASCADE)
     operation_type = models.CharField(max_length=45, blank=True, null=True, default="")
     parametres = JSONField()
     results = JSONField()
@@ -71,9 +71,9 @@ class HistoryModel(models.Model):
 
 class OperationInHistory(models.Model):
     operation_history_id = models.AutoField(primary_key=True)
-    operation_id = models.ForeignKey(BaseOperationModel , null=True, on_delete=models.CASCADE)
+    operation = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.CASCADE)
     history = models.ForeignKey(HistoryModel, null=True, on_delete=models.CASCADE)
-    parent_operation_id = models.ForeignKey('self', blank=True, null=True, related_name='children', on_delete=models.CASCADE)
+    parent_operation = models.ForeignKey('self', blank=True, null=True, related_name='children', on_delete=models.CASCADE)
     class Meta:
        db_table = 'operations_history'
 
