@@ -67,15 +67,28 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
     def _get_categorical_indices(self, dataset):
         categorical_indices = []
         for index, column in enumerate(dataset.columns):
-            if dataset[column].dtype.name in ('category', 'object'):
+            if dataset[column].dtype.name not in ("float64", "float32", "int64", "int32"):
                 categorical_indices.append(index)
             elif float(dataset[column].nunique()) / dataset[column].count() < 0.1:
                 categorical_indices.append(index)
         return tuple(categorical_indices)
 
+    def _get_encoding_map(self, values):
+        unique_values = np.unique(values.to_numpy())
+        encoding_map = {}
+        for index, value in enumerate(unique_values):
+            encoding_map[value] = index
+        return encoding_map
+
+    def _encode_nominal_parameters(self, dataset):
+        for column, values in dataset.items():
+            if dataset[column].dtype.name not in ("float64", "float32", "int64", "int32"):
+                encoding_map = self._get_encoding_map(values)
+                dataset[column] = values.apply(encoding_map.get)
+        return dataset
+
     def _get_initial_centers(self, dataset, categorical_indices):
         dataset_cat = dataset.take(categorical_indices, axis=1).to_numpy()
-        # initial_centroids_cat = init_cao(dataset_cat, self.cluster_number, matching_dissim)
         categorical_labels = [column for index, column in enumerate(dataset.columns) if index in categorical_indices]
         dataset_num = dataset.drop(categorical_labels, axis=1).to_numpy()
 
@@ -117,6 +130,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         categorical_indices = self._get_categorical_indices(dataset)
         if not categorical_indices:
             return self._fallback_algorithm(dataset)
+        dataset = self._encode_nominal_parameters(dataset)
 
         initial_centers = self._get_initial_centers(dataset, categorical_indices)
         self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=euclidean, n_jobs=1)

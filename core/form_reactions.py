@@ -380,7 +380,7 @@ def clusterize(request, dataset_id, group_ids=None):
                                      clusters_list)
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
+        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and \
                 'numberofcl' in request.POST and 'batch_size' in request.POST):
 
             operation = calc.MiniBatchKMeansClustering.\
@@ -395,9 +395,9 @@ def clusterize(request, dataset_id, group_ids=None):
             operation = calc.KPrototypesClustering.KPrototypesClustering()
             operation.set_parameters(int(request.POST['cluster_number']),
                                      int(request.POST['categorical_data_weight']))
-            mode = 'numeric'
+            mode = 'all'
 
-        elif (request.POST['algorithm'] == 'DBSCAN' and
+        elif (request.POST['algorithm'] == 'DBSCAN' and \
                 'min_samples' in request.POST and 'eps' in request.POST):
 
             operation = calc.DBScanClustering.DBScanClustering()
@@ -406,8 +406,8 @@ def clusterize(request, dataset_id, group_ids=None):
 
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'GroupData' and
-                      'feature_name' in request.POST):
+        elif (request.POST['algorithm'] == 'GroupData' and \
+                'feature_name' in request.POST):
 
             operation = calc.GroupData.GroupData()
             operation.set_parameters(request.POST['feature_name'])
