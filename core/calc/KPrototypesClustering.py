@@ -64,7 +64,8 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         result = {'cluster_number': self.cluster_number, 'categorical_data_weight': self.categorical_weight}
         return result
 
-    def _get_categorical_indices(self, dataset):
+    @staticmethod
+    def _get_categorical_indices(dataset):
         categorical_indices = []
         for index, column in enumerate(dataset.columns):
             if dataset[column].dtype.name not in ("float64", "float32", "int64", "int32"):
@@ -73,17 +74,19 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
                 categorical_indices.append(index)
         return tuple(categorical_indices)
 
-    def _get_encoding_map(self, values):
+    @staticmethod
+    def _get_encoding_map(values):
         unique_values = np.unique(values.to_numpy())
         encoding_map = {}
         for index, value in enumerate(unique_values):
             encoding_map[value] = index
         return encoding_map
 
-    def _encode_nominal_parameters(self, dataset):
+    @staticmethod
+    def _encode_nominal_parameters(dataset):
         for column, values in dataset.items():
             if dataset[column].dtype.name not in ("float64", "float32", "int64", "int32"):
-                encoding_map = self._get_encoding_map(values)
+                encoding_map = KPrototypesClustering._get_encoding_map(values)
                 dataset[column] = values.apply(encoding_map.get)
         return dataset
 

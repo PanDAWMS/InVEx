@@ -46,7 +46,14 @@ class DatasetStats {
                 'message': 'Select single numerical continuous parameter for grouping using "group" selector and ' +
                 'set the number of groups',
                 'number_of_groups': 'user_defined'
-              }
+            }, 
+            {
+              'idx': 3,
+              'mode': 'kprototypes',
+              'title': 'K-prototypes clusterisation', 
+              'message': 'Only works with full dataset at the moment - do not use "group" selector',
+              'number_of_groups': 'user_defined'
+            }
         ];
     }
 
