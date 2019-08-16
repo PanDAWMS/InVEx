@@ -26,30 +26,26 @@ class DataSampleModel(models.Model):
     def to_dataframe(self):
         return self.data_real, self.data_norm, self.statistics_real, self.statistics_norm
 
+class HistoryModel(models.Model):
+    history_id = models.AutoField(primary_key=True)
+    creation_date = models.DateTimeField(auto_now_add=True)
+    user_id = models.CharField(max_length=45, null=True)
+    title = models.CharField(max_length=45, blank=True, null=True, default="")
+    description = models.CharField(max_length=300, blank=True, null=True, default="")
+    class Meta:
+       db_table = 'history'
+
 class BaseOperationModel(models.Model):
     operation_id = models.AutoField(primary_key=True)
     creation_date = models.DateTimeField(auto_now_add=True)
     input_data_sample = models.ForeignKey(DataSampleModel, blank=False, null=True, on_delete=models.CASCADE)
+    operation_history_id = models.AutoField(primary_key=True)
+    level = models.IntegerField(default=1, null=True)
+    history = models.ForeignKey(HistoryModel, null=True, on_delete=models.CASCADE)
+    parent_operation = models.ForeignKey('self', blank=True, null=True, related_name='children',
+                                         on_delete=models.CASCADE)
     class Meta:
        db_table = 'operations'
-
-class GroupingOperationModel(models.Model):
-    grouping_operation_id = models.AutoField(primary_key=True)
-    grouping_type = models.CharField(max_length=45, blank=True, null=True, default="")
-    grouping_value = models.CharField(max_length=45, blank=True, null=True, default="")
-    grouping_features = models.BinaryField(blank=False, null=True)
-    operation = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.Case)
-    output_data_sample = models.ForeignKey(DataSampleModel, null=True, on_delete=models.CASCADE)
-    class Meta:
-       db_table = 'grouping_operation'
-
-class OutputGroups(models.Model):
-    outpur_group_id = models.AutoField(primary_key=True)
-    output_group_name = models.CharField(max_length=45, null=True)
-    data_sample = models.ForeignKey(DataSampleModel, null=True, on_delete=models.CASCADE)
-    grouping_operation = models.ForeignKey(GroupingOperationModel, null=True, on_delete=models.CASCADE)
-    class Meta:
-       db_table = 'output_groups'
 
 class DirectOperationModel(models.Model):
     direct_operation_id = models.AutoField(primary_key=True)
@@ -62,20 +58,19 @@ class DirectOperationModel(models.Model):
     class Meta:
        db_table = 'direct_operation'
 
-class HistoryModel(models.Model):
-    history_id = models.AutoField(primary_key=True)
-    creation_date = models.DateTimeField(auto_now_add=True)
-    userid = models.CharField(max_length=45, null=True)
+class GroupingOperationModel(models.Model):
+    grouping_operation_id = models.AutoField(primary_key=True)
+    grouping_type = models.CharField(max_length=45, blank=True, null=True, default="")
+    grouping_value = models.CharField(max_length=45, blank=True, null=True, default="")
+    grouping_features = models.BinaryField(blank=False, null=True)
+    operation = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.Case)
+    output_data_sample = models.ForeignKey(DataSampleModel, null=True, on_delete=models.CASCADE)
     class Meta:
-       db_table = 'history'
+       db_table = 'grouping_operation'
 
-class OperationInHistory(models.Model):
-    operation_history_id = models.AutoField(primary_key=True)
-    operation = models.ForeignKey(BaseOperationModel, null=True, on_delete=models.CASCADE)
-    history = models.ForeignKey(HistoryModel, null=True, on_delete=models.CASCADE)
-    parent_operation = models.ForeignKey('self', blank=True, null=True, related_name='children', on_delete=models.CASCADE)
+class OutputGroups(models.Model):
+    output_group_name = models.CharField(max_length=45, null=True)
+    data_sample = models.ForeignKey(DataSampleModel, primary_key=True, null=True, on_delete=models.CASCADE)
+    grouping_operation = models.ForeignKey(GroupingOperationModel, primary_key=True, null=True, on_delete=models.CASCADE)
     class Meta:
-       db_table = 'operations_history'
-
-
-
+       db_table = 'output_groups'
