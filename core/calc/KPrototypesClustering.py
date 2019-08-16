@@ -115,7 +115,6 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
             initial_centroids_cat[i] = dataset_cat[chosen_point]
 
         initial_centroids = [initial_centroids_num, initial_centroids_cat]
-        print("iteration done")
         return initial_centroids
 
     # Used if there's no categorical properties in the dataset
