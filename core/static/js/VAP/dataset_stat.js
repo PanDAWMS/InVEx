@@ -51,7 +51,7 @@ class DatasetStats {
               'idx': 3,
               'mode': 'kprototypes',
               'title': 'K-prototypes clusterisation', 
-              'message': 'Only works with full dataset at the moment - do not use "group" selector',
+              'message': 'Set the number of clusters and select features using "group" selector',
               'number_of_groups': 'user_defined'
             }
         ];

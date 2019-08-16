@@ -6,7 +6,12 @@ cimport cython
 
 
 def euclidean(ndarray a, ndarray b):
-    assert a.dtype == b.dtype
+    if not (a.dtype == b.dtype):
+        if a.dtype in (float32, float64, int32, int64) and b.dtype in (float32, float64, int32, int64):
+            a = a.astype(float64)
+            b = b.astype(float64)
+        else:
+            return _euclidean_default(a, b)
     dispatch = {
         "float64": _euclidean_f64,
         "float32": _euclidean_f32,

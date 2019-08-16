@@ -74,7 +74,6 @@ class LoDGenerator:
                 features=features)
             self.group_features = '_cluster_number'
             self.dataset[self.group_features] = group_labels
-            self.dataset.set_index(self.group_features)
             self.grouped_dataset = self._get_groups_mean()
             self._update_groups_metadata()
         elif mode == 'param_categorical':
@@ -135,7 +134,13 @@ class LoDGenerator:
         return pd.Series(dict(columns_dict))
 
     def _get_groups_mean(self):
-        return self.dataset.groupby(self.group_features).apply(self.f).drop(self.group_features, axis=1)
+        result = self.dataset.groupby(self.group_features).apply(self.f)
+        # We cannot drop self.group_features if we group by it, cause in that case it serves as an index
+        try:
+            result = result.drop(self.group_features, axis=1)
+        except KeyError:
+            pass
+        return result
         # return self.dataset.groupby(self.group_features).mean()
 
     def _update_groups_metadata(self):
