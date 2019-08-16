@@ -76,7 +76,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
 
     @staticmethod
     def _get_encoding_map(values):
-        unique_values = np.unique(values.to_numpy())
+        unique_values = np.unique(values.values)
         encoding_map = {}
         for index, value in enumerate(unique_values):
             encoding_map[value] = index
@@ -91,9 +91,9 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         return dataset
 
     def _get_initial_centers(self, dataset, categorical_indices):
-        dataset_cat = dataset.take(categorical_indices, axis=1).to_numpy()
+        dataset_cat = dataset.take(categorical_indices, axis=1).values
         categorical_labels = [column for index, column in enumerate(dataset.columns) if index in categorical_indices]
-        dataset_num = dataset.drop(categorical_labels, axis=1).to_numpy()
+        dataset_num = dataset.drop(categorical_labels, axis=1).values
 
         categorical_weight = self.categorical_weight
         if categorical_weight is None:
@@ -137,7 +137,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
 
         initial_centers = self._get_initial_centers(dataset, categorical_indices)
         self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=euclidean, n_jobs=1)
-        dataset = dataset.to_numpy()
+        dataset = dataset.values
         self.model.fit(dataset, categorical=categorical_indices)
         self.results = self.model.predict(dataset, categorical=categorical_indices)
         self.cent = self.model.cluster_centroids_
@@ -149,7 +149,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
 
     def predict(self, dataset):
         categorical_indices = self._get_categorical_indices(dataset)
-        dataset = dataset.to_numpy()
+        dataset = dataset.values
         return self.model.predict(dataset, categorical=categorical_indices)
 
 
