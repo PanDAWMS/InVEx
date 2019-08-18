@@ -6,7 +6,7 @@ svg {
 
 .background path {
     fill: none;
-    stroke: #ddd;
+    stroke: #ddd5;
     shape-rendering: crispEdges;
 }
 
@@ -32,15 +32,8 @@ svg {
     cursor: move;
 }
 
-/* Glowing animation */
-
-@keyframes glowing {
-    0% { stroke-width: 3 }
-    50% { stroke-width: 5 }
-    100% { stroke-width: 3 }
-}
-
-.glowing {
-    animation: glowing 1500ms infinite;
-    filter: url(#blur);
+.bold {
+    stroke-width: 3;
+    stroke-opacity: 1.0;
+    filter: brightness(150%);
 }
