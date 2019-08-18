@@ -3,6 +3,9 @@ from math import log1p
 from sklearn.cluster import MiniBatchKMeans
 import pandas as pd
 
+from .KPrototypesClustering import KPrototypesClustering
+
+
 MINIBATCH_PARAMS_DEFAULT = {
     'random_state': 0,
     'batch_size': 6,
@@ -59,9 +62,18 @@ class LoDGenerator:
             group_labels = self._get_labels_kmeans_clustering(
                 n_clusters=num_groups,
                 features=features)
-            self.group_features = 'cluster'
+            self.group_features = '_cluster_number'
             self.dataset[self.group_features] = group_labels
             self.dataset.set_index(self.group_features)
+            self.grouped_dataset = self._get_groups_mean()
+            self._update_groups_metadata()
+        elif mode == 'kprototypes':
+            group_labels = self._get_labels_kprototypes_clustering(
+                n_clusters=num_groups,
+                categorical_weight=None,
+                features=features)
+            self.group_features = '_cluster_number'
+            self.dataset[self.group_features] = group_labels
             self.grouped_dataset = self._get_groups_mean()
             self._update_groups_metadata()
         elif mode == 'param_categorical':
@@ -105,6 +117,12 @@ class LoDGenerator:
         return MiniBatchKMeans(n_clusters=n_clusters,
                                **MINIBATCH_PARAMS_DEFAULT).fit_predict(data)
 
+    def _get_labels_kprototypes_clustering(self, n_clusters, categorical_weight=None, features=None):
+        data = self.dataset if not features else self.dataset.filter(items=features)
+        algorithm = KPrototypesClustering()
+        algorithm.set_parameters(n_clusters, categorical_weight)
+        return algorithm.process_data(data)
+
     def f(self, data):
         columns_dict = {}
         for i in data.columns:
@@ -116,7 +134,13 @@ class LoDGenerator:
         return pd.Series(dict(columns_dict))
 
     def _get_groups_mean(self):
-        return self.dataset.groupby(self.group_features).apply(self.f).drop(self.group_features, 1)
+        result = self.dataset.groupby(self.group_features).apply(self.f)
+        # We cannot drop self.group_features if we group by it, cause in that case it serves as an index
+        try:
+            result = result.drop(self.group_features, axis=1)
+        except KeyError:
+            pass
+        return result
         # return self.dataset.groupby(self.group_features).mean()
 
     def _update_groups_metadata(self):

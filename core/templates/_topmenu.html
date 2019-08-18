@@ -8,7 +8,6 @@
 {% endif %}
 {%  if data_is_ready %}
     <li class="tabs-title"><a href="#print">Print Dataset</a></li>
-    <li class="tabs-title"><a href="#stats">Statistics</a></li>
     <li class="tabs-title"><a href="#corr">Correlations</a></li>
 {% if cluster_ready %}
     <li class="tabs-title"><a href="#clusters">Clusters</a></li>
@@ -69,7 +68,6 @@
     <div class="tabs-panel" id="print">
         <button type="button" class="button small" id="printAllBtn">Display All</button>
     </div>
-    <div class="tabs-panel" id="stats"></div>
     <div class="tabs-panel" id="corr">
         <div id="corr-matrix">
             <div id="legend"></div>

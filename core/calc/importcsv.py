@@ -12,10 +12,11 @@ def import_csv_file(path_to_file, index=False, column_names=False, use_cols=Fals
         column_names = 0
     else:
         column_names = None
-    if use_cols == False:
+    if use_cols is False:
         return pd.read_csv(path_to_file, index_col=index, header=column_names)
     else:
         return pd.read_csv(path_to_file, index_col=index, header=column_names, usecols=use_cols)
+
 
 def scaler(df):
     scaler = preprocessing.MinMaxScaler()
@@ -34,6 +35,6 @@ def dropNA(df):
 def numeric_columns(df):
     aux = []
     for item in df:
-        if df[item].dtypes in ['int64', 'float64','int32','float32','int','float']:
+        if df[item].dtypes in ['int64', 'float64', 'int32', 'float32', 'int', 'float']:
             aux.append(item)
     return aux

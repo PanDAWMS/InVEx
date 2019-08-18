@@ -51,11 +51,11 @@ class DatasetHandler(BaseDataHandler):
         self._modifications = {}
         self._property_set = {}
 
-        if (isinstance(kwargs.get('dataset'), pd.DataFrame) and
+        if (isinstance(kwargs.get('dataset'), pd.DataFrame) and \
                 not kwargs['dataset'].empty):
             self._origin = kwargs['dataset']
 
-        elif (kwargs.get('load_initial_dataset', False) or
+        elif (kwargs.get('load_initial_dataset', False) or \
                 kwargs.get('process_initial_dataset', False)):
 
             features = kwargs.get('features') or []
@@ -149,13 +149,15 @@ class DatasetHandler(BaseDataHandler):
             logger.error('[DatasetHandler.clustering_dataset] '
                          'Dataset for clustering is not prepared')
             raise
-
-        _set = set(self._origin.columns.tolist())
-        _features = [x for x in self._property_set['features'] if x in _set]
-        # TODO: Re-check that feature selection is needed here
-        #  (it was processed at _form_dataset_modifications for _origin dataset)
-        #  (Note: for LoD _origin dataset it might behave differently)
-        return self._origin.loc[:, _features]
+        if (self._mode == 'numeric'):
+            _set = set(self._origin.columns.tolist())
+            _features = [x for x in self._property_set['features'] if x in _set]
+            # TODO: Re-check that feature selection is needed here
+            #  (it was processed at _form_dataset_modifications for _origin dataset)
+            #  (Note: for LoD _origin dataset it might behave differently)
+            return self._origin.loc[:, _features]
+        elif (self._mode == 'all'):
+            return pd.concat([self._origin, self._auxiliary], axis=1, sort=True)
 
     @property
     def operation_history(self):
@@ -277,6 +279,6 @@ class DatasetHandler(BaseDataHandler):
         """
         Public method to save changes into the history file.
         """
-        if (self._origin is not None and
+        if (self._origin is not None and \
                 self._modifications and self._property_set):
             self._save_history_data()
