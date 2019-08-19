@@ -37,3 +37,12 @@ svg {
     stroke-opacity: 1.0;
     filter: brightness(150%);
 }
+
+mark {
+    background: orange;
+    color: black;
+}
+
+.table-selected-line {
+    background: #dddd;
+}

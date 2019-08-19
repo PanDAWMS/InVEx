@@ -38,13 +38,13 @@ d3.selection.prototype.moveToBack = function () {
 class ParallelCoordinates {
 
     constructor(element_id, real_data, clusters_list, clusters_color_scheme,
-        dimNames, skipOptions = {}) {
+        dimNames, options = {}) {
         // Update data and draw the graph
-        this.updateData(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, skipOptions);
+        this.updateData(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, options);
     }
 
     updateData(element_id, real_data, clusters_list, clusters_color_scheme,
-        dimNames, skipOptions = {}) {       
+        dimNames, options = {}) {
         this.element_id = element_id;
 
         this.real_data = real_data;
@@ -52,38 +52,39 @@ class ParallelCoordinates {
         this.clusters_color_scheme = clusters_color_scheme;
         this.dimNames = dimNames;
 
-        // If skipOptions is empty, init an empty one
-        if (skipOptions === {})
-            skipOptions = {
-                dims: { mode: "none" },
-                clusters: { mode: "none" },
-                elements: { mode: "none" }
+        // If options does not have 'draw' option, make default one
+        if (!options.hasOwnProperty('draw'))
+            options.draw = {
+                framework: "d3",
+                mode: "print"
             };
 
-        this.skipOptions = skipOptions;
+        if (!options.hasOwnProperty('skip'))
+            options.skip = {
+                dims: { mode: "none" }
+            };
+
+        this.options = options;
 
 
         // -------------------
         // debug redefine
-        this.skipOptions = {
-            dims: {
-                mode: "show", // hide, show, none
-                values: ["IObytesRead", "IObytesReadRate", "IObytesWriteRate", "IObytesWritten", "IOcharWritten", "avgrss"]
+        this.options = {
+            draw: {
+                framework: "d3",
+                mode: "cluster"
             },
-            clusters: {
-                mode: "hide", // hide, show, none
-                values: ["2", "3"]
-            },
-            elements: {
-                mode: "none" // hide, show, none
-                //values: ["2", "3"]
+            skip: {
+                dims: {
+                    mode: "show", // hide, show, none
+                    values: ["IObytesRead", "IObytesReadRate", "IObytesWriteRate", "IObytesWritten", "IOcharWritten", "avgrss"]
+                }
             }
         };
         // ------------------
 
         this._drawGraphAndTable();
     }
-
 
     _drawGraphAndTable() {
         // A link to this ParCoord object
@@ -95,10 +96,10 @@ class ParallelCoordinates {
 
         // Construct the list with dimentions on graph
         this._dimensions = this.dimNames.filter((elem, i) => {
-            if (!('dims' in this.skipOptions)) return true;
-            if (this.skipOptions['dims'].mode === 'show' && this.skipOptions['dims'].values.includes(elem)) return true;
-            if (this.skipOptions['dims'].mode === 'hide' && !this.skipOptions['dims'].values.includes(elem)) return true;
-            if (this.skipOptions['dims'].mode === 'none') return true;
+            if (!('dims' in this.options.skip)) return true;
+            if (this.options.skip['dims'].mode === 'none') return true;
+            if (this.options.skip['dims'].mode === 'show' && this.options.skip['dims'].values.includes(elem)) return true;
+            if (this.options.skip['dims'].mode === 'hide' && !this.options.skip['dims'].values.includes(elem)) return true;
             return false;
         });
 
@@ -119,7 +120,36 @@ class ParallelCoordinates {
         // Append an SVG to draw lines on
         this._graph = d3.select("#" + this.element_id).append("svg")
             .attr("width", this._width + this._margin.left + this._margin.right)
-            .attr("height", this._height + this._margin.top + this._margin.bottom);
+            .attr("height", this._height + this._margin.top + this._margin.bottom),
+            _selected_line = -1;
+
+        // Add table below the ParCoords
+        d3.select("#" + this.element_id)
+            .append("table")
+            .attr("id", "t" + this.element_id)
+            .attr("class", "table hover");
+
+        // Cluster list
+        this._color = this.clusters_list;///.filter((x) => { return skipClust.indexOf(x) === -1; });
+
+        this._createGraph();
+        this._createTable();
+
+        // trash bin :)
+        
+        /* $("#" + element_id + ".svg")
+                .tooltip({
+                track: true
+                });*/
+        // console.log('ids', _ids);
+
+        return this;
+    }
+
+    // Function to draw the graph
+    _createGraph() {
+        // A link to this ParCoord object
+        var _PCobject = this;
 
         // Shift the draw space
         this._svg = this._graph.append("g")
@@ -174,18 +204,18 @@ class ParallelCoordinates {
             .on("mouseover", function (d, i) {
                 $(this).addClass("bold");
                 d3.select(this).moveToFront();
-                
+
                 //console.log(_PCobject);
                 //bold[0][i].attr("display", "block");
                 //stroke: #0082C866;
 
                 _PCobject._datatable.rows().nodes()
-                    .to$().removeClass('selected');
+                    .to$().removeClass('table-selected-line');
 
                 let row = _PCobject._datatable.row((idx, data) => data[0] === _PCobject._parcoordsToTable(i));
 
                 row.show().draw(false);
-                _PCobject._datatable.rows(row).nodes().to$().addClass('selected');
+                _PCobject._datatable.rows(row).nodes().to$().addClass('table-selected-line');
             })
 
             // When mouse is away, clear the effect
@@ -223,9 +253,6 @@ class ParallelCoordinates {
                         .duration(0)
                         .attr("visibility", null);
                 }));
-        //console.log(_PCobject._y);
-
-
 
         // Add an axis and titles
         this._g.append("g")
@@ -249,18 +276,23 @@ class ParallelCoordinates {
             .selectAll("rect")
             .attr("x", -8)
             .attr("width", 16);
+    }
 
-        // Cluster list
-        this._color = this.clusters_list;///.filter((x) => { return skipClust.indexOf(x) === -1; });
+    // Creates a table below the ParallelCoordinates graph
+    _createTable() {
+        // A link to this ParCoord object
+        var _PCobject = this;
 
-        // Add table below the ParCoords
-        d3.select("#" + this.element_id)
-            .append("table")
-            .attr("id", "t" + this.element_id)
-            .attr("class", "table hover");
+        // 'visible' data array with lines on foreground (not filtered by a brush)
+        //  possible values: ["all"] or ["id in real_data", ...]
+        this._visible = ["all"];
+
+        // Initialize a search result with all objects visible
+        this._search_results = this.real_data.map((x) => x[0]);
 
         // Array with headers
         this._theader_array = this.dimNames.slice();
+        if (this.options.draw['mode'] === "cluster") this._theader_array.unshift('Cluster');
         this._theader_array.unshift('ID');
 
         // Map headers for the tables
@@ -269,8 +301,9 @@ class ParallelCoordinates {
             // Array with table cell data
             this._tcells = this.real_data.map((row, i) =>
                 [row[0]]
+                    .concat((this.options.draw['mode'] === "cluster") ? [this.clusters_list[i]] : [])
                     .concat(row[1].map(String))
-                    .concat([rgbToHex(this.clusters_color_scheme[this._color[i]])])
+                    .concat((this.options.draw['mode'] === "cluster") ? [rgbToHex(this.clusters_color_scheme[this._color[i]])] : [])
             ),
 
             // Vars for table and its datatable
@@ -278,19 +311,23 @@ class ParallelCoordinates {
             this._datatable = this._table.DataTable({
                 data: this._tcells,
                 columns: this._theader,
+                mark: true,
+
+                "search": {
+                    "regex": true
+                },
 
                 // Make colors lighter for readability
                 "rowCallback": (row, data) => {
-                    $(row).children().css('background', data[data.length - 1] + "33");
+                    if (this.options.draw['mode'] === "cluster")
+                        $(row).children().css('background', data[data.length - 1] + "33");
+                },
+
+                // Redraw lines on ParCoords when table is ready
+                "fnDrawCallback": () => {
+                    _PCobject._on_table_ready(_PCobject);
                 }
             });
-
-        // 'visible' data array with lines on foreground (not filtered by a brush)
-        //  possible values: ["all"] or ["id in real_data", ...]
-        this.visible = ["all"];
-
-        // Initialize a search result with all objects visible
-        this._search_results = this.real_data.map((x) => x[0]);
 
         // Add glow to lines when a line is hovered over in the table
         $('#t' + this.element_id + ' tbody').on("mouseover", 'tr', function (d, i) {
@@ -317,73 +354,41 @@ class ParallelCoordinates {
         // Apply the search
         this._datatable.columns().every(function (i, x) {
             $('#t' + _PCobject.element_id + 'Input' + i).on('keyup change', function () {
-                //_PCobject._brush(_PCobject);
-
                 _PCobject._datatable
                     .columns(i)
                     .search(this.value)
                     .draw();
-
-                /*_PCobject._search_results = Object.values(
-                    _PCobject._datatable
-                        .rows({ search: 'applied' }).nodes()
-                            .map((x) => x.firstChild.innerHTML));*/
-
-                //console.log(_PCobject._search_results);
-
-                /*let actives = _PCobject._dimensions.filter(function (p) { return !_PCobject._y[p].brush.empty(); }),
-                    extents = actives.map(function (p) { return _PCobject._y[p].brush.extent(); }),
-                    visible = [];
-
-                _PCobject._foreground.style("display", function (d, j) {
-                    let isVisible = actives.every(function (p, i) {
-                        return extents[i][0] <= d[p] && d[p] <= extents[i][1];
-                    });
-
-                    return isVisible && _PCobject._search_results.includes(_PCobject._parcoordsToTable(j)) ? null : "none";
-                });*/
-
-                _PCobject._brush(_PCobject);
-                //if (actives.length === 0) visible.push("all");
-
-                //_PCobject._foreground.style("display", null);
-                //console.log(_PCobject._datatable.rows({ search: 'applied' }).data());
-                
             });
         });
 
-        // When a brush filteres lines, this is the callback in the table
+        // Callback for _search_results filling
         $.fn.dataTable.ext.search.push(
             function (settings, data, dataIndex, rowData, counter) {
                 if (settings.sTableId !== "t" + _PCobject.element_id) return true;
 
                 if (counter === 0) _PCobject._search_results = [];
 
-                if (_PCobject.visible[0] === "all") {
+                if (_PCobject._visible[0] === "all" || _PCobject._visible.includes(data[0])) {
                     _PCobject._search_results.push(data[0]);
                     return true;
                 }
-                console.log(settings);
-                if (_PCobject.visible.includes(data[0])) _PCobject._search_results.push(data[0]);
-
-                return _PCobject.visible.includes(data[0]);
+                return false;
             }
         );
-
-        // trash bin :)
-        
-        /* $("#" + element_id + ".svg")
-                .tooltip({
-                track: true
-                });*/
-        // console.log('ids', _ids);
-
-        return this;
     }
 
     // Functions to perform id transformation
     _tableToParcoords(index) { return this._ids.indexOf(index); }
     _parcoordsToTable(index) { return this._ids[index]; }
+
+    // Callback to change the lines visibility after 'draw()' completed
+    _on_table_ready(object) {
+        object._foreground.style("display", function (d, j) {
+            let isVisible = object._visible[0] === "all" || object._visible.includes(object._parcoordsToTable(j));
+
+            return isVisible && object._search_results.includes(object._parcoordsToTable(j)) ? null : "none";
+        });
+    }
 
     // Functions for lines and brushes
     _position(d) {
@@ -415,17 +420,16 @@ class ParallelCoordinates {
             extents = actives.map(function (p) { return object._y[p].brush.extent(); }),
             visible = [];
 
-        object._foreground.style("display", function (d, j) {
+        if (actives.length === 0) visible.push("all");
+        else object._foreground.each(function (d, j) {
             let isVisible = actives.every(function (p, i) {
                 return extents[i][0] <= d[p] && d[p] <= extents[i][1];
             });
-
+            
             if (isVisible) visible.push(object.real_data[j][0]);
-            return isVisible && object._search_results.includes(object._parcoordsToTable(j)) ? null : "none";
         });
-        if (actives.length === 0) visible.push("all");
 
-        object.visible = visible;
+        object._visible = visible;
         object._datatable.draw();
     }
 }
