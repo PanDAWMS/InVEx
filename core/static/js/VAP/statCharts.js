@@ -104,13 +104,13 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
 //  dimNames - array of dimention names, format: [0: "name", ...]
 //  ??
 //
-function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, skipOptions = {})
+function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, options = {})
 {
     //draw?
 
-    var coord = new ParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, skipOptions);
+    this._coord = new ParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, options);
 
-    console.log(coord);
+    //console.log(this, this._coord);
 }
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {

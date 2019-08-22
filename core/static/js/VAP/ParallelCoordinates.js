@@ -45,6 +45,7 @@ class ParallelCoordinates {
 
     updateData(element_id, real_data, clusters_list, clusters_color_scheme,
         dimNames, options = {}) {
+        // Store the new values
         this.element_id = element_id;
 
         this.real_data = real_data;
@@ -59,6 +60,7 @@ class ParallelCoordinates {
                 mode: "print"
             };
 
+        // If options does not have 'skip' option, make default one
         if (!options.hasOwnProperty('skip'))
             options.skip = {
                 dims: { mode: "none" }
@@ -83,10 +85,11 @@ class ParallelCoordinates {
         };
         // ------------------
 
-        this._drawGraphAndTable();
+        // Initiate the arrays and draw the stuff
+        this._prepareGraphAndTable();
     }
 
-    _drawGraphAndTable() {
+    _prepareGraphAndTable() {
         // A link to this ParCoord object
         var _PCobject = this;
 
@@ -103,25 +106,33 @@ class ParallelCoordinates {
             return false;
         });
 
-        // Sizes of the graph
-        this._margin = { top: 30, right: 10, bottom: 10, left: 10 };
-        this._width = (this._dimensions.length > 7 ? 80 * this._dimensions.length : 600) - this._margin.left - this._margin.right;
-        this._height = 500 - this._margin.top - this._margin.bottom;
+        // A selectBox with chosen features
+        d3.select("#" + this.element_id)
+            .append('select')
+            .attr('class', 'select')
+            .attr('id', 's' + this.element_id);
 
-        // Arrays for x and y data, and brush dragging
-        this._x = d3.scale.ordinal().rangePoints([0, this._width], 1);
-        this._y = {};
-        this._dragging = {};
+        // Options for selectBox
+        this._selectBox = $('#s' + this.element_id).select2({
+            closeOnSelect: false,
+            data: this.dimNames.map((d, i) => { return { id: d, text: d, selected: this._dimensions.includes(d) }; }),
+            multiple: true,
+            width: 600
+        })
+            // If the list changes - redraw the graph
+            .on("change.select2", () => {
+                this._dimensions = $('#s' + this.element_id).val();
+                this._createGraph();
+            });
 
-        // Line and axis parameters, arrays with lines (gray and colored)
-        this._line = d3.svg.line().interpolate("monotone");
-        this._axis = d3.svg.axis().orient("left");
+        // Arrays with (line id)<->(id in real_data)
+        this._ids = this.real_data.map((row) => row[0]);
 
         // Append an SVG to draw lines on
-        this._graph = d3.select("#" + this.element_id).append("svg")
-            .attr("width", this._width + this._margin.left + this._margin.right)
-            .attr("height", this._height + this._margin.top + this._margin.bottom),
-            _selected_line = -1;
+        this._graph = d3.select("#" + this.element_id).append("svg");
+
+        // Currently selected line id
+        this._selected_line = -1;
 
         // Add table below the ParCoords
         d3.select("#" + this.element_id)
@@ -143,6 +154,13 @@ class ParallelCoordinates {
                 });*/
         // console.log('ids', _ids);
 
+        //console.log(_PCobject);
+        //bold[0][i].attr("display", "block");
+        //stroke: #0082C866;
+
+        /*_PCobject._datatable.rows().nodes()
+            .to$().removeClass('table-selected-line');*/
+
         return this;
     }
 
@@ -151,13 +169,30 @@ class ParallelCoordinates {
         // A link to this ParCoord object
         var _PCobject = this;
 
+        if (this._svg !== undefined) this._svg.remove();
+
+        // Sizes of the graph
+        this._margin = { top: 30, right: 10, bottom: 10, left: 10 };
+        this._width = (this._dimensions.length > 7 ? 80 * this._dimensions.length : 600) - this._margin.left - this._margin.right;
+        this._height = 500 - this._margin.top - this._margin.bottom;
+
+        // Change the SVG size to draw lines on
+        this._graph.attr("width", this._width + this._margin.left + this._margin.right)
+            .attr("height", this._height + this._margin.top + this._margin.bottom);
+
+        // Arrays for x and y data, and brush dragging
+        this._x = d3.scale.ordinal().rangePoints([0, this._width], 1);
+        this._y = {};
+        this._dragging = {};
+        this._values = [];
+
+        // Line and axis parameters, arrays with lines (gray and colored)
+        this._line = d3.svg.line().interpolate("monotone");
+        this._axis = d3.svg.axis().orient("left");
+
         // Shift the draw space
         this._svg = this._graph.append("g")
             .attr("transform", "translate(" + this._margin.left + "," + this._margin.top + ")");
-
-        // Arrays with line pos values and array (line id)<->(id in real_data)
-        this._values = [];
-        this._ids = this.real_data.map((row) => row[0]);
 
         // Extract the list of dimensions and create a scale for each
         this._x.domain(this._dimensions.map((dim, index) => {
@@ -202,15 +237,10 @@ class ParallelCoordinates {
             // When mouse is over the line, make it bold and colorful, move to the front
             // and select a correspoding line in the table below
             .on("mouseover", function (d, i) {
+                if (_PCobject._selected_line !== -1) return;
+
                 $(this).addClass("bold");
                 d3.select(this).moveToFront();
-
-                //console.log(_PCobject);
-                //bold[0][i].attr("display", "block");
-                //stroke: #0082C866;
-
-                _PCobject._datatable.rows().nodes()
-                    .to$().removeClass('table-selected-line');
 
                 let row = _PCobject._datatable.row((idx, data) => data[0] === _PCobject._parcoordsToTable(i));
 
@@ -219,8 +249,29 @@ class ParallelCoordinates {
             })
 
             // When mouse is away, clear the effect
-            .on("mouseout", function (d) {
+            .on("mouseout", function (d, i) {
+                if (_PCobject._selected_line !== -1) return;
+
                 $(this).removeClass("bold");
+
+                let row = _PCobject._datatable.row((idx, data) => data[0] === _PCobject._parcoordsToTable(i));
+                _PCobject._datatable.rows(row).nodes().to$().removeClass('table-selected-line');
+            })
+
+            // Mouse click selects and deselects the line
+            .on("click", function (d, i) {
+                if (_PCobject._selected_line === -1) {
+                    _PCobject._selected_line = i;
+
+                    $(this).addClass("bold");
+                    d3.select(this).moveToFront();
+
+                    let row = _PCobject._datatable.row((idx, data) => data[0] === _PCobject._parcoordsToTable(i));
+
+                    row.show().draw(false);
+                    _PCobject._datatable.rows(row).nodes().to$().addClass('table-selected-line');
+                }
+                else if (_PCobject._selected_line === i) _PCobject._selected_line = -1;
             });
 
         // Add a group element for each dimension
@@ -329,16 +380,38 @@ class ParallelCoordinates {
                 }
             });
 
-        // Add glow to lines when a line is hovered over in the table
-        $('#t' + this.element_id + ' tbody').on("mouseover", 'tr', function (d, i) {
-            let line = _PCobject._foreground[0][_PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])];
-            $(line).addClass("bold");
-            d3.select(line).moveToFront();
-        })
+        // Add bold effect to lines when a line is hovered over in the table
+        $('#t' + this.element_id + ' tbody')
+            .on("mouseover", 'tr', function (d, i) {
+                if (_PCobject._selected_line !== -1) return;
+
+                let line = _PCobject._foreground[0][_PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])];
+                $(line).addClass("bold");
+                d3.select(line).moveToFront();
+            })
             .on("mouseout", 'tr', function (d) {
+                if (_PCobject._selected_line !== -1) return;
+
                 $(_PCobject._foreground[0][
                     _PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])
                 ]).removeClass("bold");
+            })
+
+            // If the line is clicked, make it 'selected'. Remove this status on one more click.
+            .on("click", 'tr', function (d, i) {
+                if (_PCobject._selected_line === -1) {
+                    _PCobject._selected_line = _PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0]);
+
+                    let line = _PCobject._foreground[0][_PCobject._selected_line];
+                    $(line).addClass("bold");
+                    d3.select(line).moveToFront();
+
+                    _PCobject._datatable.rows(this).nodes().to$().addClass('table-selected-line');
+                }
+                else if (_PCobject._selected_line === _PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])) {
+                    _PCobject._selected_line = -1;
+                    _PCobject._datatable.rows(this).nodes().to$().removeClass('table-selected-line');
+                }  
             });
 
         // Add footer elements
@@ -356,7 +429,7 @@ class ParallelCoordinates {
             $('#t' + _PCobject.element_id + 'Input' + i).on('keyup change', function () {
                 _PCobject._datatable
                     .columns(i)
-                    .search(this.value)
+                    .search(this.value, true)
                     .draw();
             });
         });

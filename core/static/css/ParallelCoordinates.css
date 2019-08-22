@@ -44,5 +44,5 @@ mark {
 }
 
 .table-selected-line {
-    background: #dddd;
+    background: #ddd !important;
 }
