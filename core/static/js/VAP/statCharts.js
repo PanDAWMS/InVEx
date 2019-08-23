@@ -98,19 +98,12 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
 // --------------
 // Inputs:
 //  element_id - id of DOM element where to put ParCoords
-//  real_data - data to visualize, array format: [0: [0: id, 1: [array of values]], ... ]
-//  clusters_list - array of ints with cluster numbers, format: [0, 0, 2, 3, ...]
-//  clusters_color_scheme - array of cluster colors, format: [0: {r: float, g: float, b: float}, ...]
-//  dimNames - array of dimention names, format: [0: "name", ...]
-//  ??
+//  scene - object with the scene to take data from
+//  options - ParCoords display options
 //
-function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, options = {})
+function drawParallelCoordinates(element_id, scene, options = {})
 {
-    //draw?
-
-    this._coord = new ParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames, options);
-
-    //console.log(this, this._coord);
+    this._coord = new ParallelCoordinates(element_id, scene, options);
 }
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {
