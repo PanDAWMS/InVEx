@@ -1,7 +1,7 @@
 """
 Class GroupedDataHandler provides methods to deal with grouped data.
 """
-
+import h5py
 import linecache
 import os
 
@@ -74,9 +74,13 @@ class GroupedDataHandler(BaseDataHandler):
 
         if save_to_file:
             self._remove_file(file_name=self._file_name)
-            with open(self._file_name, 'w') as f:
+            with h5py.File(self._file_name, 'w') as f:
                 for group in self._groups:
-                    f.write('{}\n'.format(group.to_json(orient='table')))
+                    f.create_dataset('groups', data=group.to_json(orient='table'),
+                                 compression="gzip", compression_opts=9)
+            # with open(self._file_name, 'w') as f:
+            #     for group in self._groups:
+            #         f.write('{}\n'.format(group.to_json(orient='table')))
 
     # TODO: Check the correctness of group_id and corresponding extracted data.
     def get_group(self, group_id):

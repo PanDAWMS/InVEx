@@ -177,7 +177,7 @@ def set_jobs_data_from_panda(request):
             if parsed_url.path != '/jobs/':
                 logger.error('{} Provided BigPanDA URL is incorrect: {}'.
                              format(err_msg_subj, json.dumps(request.GET)))
-                raise
+                #raise
 
             filter_params = {'fulllist': 'true'}
             if len(parsed_url.query) > 0 and '=' in parsed_url.query:
@@ -197,7 +197,7 @@ def set_jobs_data_from_panda(request):
         else:
             logger.error('{} Data from BigPanDA was not collected: {}'.
                          format(err_msg_subj, json.dumps(request.GET)))
-            raise
+            #raise
 
     else:
         logger.error('{} Request parameters are incorrect: {}'.

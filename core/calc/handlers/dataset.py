@@ -6,6 +6,7 @@ the original dataset, and to process it according to the required view.
 import json
 import logging
 import os
+import h5py
 
 import pandas as pd
 
@@ -18,6 +19,7 @@ from ..operationshistory import OperationHistory
 
 from ._base import BaseDataHandler
 from .groupeddata import GroupedDataHandler
+
 
 FILE_EXTENSION_DEFAULT = 'csv'
 HISTORY_FILE_EXTENSION = 'history'
@@ -79,7 +81,8 @@ class DatasetHandler(BaseDataHandler):
                 self._origin = dataset
 
         elif kwargs.get('load_history_data', False):
-            self._load_history_data()
+            #self._load_history_data()
+            self._load_history_data_hdf5()
 
     def _get_full_file_name(self, is_history_file=False):
         """
@@ -148,7 +151,7 @@ class DatasetHandler(BaseDataHandler):
         if not self._modifications:
             logger.error('[DatasetHandler.clustering_dataset] '
                          'Dataset for clustering is not prepared')
-            raise
+            raise DatasetHandler
         if (self._mode == 'numeric'):
             _set = set(self._origin.columns.tolist())
             _features = [x for x in self._property_set['features'] if x in _set]
@@ -238,6 +241,33 @@ class DatasetHandler(BaseDataHandler):
                          'Failed to save data ({}): {}'.format(file_name, e))
             raise
 
+    def _save_history_data_hdf5(self):
+        """
+        Save modifications of the in initial dataset and corresponding data. HDF5
+
+        1st line - origin (numeric) dataset
+        2nd line - normalized dataset
+        3rd line - auxiliary data (not numeric values)
+        4th line - selected features
+        5th line - Level-of-Detail Generator metadata
+        6th line - operations history (list of clustering operations)
+        """
+        file_name = self._get_full_file_name(is_history_file=True)
+        self._remove_file(file_name=file_name)
+        try:
+            with h5py.File(file_name, 'w') as f:
+                f.create_dataset("origin", data=self._origin.to_json(orient='table'))
+                f.create_dataset("normalized", data=self._normalized.to_json(orient='table'))
+                f.create_dataset("auxiliary", data=self._auxiliary.to_json(orient='table'))
+                f.create_dataset("features", data=json.dumps(self._property_set['features']))
+                f.create_dataset("lod", data=json.dumps(self._property_set['lod']))
+                f.create_dataset("operations", data=self.operation_history.save_to_json())
+
+        except Exception as e:
+            logger.error('[DatasetHandler._save_history_data] '
+                         'Failed to save data ({}): {}'.format(file_name, e))
+            raise
+
     def _load_history_data(self):
         """
         Load dataset modifications and corresponding data from history file.
@@ -275,10 +305,48 @@ class DatasetHandler(BaseDataHandler):
                          format(err_msg_subj, file_name, e))
             raise
 
+    def _load_history_data_hdf5(self):
+        """
+        Load dataset modifications and corresponding data from history file. HDF5
+
+        1st line - origin (numeric) dataset
+        2nd line - normalized dataset
+        3rd line - auxiliary data (not numeric values)
+        4th line - selected features
+        5th line - Level-of-Detail Generator metadata
+        6th line - operations history (list of clustering operations)
+        """
+        err_msg_subj = '[DatasetHandler._load_history_data]'
+
+        file_name = self._get_full_file_name(is_history_file=True)
+        if not os.path.isfile(file_name):
+            logger.error('{} Failed to find the file ({})'
+                         .format(err_msg_subj, file_name))
+
+        try:
+            hf = h5py.File(file_name, 'r')
+            with open(file_name, 'r') as f:
+                self._origin = data_converters.table_to_df(hf.get('origin'))
+                self._modifications.update({
+                    'normalized': data_converters.table_to_df(hf.get('normolized')),
+                    'auxiliary': data_converters.table_to_df(hf.get('auxiliary'))})
+
+                self._property_set.update({
+                    'features': json.loads(hf.get('features')),
+                    'lod': json.loads(hf.get('lod'))})
+
+                operation_history = OperationHistory()
+                operation_history.load_from_json(hf.get('operations'))
+                self._property_set['op_history'] = operation_history
+        except Exception as e:
+            logger.error('{} Failed to load data ({}): {}'.
+                         format(err_msg_subj, file_name, e))
+            raise
     def save(self):
         """
         Public method to save changes into the history file.
         """
         if (self._origin is not None and \
                 self._modifications and self._property_set):
-            self._save_history_data()
+            #self._save_history_data()
+            self._save_history_data_hdf5()

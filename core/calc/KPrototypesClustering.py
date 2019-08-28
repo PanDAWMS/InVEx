@@ -6,7 +6,7 @@ from random import randint
 from kmodes.kprototypes import KPrototypes
 from kmodes.util.dissim import matching_dissim
 from . import baseoperationclass
-from .util.dissimilarity import euclidean
+import euclidean
 
 
 CLUSTER_NUMBER = 5
