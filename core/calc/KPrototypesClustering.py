@@ -6,8 +6,7 @@ from random import randint
 from kmodes.kprototypes import KPrototypes
 from kmodes.util.dissim import matching_dissim
 from . import baseoperationclass
-from .util import dissimilarity_python
-from .util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
+import euclidean
 
 
 CLUSTER_NUMBER = 5
