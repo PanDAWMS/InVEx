@@ -2,6 +2,7 @@ from . import baseoperationclass
 from . import basicstatistics
 from . import KMeansClustering
 from . import KPrototypesClustering
+from . import HierarchicalClustering
 from . import MiniBatchKMeansClustering
 from . import DBScanClustering
 from . import GroupData

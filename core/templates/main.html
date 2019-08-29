@@ -189,7 +189,27 @@
                                 'attributes': [['placeholder', '1']],
                                 'defvalue': '1',
                                 'min': 0,
-                                'max': 20
+                                'max': 1000
+                            }],
+                        ['Hierarchical',
+                            'Hierarchical',
+                            {
+                                'name': 'cluster_number',
+                                'label': 'Number of clusters',
+                                'type': 'integer',
+                                'attributes': [['placeholder', '5']],
+                                'defvalue': '5',
+                                'min': 1,
+                                'max': 40
+                            },
+                            {
+                                'name': 'categorical_data_weight',
+                                'label': 'Weight of categorical data in distance',
+                                'type': 'float',
+                                'attributes': [['placeholder', '1']],
+                                'defvalue': '1',
+                                'min': 0,
+                                'max': 1000
                             }],
                         ['DBSCAN',
                             'DBSCAN',

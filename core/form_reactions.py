@@ -397,6 +397,15 @@ def clusterize(request, dataset_id, group_ids=None):
                                      int(request.POST['categorical_data_weight']))
             mode = 'all'
 
+        elif (request.POST['algorithm'] == 'Hierarchical' and \
+                'cluster_number' in request.POST and \
+                'categorical_data_weight' in request.POST):
+
+            operation = calc.HierarchicalClustering.HierarchicalClustering()
+            operation.set_parameters(int(request.POST['cluster_number']),
+                                     int(request.POST['categorical_data_weight']))
+            mode = 'all'
+
         elif (request.POST['algorithm'] == 'DBSCAN' and \
                 'min_samples' in request.POST and 'eps' in request.POST):
 
