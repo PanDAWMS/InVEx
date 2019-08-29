@@ -29,6 +29,8 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
             self.cluster_number = cluster_number
         if categorical_weight is not None:
             self.categorical_weight = categorical_weight
+            if categorical_weight < 0:
+                self.categorical_weight = None
         return True
 
     def save_parameters(self):
