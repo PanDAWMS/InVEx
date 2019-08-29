@@ -64,12 +64,12 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
     def find_linkage(self, dataset):
         distance_metric = 'euclidean'
         categorical_indices = get_categorical_indices(dataset)
+        numerical_indices = [x for x in range(dataset.shape[1]) if x not in categorical_indices]
         if categorical_indices:
             dataset = normalized_dataset(dataset, categorical_indices)
-            dataset = encode_nominal_parameters(dataset)
+            dataset = encode_nominal_parameters(dataset, categorical_indices)
             if self.categorical_weight is None:
-                self.categorical_weight = 0.5 * dataset.values.std()
-                print(self.categorical_weight)
+                self.categorical_weight = 0.5 * dataset.take(numerical_indices, axis=1).values.std()
             from .util.dissimilarity import mixed_metric
             distance_metric = partial(mixed_metric, categorical_indices=np.array(categorical_indices, dtype=np.int32), categorical_weight=self.categorical_weight)
         dataset = dataset.values.astype(np.float64)
