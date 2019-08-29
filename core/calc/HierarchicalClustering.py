@@ -8,7 +8,7 @@ from .util import get_categorical_indices, encode_nominal_parameters, normalized
 
 
 CLUSTER_NUMBER = 5
-CATEGORICAL_WEIGHT = None
+CATEGORICAL_WEIGHT = -1
 
 
 class HierarchicalClustering(baseoperationclass.BaseOperationClass):
@@ -29,8 +29,6 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
             self.cluster_number = cluster_number
         if categorical_weight is not None:
             self.categorical_weight = categorical_weight
-            if categorical_weight < 0:
-                self.categorical_weight = None
         return True
 
     def save_parameters(self):
@@ -68,7 +66,7 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
         if categorical_indices:
             dataset = normalized_dataset(dataset, categorical_indices)
             dataset = encode_nominal_parameters(dataset, categorical_indices)
-            if self.categorical_weight is None:
+            if self.categorical_weight is None or self.categorical_weight < 0:
                 self.categorical_weight = 0.5 * dataset.take(numerical_indices, axis=1).values.std()
             from .util.dissimilarity import mixed_metric
             distance_metric = partial(mixed_metric, categorical_indices=np.array(categorical_indices, dtype=np.int32), categorical_weight=self.categorical_weight)

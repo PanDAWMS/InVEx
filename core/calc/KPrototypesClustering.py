@@ -11,7 +11,7 @@ from .util import get_categorical_indices, encode_nominal_parameters, normalized
 
 
 CLUSTER_NUMBER = 5
-CATEGORICAL_WEIGHT = None
+CATEGORICAL_WEIGHT = -1
 
 
 class KPrototypesClustering(baseoperationclass.BaseOperationClass):
@@ -33,8 +33,6 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
             self.cluster_number = cluster_number
         if categorical_weight is not None:
             self.categorical_weight = categorical_weight
-            if categorical_weight < 0:
-                self.categorical_weight = None
         return True
 
     def save_parameters(self):
@@ -73,7 +71,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         dataset_num = dataset.drop(categorical_labels, axis=1).values.astype(np.float64)
 
         categorical_weight = self.categorical_weight
-        if categorical_weight is None:
+        if categorical_weight is None or categorical_weight < 0:
             categorical_weight = 0.5 * dataset_num.std()
         initial_centroids_num = np.zeros((self.cluster_number, dataset_num.shape[1]), dtype=np.float64)
         initial_centroids_cat = np.zeros((self.cluster_number, dataset_cat.shape[1]), dtype=np.float64)
