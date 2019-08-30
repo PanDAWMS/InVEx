@@ -324,19 +324,18 @@ class DatasetHandler(BaseDataHandler):
                          .format(err_msg_subj, file_name))
 
         try:
-            hf = h5py.File(file_name, 'r')
-            with open(file_name, 'r') as f:
-                self._origin = data_converters.table_to_df(hf.get('origin'))
+            with h5py.File(file_name, 'r') as hf:
+                self._origin = data_converters.table_to_df(hf.get('origin').value)
                 self._modifications.update({
-                    'normalized': data_converters.table_to_df(hf.get('normolized')),
-                    'auxiliary': data_converters.table_to_df(hf.get('auxiliary'))})
+                    'normalized': data_converters.table_to_df(hf.get('normalized').value),
+                    'auxiliary': data_converters.table_to_df(hf.get('auxiliary').value)})
 
                 self._property_set.update({
-                    'features': json.loads(hf.get('features')),
-                    'lod': json.loads(hf.get('lod'))})
+                    'features': json.loads(hf.get('features').value),
+                    'lod': json.loads(hf.get('lod').value)})
 
                 operation_history = OperationHistory()
-                operation_history.load_from_json(hf.get('operations'))
+                operation_history.load_from_json(hf.get('operations').value)
                 self._property_set['op_history'] = operation_history
         except Exception as e:
             logger.error('{} Failed to load data ({}): {}'.
