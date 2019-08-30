@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.foundation.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.1.5/css/fixedHeader.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.5.1/css/colReorder.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css" />
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -45,6 +46,7 @@
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+<script src="https://cdn.datatables.net/fixedheader/3.1.5/js/dataTables.fixedHeader.min.js"></script>
 <script src="https://cdn.datatables.net/colreorder/1.5.1/js/dataTables.colReorder.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
@@ -134,13 +136,36 @@
                 var new_dataArray = fix_array(dataArray);
                 scene.setDataArray(new_dataArray);
             {% endif %}
+            
+            {% if visualparameters %}
+                scene.loadVisualParameters({{ visualparameters|safe }});
+            {% endif %}
+
+            {% if aux_dataset %}
+                var auxData = {{ aux_dataset|safe }};
+                var new_auxData = fix_array(auxData);
+                scene.setAuxiliaryData(new_auxData);
+                var auxNames = {{ aux_names|safe }};
+                scene.setAuxiliaryColumns(auxNames);
+            {% endif %}
 
             {% if real_dataset %}
                 var realData = {{ real_dataset|safe }};
                 var new_realData = fix_array(realData);
                 scene.setRealData(new_realData);
                 {% if data_is_ready %}
-                    printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
+                    //printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
+
+                    //drawParallelCoordinates("ParallelCoordinatesGraph", scene, { draw: { framework: "d3", mode: "cluster" } });
+
+                    let options = { 
+                        draw: { 
+                            framework: "d3", 
+                            mode: "print" 
+                        }
+                    };
+
+                    this._coord = new ParallelCoordinates("ParallelCoordinatesGraph", scene, options);
                 {% endif %}
             {% endif %}
 
@@ -266,18 +291,6 @@
                 });
             {% endif %}
 
-            {% if visualparameters %}
-                scene.loadVisualParameters({{ visualparameters|safe }});
-            {% endif %}
-
-            {% if aux_dataset %}
-                var auxData = {{ aux_dataset|safe }};
-                var new_auxData = fix_array(auxData);
-                scene.setAuxiliaryData(new_auxData);
-                var auxNames = {{ aux_names|safe }};
-                scene.setAuxiliaryColumns(auxNames);
-            {% endif %}
-
             var lodData = [];
             {% if lod_data %}
                 lodData = {{ lod_data|safe }};
@@ -294,8 +307,9 @@
             scene.clusters_color_scheme = scene.createColorScheme();
 
             {% if cluster_ready %}
-                cluster_selector(scene.clusters_color_scheme, "cluster_stat");
-                drawParallelCoordinates("ParallelCoordinatesGraph", scene, { draw: { framework: "d3", mode: "cluster" } });
+                this._coord.mode = "cluster";
+                
+                cluster_selector(scene.clusters_color_scheme, "print", "cluster_stat");
             {% endif %}
 
             {% if norm_dataset %}

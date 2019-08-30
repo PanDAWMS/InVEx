@@ -51,15 +51,19 @@ class ParallelCoordinates {
         // If options does not have 'draw' option, make default one
         if (!options.hasOwnProperty('draw'))
             options.draw = {
-                framework: "d3",
-                mode: "print"
+                framework: "d3",    // Possible values: 'd3'. todo: remove 'plotly' back
+                mode: "print"       // Possible values: 'print', 'cluster'
             };
 
+        if (!["print", "cluster"].includes(options.draw['mode'])) 
+            throw "Wrong mode value! Possible values: 'print', 'cluster', got: '"+ value + "'";
+            
         // If options does not have 'skip' option, make default one
+        // Default is to show 6 first lanes
         if (!options.hasOwnProperty('skip'))
             options.skip = {
                 dims: {
-                    mode: "show", // hide, show, none
+                    mode: "show", // Possible values: 'hide', 'show', 'none'
                     values: this.scene.dimNames.slice(0,
                         (this.scene.dimNames.length >= 5) ? 5 : this.scene.dimNames.length)
                 }
@@ -71,9 +75,20 @@ class ParallelCoordinates {
         this._prepareGraphAndTable();
     }
 
+    set mode(value){
+        if (!["print", "cluster"].includes(value)) 
+            throw "Wrong mode value! Possible values: 'print', 'cluster', got: '"+ value + "'";
+        
+        this.options.draw["mode"] = value;
+        this._prepareGraphAndTable();
+    }
+    
     _prepareGraphAndTable() {
         // A link to this ParCoord object
         var _PCobject = this;
+        
+        // Clear the whole div if something is there
+        $("#" + this.element_id).empty();
 
         // Add overflow from the start
         d3.select("#" + this.element_id)
@@ -120,7 +135,7 @@ class ParallelCoordinates {
 
         // A hint on how to use
         d3.select("#" + this.element_id).append('p')
-            .html('Use the Left Mouse Button to select the line and corresponding line in the table <br>' +
+            .html('Use the Left Mouse Button to select a curve and the corresponding line in the table <br>' +
                 'Hover over the lines with mouse to see the row in the table');
 
         // Currently selected line id
@@ -162,6 +177,7 @@ class ParallelCoordinates {
         // A link to this ParCoord object
         var _PCobject = this;
 
+        // Clear the graph div if something is there
         if (this._svg !== undefined) this._svg.remove();
 
         // Sizes of the graph
@@ -224,7 +240,11 @@ class ParallelCoordinates {
             .attr("d", this._path.bind(this))
 
             // Cluster color scheme is applied to the stroke color 
-            .attr("stroke", (d, i) => rgbToHex(this.scene.clusters_color_scheme[this.scene.clusters[i]]))
+            .attr("stroke", (d, i) => (
+                (this.options.draw['mode'] === "cluster")?
+                    rgbToHex(this.scene.clusters_color_scheme[this.scene.clusters[i]]):
+                    "#0082C866")
+                )
             .attr("stroke-opacity", "0.4")
 
             // When mouse is over the line, make it bold and colorful, move to the front
@@ -326,7 +346,10 @@ class ParallelCoordinates {
     _createTable() {
         // A link to this ParCoord object
         var _PCobject = this;
-
+        
+        // Clear the table div if something is there
+        $('#t' + this.element_id).empty();
+        
         // 'visible' data array with lines on foreground (not filtered by a brush)
         //  possible values: ["all"] or ["id in realData", ...]
         this._visible = ["all"];
@@ -360,10 +383,10 @@ class ParallelCoordinates {
                 columns: this._theader,
                 mark: true,
                 scrollX: true,
-                fixedColumns: {
+                /*fixedColumns: {
                     leftColumns: (this.options.draw['mode'] === "cluster") ? 2 : 1
                     //rightColumns: 1
-                },
+                },*/
                 dom: 'Bfrtip',
                 colReorder: true,
                 buttons: [
@@ -421,7 +444,7 @@ class ParallelCoordinates {
             });
 
         // Add footer elements
-        this._table.append(
+        $('#t' + this.element_id).append(
             $('<tfoot/>').append($('#t' + this.element_id + ' thead tr').clone())
         );
 

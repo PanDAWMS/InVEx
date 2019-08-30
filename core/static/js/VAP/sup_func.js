@@ -727,8 +727,9 @@ function toHex(n) {
       + "0123456789ABCDEF".charAt(n%16);
 }
 
-function cluster_selector(clusters_color_scheme, parent_element) {
-    var selector = document.getElementById("clusters");
+function cluster_selector(clusters_color_scheme, controls_parent, table_parent) {
+    var selector = document.getElementById(controls_parent);
+    
     var label = document.createElement("label");
     label.innerHTML = "Choose Cluster";
     var btnGroup = document.createElement("div");
@@ -743,16 +744,16 @@ function cluster_selector(clusters_color_scheme, parent_element) {
         a.style.background = rgbToHex(color);
         a.onclick=function(event) {
             event.preventDefault();
-            var cluster_stat = document.getElementById(parent_element);
+            var cluster_stat = document.getElementById(table_parent);
             while (cluster_stat.firstChild) {
                 cluster_stat.removeChild(cluster_stat.firstChild);
             }
-            var parent = document.getElementById(parent_element);
+            var parent = document.getElementById(table_parent);
             var h3 = document.createElement("h3");
             h3.innerText = "Cluster №" + parseInt(event.target.innerText) + " statistics";
             h3.style.background = event.target.style.background;
             parent.appendChild(h3);
-            printClusterStats(scene.realData, scene.clusters, parseInt(event.target.innerText), scene.dimNames, parent_element);
+            printClusterStats(scene.realData, scene.clusters, parseInt(event.target.innerText), scene.dimNames, table_parent);
         };
         btnGroup.appendChild(a);
     }
