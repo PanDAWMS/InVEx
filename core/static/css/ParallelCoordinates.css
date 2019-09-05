@@ -46,3 +46,7 @@ mark {
 .table-selected-line {
     background: #ddd !important;
 }
+
+.select2-container, .select2-choice, .select2-results__option {
+    font-size: 12px !important;
+}

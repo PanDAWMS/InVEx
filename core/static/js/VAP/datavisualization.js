@@ -858,6 +858,8 @@ class DataVisualization extends Scene{
 			this.selectedObject.children[i].material.color = invertColor(this.clusters_color_scheme[this.selectedObject.children[i].dataObject[2][0]].clone());
         }
 
+        this._coord.mode = "print";
+
         requestAnimationFrame(render);
 	}
 

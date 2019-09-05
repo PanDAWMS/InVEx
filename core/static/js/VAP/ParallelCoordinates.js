@@ -35,6 +35,12 @@ d3.selection.prototype.moveToBack = function () {
     });
 };
 
+function numberWithSpaces(x) {
+    var parts = x.toString().split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return parts.join(".");
+};
+
 class ParallelCoordinates {
 
     constructor(element_id, scene, options = {}) {
@@ -49,18 +55,25 @@ class ParallelCoordinates {
         this.scene = scene;
 
         // If options does not have 'draw' option, make default one
-        if (!options.hasOwnProperty('draw'))
+        if (!options.hasOwnProperty('draw') &&
+            (typeof this.options === 'undefined' ||
+                !this.options.hasOwnProperty('draw'))) {
             options.draw = {
                 framework: "d3",    // Possible values: 'd3'. todo: remove 'plotly' back
                 mode: "print"       // Possible values: 'print', 'cluster'
             };
 
-        if (!["print", "cluster"].includes(options.draw['mode'])) 
+            this.options = options;
+        }
+        else if (typeof this.options === 'undefined') this.options = options;
+            else if (options.hasOwnProperty('draw')) this.options.draw = options.draw;
+
+        if (!["print", "cluster"].includes(this.options.draw['mode'])) 
             throw "Wrong mode value! Possible values: 'print', 'cluster', got: '"+ value + "'";
             
         // If options does not have 'skip' option, make default one
         // Default is to show 6 first lanes
-        if (!options.hasOwnProperty('skip'))
+        if (!options.hasOwnProperty('skip') && !this.options.hasOwnProperty('skip'))
             options.skip = {
                 dims: {
                     mode: "show", // Possible values: 'hide', 'show', 'none'
@@ -68,8 +81,7 @@ class ParallelCoordinates {
                         (this.scene.dimNames.length >= 5) ? 5 : this.scene.dimNames.length)
                 }
             };
-
-        this.options = options;
+        else if (options.hasOwnProperty('skip')) this.options.skip = options.skip;
 
         // Initiate the arrays and draw the stuff
         this._prepareGraphAndTable();
@@ -89,10 +101,6 @@ class ParallelCoordinates {
         
         // Clear the whole div if something is there
         $("#" + this.element_id).empty();
-
-        // Add overflow from the start
-        d3.select("#" + this.element_id)
-            .style("overflow", "auto");
 
         // Construct the list with dimentions on graph
         this._dimensions = this.scene.dimNames.filter((elem, i) => {
@@ -124,14 +132,16 @@ class ParallelCoordinates {
                 this._dimensions = $('#s' + this.element_id).val();
                 this._createGraph();
             });
-
+        
         this._selectBox.data('select2').$container.css("display", "block");
 
         // Arrays with (line id)<->(id in realData)
         this._ids = this.scene.realData.map((row) => row[0]);
 
         // Append an SVG to draw lines on
-        this._graph = d3.select("#" + this.element_id).append("svg");
+        this._graph = d3.select("#" + this.element_id)
+            .append("svg")
+                .style("overflow", "auto");
 
         // A hint on how to use
         d3.select("#" + this.element_id).append('p')
@@ -143,9 +153,9 @@ class ParallelCoordinates {
 
         // Add table below the ParCoords
         d3.select("#" + this.element_id)
-            .append("table")
-            .attr("id", "t" + this.element_id)
-            .attr("class", "table hover");
+            .append("div")
+                .attr("id", "t" + this.element_id + "_wrapper");
+                //.style("overflow", "hidden");
 
         // Cluster list
         this._color = this.scene.clusters;///.filter((x) => { return skipClust.indexOf(x) === -1; });
@@ -204,9 +214,9 @@ class ParallelCoordinates {
             .attr("transform", "translate(" + this._margin.left + "," + this._margin.top + ")");
 
         // Extract the list of dimensions and create a scale for each
-        this._x.domain(this._dimensions.map((dim, index) => {
-            this._values.push(this.scene.realData //.filter((elem, i) => { return skipClust.indexOf(clusters_list[i]) === -1; })
-                .map((row) => row[1][index]));
+        this._x.domain(this._dimensions.map((dim, index, arr) => {
+            this._values.push(this.scene.realData
+                .map((row) => row[1][scene.dimNames.indexOf(dim)]));
 
             this._y[dim] = d3.scale.linear()
                 .domain([Math.min(...this._values[index]), Math.max(...this._values[index])])
@@ -348,8 +358,14 @@ class ParallelCoordinates {
         var _PCobject = this;
         
         // Clear the table div if something is there
-        $('#t' + this.element_id).empty();
-        
+        $('#t' + this.element_id + "_wrapper").empty();
+
+        // Add table to wrapper
+        d3.select("#t" + this.element_id + "_wrapper")
+            .append("table")
+                .attr("id", "t" + this.element_id)
+                .attr("class", "table hover");
+
         // 'visible' data array with lines on foreground (not filtered by a brush)
         //  possible values: ["all"] or ["id in realData", ...]
         this._visible = ["all"];
@@ -364,7 +380,19 @@ class ParallelCoordinates {
         this._theader_array = this._theader_array.concat(this.scene.auxNames);
 
         // Map headers for the tables
-        this._theader = this._theader_array.map(row => { return { title: row }; }),
+        this._theader = this._theader_array.map(row => {
+            return {
+                title: row,
+
+                // Add spaces and remove too much numbers after the comma
+                "render": function (data, type, full) {
+                    if (type === 'display' && !isNaN(data))
+                        return numberWithSpaces(parseFloat(Number(data).toFixed(2)));
+
+                    return data;
+                }
+            };
+        }),
 
             // Array with table cell data
             this._tcells = this.scene.realData.map((row, i) =>
@@ -381,18 +409,21 @@ class ParallelCoordinates {
             this._datatable = this._table.DataTable({
                 data: this._tcells,
                 columns: this._theader,
+
                 mark: true,
-                scrollX: true,
-                /*fixedColumns: {
-                    leftColumns: (this.options.draw['mode'] === "cluster") ? 2 : 1
-                    //rightColumns: 1
-                },*/
                 dom: 'Bfrtip',
                 colReorder: true,
                 buttons: [
                     'colvis'
                 ],
 
+                /*fixedColumns: {
+                    leftColumns: (this.options.draw['mode'] === "cluster") ? 2 : 1
+                    //rightColumns: 1
+                },
+                
+                scrollCollapse: true,*/
+                //scrollX: true,
                 "search": {
                     "regex": true
                 },
@@ -401,6 +432,8 @@ class ParallelCoordinates {
                 "rowCallback": (row, data) => {
                     if (this.options.draw['mode'] === "cluster")
                         $(row).children().css('background', data[data.length - 1] + "33");
+
+                    $(row).children().css('white-space', 'nowrap');
                 },
 
                 // Redraw lines on ParCoords when table is ready
@@ -408,6 +441,11 @@ class ParallelCoordinates {
                     _PCobject._on_table_ready(_PCobject);
                 }
             });
+
+        d3.select('#t' + this.element_id)
+            .style('display', 'block')
+            .style('width', 'auto')
+            .style('overflow', 'auto');
 
         // Add bold effect to lines when a line is hovered over in the table
         $('#t' + this.element_id + ' tbody')
@@ -472,6 +510,7 @@ class ParallelCoordinates {
 
                 if (_PCobject._visible[0] === "all" || _PCobject._visible.includes(data[0])) {
                     _PCobject._search_results.push(data[0]);
+
                     return true;
                 }
                 return false;

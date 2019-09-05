@@ -2,10 +2,6 @@
 {% load staticfiles %}
 
 {% block extra_css %}
-    <!-- for minified version add this -->
-    <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
-    <link rel="stylesheet" href="{% static "css/ParallelCoordinates.css" %}">
-
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/scroller/2.0.0/css/scroller.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
@@ -15,6 +11,9 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css" />
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/css/select2.min.css" />
+
+    <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
+    <link rel="stylesheet" href="{% static "css/ParallelCoordinates.css" %}">
 {% endblock %}
 
 {% block body %}
@@ -54,7 +53,7 @@
 <script src="https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
 <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js),datatables.mark.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/js/select2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/js/select2.full.js"></script>
 
 <script src="{% static "js/foundation/vendor/foundation.min.js" %}"></script>
 <script src="{% static "js/dat.gui.min.js" %}"></script>
@@ -154,18 +153,7 @@
                 var new_realData = fix_array(realData);
                 scene.setRealData(new_realData);
                 {% if data_is_ready %}
-                    //printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
-
-                    //drawParallelCoordinates("ParallelCoordinatesGraph", scene, { draw: { framework: "d3", mode: "cluster" } });
-
-                    let options = { 
-                        draw: { 
-                            framework: "d3", 
-                            mode: "print" 
-                        }
-                    };
-
-                    this._coord = new ParallelCoordinates("ParallelCoordinatesGraph", scene, options);
+                    scene._coord = new ParallelCoordinates("ParallelCoordinatesGraph", scene);
                 {% endif %}
             {% endif %}
 
@@ -307,7 +295,7 @@
             scene.clusters_color_scheme = scene.createColorScheme();
 
             {% if cluster_ready %}
-                this._coord.mode = "cluster";
+                scene._coord.mode = "cluster";
                 
                 cluster_selector(scene.clusters_color_scheme, "print", "cluster_stat");
             {% endif %}
