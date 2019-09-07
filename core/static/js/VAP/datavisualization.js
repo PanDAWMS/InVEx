@@ -365,40 +365,57 @@ class DataVisualization extends Scene{
 				updateBtn.classList.add('button', 'small');
 				updateBtn.value = 'Update Colors';
 				updateBtn.setAttribute('type', 'button');
-				updateBtn.onclick = function(event) {
-					event.preventDefault();
+            updateBtn.onclick = function (event) {
+                event.preventDefault();
 
-                    var _real_data = [],
-                        _clusters_list = [],
-                        _clusters_color_scheme = [],
-                        selected_spheres, active;
+                var _real_data = [],
+                    _clusters_list = [],
+                    _clusters_color_scheme = [],
+                    _aux_data = [],
+                    selected_spheres, active;
 
-                    for (var i = 0; i < self.selectionsHistory.length; i++) {
+                for (var i = 0; i < self.selectionsHistory.length; i++) {
+                    selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
+                        self.selectionsHistory[i]['feature_id'],
+                        ((self.selectionsHistory[i]['type'] === 'range') ?
+                            [self.selectionsHistory[i]['min'], self.selectionsHistory[i]['max']] :
+                            [self.selectionsHistory[i]['value']]),
+                        self.selectionsHistory[i]['type']);
 
-                        selected_spheres = self.chosenSpheres(self.groupOfSpheres.children,
-                            self.selectionsHistory[i]['feature_id'],
-                            ((self.selectionsHistory[i]['type'] == 'range') ?
-                                [self.selectionsHistory[i]['min'], self.selectionsHistory[i]['max']] :
-                                [self.selectionsHistory[i]['value']]),
-                            self.selectionsHistory[i]['type']);
+                    active = self.selectionsHistory[i]['active'];
 
-                        active = self.selectionsHistory[i]['active'];
+                    if (active) _clusters_color_scheme[i] = self.clusters_color_scheme['group' + i];
 
-                        if (active) _clusters_color_scheme[i] = self.clusters_color_scheme['group' + i];
-
-                        for (var j = 0; j < selected_spheres.length; j++) {
-                            if (active) {
-                                _real_data.push(selected_spheres[j].realData);
-                                _clusters_list.push(i);
-                            }
-                            selected_spheres[j].material.color =
-                                self.clusters_color_scheme[((active) ? 'group' + i : '0')].clone();
+                    for (var j = 0; j < selected_spheres.length; j++) {
+                        if (active) {
+                            _real_data.push(selected_spheres[j].realData);
+                            _aux_data.push(selected_spheres[j].auxData);
+                            _clusters_list.push(i);
                         }
+                        selected_spheres[j].material.color =
+                            self.clusters_color_scheme[(active) ? 'group' + i : '0'].clone();
                     }
+                }
 
-                    drawParallelCoordinates('radar_chart_groups', _real_data, _clusters_list, _clusters_color_scheme, self.dimNames);
-                    requestAnimationFrame(render)
-				}
+                delete scene._group_coord;
+
+                scene._group_coord = new ParallelCoordinates("chart_groups",
+                    scene.dimNames,
+                    _real_data,
+                    _clusters_list,
+                    _clusters_color_scheme,
+                    scene.auxNames,
+                    _aux_data,
+                    {
+                        draw: {
+                            framework: "d3",
+                            mode: "cluster"
+                        }
+                    });
+
+                requestAnimationFrame(render);
+            };
+
 			var clearHistoryBtn = document.createElement('input');
 				clearHistoryBtn.id = 'clearHistBtn';
 				clearHistoryBtn.classList.add('button', 'small');

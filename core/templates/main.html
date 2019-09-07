@@ -152,8 +152,14 @@
                 var realData = {{ real_dataset|safe }};
                 var new_realData = fix_array(realData);
                 scene.setRealData(new_realData);
-                {% if data_is_ready %}
-                    scene._coord = new ParallelCoordinates("ParallelCoordinatesGraph", scene);
+            {% if data_is_ready %} 
+                scene._coord = new ParallelCoordinates("ParallelCoordinatesGraph",
+                    scene.dimNames,
+                    scene.realData,
+                    [],
+                    [],
+                    scene.auxNames,
+                    scene.auxData);
                 {% endif %}
             {% endif %}
 
@@ -295,7 +301,19 @@
             scene.clusters_color_scheme = scene.createColorScheme();
 
             {% if cluster_ready %}
-                scene._coord.mode = "cluster";
+                scene._coord.updateData("ParallelCoordinatesGraph",
+                    scene.dimNames,
+                    scene.realData,
+                    scene.clusters,
+                    scene.clusters_color_scheme,
+                    scene.auxNames,
+                    scene.auxData,
+                    {
+                        draw: {
+                            framework: "d3",
+                            mode: "cluster" 
+                        }
+                    });
                 
                 cluster_selector(scene.clusters_color_scheme, "print", "cluster_stat");
             {% endif %}

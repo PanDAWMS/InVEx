@@ -39,20 +39,41 @@ function numberWithSpaces(x) {
     var parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     return parts.join(".");
-};
+}
 
 class ParallelCoordinates {
-
-    constructor(element_id, scene, options = {}) {
+    constructor(element_id, dimension_names, data_array, clusters_list, clusters_color_scheme,
+        aux_features, aux_data_array, options = {}) {
         // Update data and draw the graph
-        this.updateData(element_id, scene, options);
+        if (arguments.length > 0) 
+            this.updateData(element_id, dimension_names, data_array, clusters_list, clusters_color_scheme,
+                aux_features, aux_data_array, options);
     }
 
-    updateData(element_id, scene, options = {}) {
+    // ********
+    // Data loading function
+    // 
+    // Parameters:
+    //  element_id - DOM id where to attach the Parallel Coordinates
+    //  feature_names - array with feature names
+    //
+    //
+    // ********
+    updateData(element_id, feature_names, data_array, clusters_list, clusters_color_scheme,
+        aux_features, aux_data_array, options = {}) {
         // Store the new values
         this.element_id = element_id;
 
-        this.scene = scene;
+        // Update arrays
+        this._features = feature_names;
+        this._data = data_array;
+        this._color = clusters_list;
+        this._clusters_color_scheme = clusters_color_scheme;
+        this._aux_features = aux_features;
+        this._aux_data = aux_data_array;
+
+        // Arrays with (line id)<->(id in realData)
+        this._ids = this._data.map((row) => row[0]);
 
         // If options does not have 'draw' option, make default one
         if (!options.hasOwnProperty('draw') &&
@@ -77,21 +98,13 @@ class ParallelCoordinates {
             options.skip = {
                 dims: {
                     mode: "show", // Possible values: 'hide', 'show', 'none'
-                    values: this.scene.dimNames.slice(0,
-                        (this.scene.dimNames.length >= 5) ? 5 : this.scene.dimNames.length)
+                    values: this._features.slice(0,
+                        (this._features.length >= 5) ? 5 : this._features.length)
                 }
             };
         else if (options.hasOwnProperty('skip')) this.options.skip = options.skip;
 
         // Initiate the arrays and draw the stuff
-        this._prepareGraphAndTable();
-    }
-
-    set mode(value){
-        if (!["print", "cluster"].includes(value)) 
-            throw "Wrong mode value! Possible values: 'print', 'cluster', got: '"+ value + "'";
-        
-        this.options.draw["mode"] = value;
         this._prepareGraphAndTable();
     }
     
@@ -102,15 +115,6 @@ class ParallelCoordinates {
         // Clear the whole div if something is there
         $("#" + this.element_id).empty();
 
-        // Construct the list with dimentions on graph
-        this._dimensions = this.scene.dimNames.filter((elem, i) => {
-            if (!('dims' in this.options.skip)) return true;
-            if (this.options.skip['dims'].mode === 'none') return true;
-            if (this.options.skip['dims'].mode === 'show' && this.options.skip['dims'].values.includes(elem)) return true;
-            if (this.options.skip['dims'].mode === 'hide' && !this.options.skip['dims'].values.includes(elem)) return true;
-            return false;
-        });
-
         // A selectBox with chosen features
         d3.select("#" + this.element_id)
             .append('p')
@@ -120,26 +124,36 @@ class ParallelCoordinates {
             .attr('class', 'select')
             .attr('id', 's' + this.element_id);
 
+        // Construct the list with dimentions on graph
+        this._graph_features = this._features.filter((elem, i) => {
+            if (!('dims' in this.options.skip)) return true;
+            if (this.options.skip['dims'].mode === 'none') return true;
+            if (this.options.skip['dims'].mode === 'show' && this.options.skip['dims'].values.includes(elem)) return true;
+            if (this.options.skip['dims'].mode === 'hide' && !this.options.skip['dims'].values.includes(elem)) return true;
+            return false;
+        });
+
         // Options for selectBox
         this._selectBox = $('#s' + this.element_id).select2({
             closeOnSelect: false,
-            data: this.scene.dimNames.map((d, i) => { return { id: d, text: d, selected: this._dimensions.includes(d) }; }),
+            data: this._features.map((d, i) => { return { id: d, text: d, selected: this._graph_features.includes(d) }; }),
             multiple: true,
             width: 600
         })
             // If the list changes - redraw the graph
             .on("change.select2", () => {
-                this._dimensions = $('#s' + this.element_id).val();
+                this._graph_features = $('#s' + this.element_id).val();
                 this._createGraph();
             });
         
         this._selectBox.data('select2').$container.css("display", "block");
 
-        // Arrays with (line id)<->(id in realData)
-        this._ids = this.scene.realData.map((row) => row[0]);
-
         // Append an SVG to draw lines on
         this._graph = d3.select("#" + this.element_id)
+            .append('div')
+                .style('display', 'block')
+                .style('width', 'auto')
+                .style('overflow', 'auto')
             .append("svg")
                 .style("overflow", "auto");
 
@@ -151,14 +165,10 @@ class ParallelCoordinates {
         // Currently selected line id
         this._selected_line = -1;
 
-        // Add table below the ParCoords
+        // Add the table below the ParCoords
         d3.select("#" + this.element_id)
             .append("div")
                 .attr("id", "t" + this.element_id + "_wrapper");
-                //.style("overflow", "hidden");
-
-        // Cluster list
-        this._color = this.scene.clusters;///.filter((x) => { return skipClust.indexOf(x) === -1; });
 
         // Draw the graph and the table
         this._createGraph();
@@ -192,7 +202,7 @@ class ParallelCoordinates {
 
         // Sizes of the graph
         this._margin = { top: 30, right: 10, bottom: 10, left: 10 };
-        this._width = (this._dimensions.length > 7 ? 80 * this._dimensions.length : 600) - this._margin.left - this._margin.right;
+        this._width = (this._graph_features.length > 7 ? 80 * this._graph_features.length : 600) - this._margin.left - this._margin.right;
         this._height = 500 - this._margin.top - this._margin.bottom;
 
         // Change the SVG size to draw lines on
@@ -214,9 +224,8 @@ class ParallelCoordinates {
             .attr("transform", "translate(" + this._margin.left + "," + this._margin.top + ")");
 
         // Extract the list of dimensions and create a scale for each
-        this._x.domain(this._dimensions.map((dim, index, arr) => {
-            this._values.push(this.scene.realData
-                .map((row) => row[1][scene.dimNames.indexOf(dim)]));
+        this._x.domain(this._graph_features.map((dim, index, arr) => {
+            this._values.push(this._data.map((row) => row[1][this._features.indexOf(dim)]));
 
             this._y[dim] = d3.scale.linear()
                 .domain([Math.min(...this._values[index]), Math.max(...this._values[index])])
@@ -229,7 +238,7 @@ class ParallelCoordinates {
         this._line_data = [];
         for (var i = 0; i < this._values[0].length; i++) {
             let tmp = {};
-            for (var j = 0; j < this._values.length; j++) tmp[this._dimensions[j]] = this._values[j][i];
+            for (var j = 0; j < this._values.length; j++) tmp[this._graph_features[j]] = this._values[j][i];
             this._line_data.push(tmp);
         }
 
@@ -252,7 +261,7 @@ class ParallelCoordinates {
             // Cluster color scheme is applied to the stroke color 
             .attr("stroke", (d, i) => (
                 (this.options.draw['mode'] === "cluster")?
-                    rgbToHex(this.scene.clusters_color_scheme[this.scene.clusters[i]]):
+                    rgbToHex(this._clusters_color_scheme[this._color[i]]):
                     "#0082C866")
                 )
             .attr("stroke-opacity", "0.4")
@@ -299,7 +308,7 @@ class ParallelCoordinates {
 
         // Add a group element for each dimension
         this._g = this._svg.selectAll(".dimension")
-            .data(this._dimensions)
+            .data(this._graph_features)
             .enter().append("g")
             .attr("class", "dimension")
             .attr("transform", function (d) { return "translate(" + _PCobject._x(d) + ")"; })
@@ -312,8 +321,8 @@ class ParallelCoordinates {
                 .on("drag", function (d) {
                     this._dragging[d] = Math.min(this._width, Math.max(0, d3.event.x));
                     this._foreground.attr("d", this._path.bind(this));
-                    this._dimensions.sort(function (a, b) { return this._position(a) - this._position(b); }.bind(this));
-                    this._x.domain(this._dimensions);
+                    this._graph_features.sort(function (a, b) { return this._position(a) - this._position(b); }.bind(this));
+                    this._x.domain(this._graph_features);
                     this._g.attr("transform", function (d) { return "translate(" + this._position(d) + ")"; }.bind(this));
                 }.bind(this))
                 .on("dragend", function (d) {
@@ -367,17 +376,17 @@ class ParallelCoordinates {
                 .attr("class", "table hover");
 
         // 'visible' data array with lines on foreground (not filtered by a brush)
-        //  possible values: ["all"] or ["id in realData", ...]
+        //  possible values: ["all"] or ["id in _data", ...]
         this._visible = ["all"];
 
         // Initialize a search result with all objects visible
-        this._search_results = this.scene.realData.map((x) => x[0]);
+        this._search_results = this._data.map((x) => x[0]);
 
         // Array with headers
-        this._theader_array = this.scene.dimNames.slice();
+        this._theader_array = this._features.slice();
         if (this.options.draw['mode'] === "cluster") this._theader_array.unshift('Cluster');
         this._theader_array.unshift('ID');
-        this._theader_array = this._theader_array.concat(this.scene.auxNames);
+        this._theader_array = this._theader_array.concat(this._aux_features);
 
         // Map headers for the tables
         this._theader = this._theader_array.map(row => {
@@ -395,13 +404,13 @@ class ParallelCoordinates {
         }),
 
             // Array with table cell data
-            this._tcells = this.scene.realData.map((row, i) =>
+            this._tcells = this._data.map((row, i) =>
                 [row[0]]
-                    .concat((this.options.draw['mode'] === "cluster") ? [this.scene.clusters[i]] : [])
+                    .concat((this.options.draw['mode'] === "cluster") ? [this._color[i]] : [])
                     .concat(row[1].map(String))
-                    .concat(this.scene.auxData[i][1].map(String))
+                    .concat(this._aux_data[i][1].map(String))
                     .concat((this.options.draw['mode'] === "cluster") ?
-                        [rgbToHex(this.scene.clusters_color_scheme[this._color[i]])] : [])
+                        [rgbToHex(this._clusters_color_scheme[this._color[i]])] : [])
             ),
 
             // Vars for table and its datatable
@@ -411,19 +420,12 @@ class ParallelCoordinates {
                 columns: this._theader,
 
                 mark: true,
-                dom: 'Bfrtip',
+                dom: 'Blfrtip',
                 colReorder: true,
                 buttons: [
                     'colvis'
                 ],
 
-                /*fixedColumns: {
-                    leftColumns: (this.options.draw['mode'] === "cluster") ? 2 : 1
-                    //rightColumns: 1
-                },
-                
-                scrollCollapse: true,*/
-                //scrollX: true,
                 "search": {
                     "regex": true
                 },
@@ -446,6 +448,15 @@ class ParallelCoordinates {
             .style('display', 'block')
             .style('width', 'auto')
             .style('overflow', 'auto');
+
+        d3.select('#t' + this.element_id + '_paginate')
+            .style('display', 'flex')
+            .style('justify-content', 'flex-end')
+            .style('float', 'none');
+
+        document.getElementById('t' + this.element_id + '_length').children[0].style = 'font-size: 12px !important;';
+        document.getElementById('t' + this.element_id + '_length').children[0].children[0].style = 'height: auto;';
+        document.getElementById('t' + this.element_id + '_filter').children[0].style = 'font-size: 12px !important;';
 
         // Add bold effect to lines when a line is hovered over in the table
         $('#t' + this.element_id + ' tbody')
@@ -548,7 +559,7 @@ class ParallelCoordinates {
     // Returns the path for a given data point
     _path(d) {
         return this._line(
-            this._dimensions.map(
+            this._graph_features.map(
                 function (p) { return [this._position(p), this._y[p](d[p])]; },
                 this
             )
@@ -557,7 +568,7 @@ class ParallelCoordinates {
 
     // Handles a brush event, toggling the display of foreground lines
     _brush(object) {
-        let actives = object._dimensions.filter(function (p) { return !object._y[p].brush.empty(); }),
+        let actives = object._graph_features.filter(function (p) { return !object._y[p].brush.empty(); }),
             extents = actives.map(function (p) { return object._y[p].brush.extent(); }),
             visible = [];
 
@@ -567,7 +578,7 @@ class ParallelCoordinates {
                 return extents[i][0] <= d[p] && d[p] <= extents[i][1];
             });
             
-            if (isVisible) visible.push(object.scene.realData[j][0]);
+            if (isVisible) visible.push(object._data[j][0]);
         });
 
         object._visible = visible;
