@@ -93,6 +93,7 @@ class ParallelCoordinates {
             options.draw = {
                 framework: "d3",    // Possible values: 'd3'. todo: remove 'plotly' back
                 mode: "print"       // Possible values: 'print', 'cluster'
+                //, cluster_tab_name: "Clusters"    // Custom name for 'clusters' tab in the table
             };
 
             this.options = options;
@@ -395,7 +396,10 @@ class ParallelCoordinates {
 
         // Array with headers
         this._theader_array = this._features.slice();
-        if (this.options.draw['mode'] === "cluster") this._theader_array.unshift('Cluster');
+        if (this.options.draw['mode'] === "cluster")
+            if (this.options.draw.hasOwnProperty('cluster_tab_name'))
+                this._theader_array.unshift(this.options.draw['cluster_tab_name']);
+            else this._theader_array.unshift('Cluster');
         this._theader_array.unshift('ID');
         this._theader_array = this._theader_array.concat(this._aux_features);
 

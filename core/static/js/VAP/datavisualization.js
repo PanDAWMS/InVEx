@@ -409,7 +409,8 @@ class DataVisualization extends Scene{
                     {
                         draw: {
                             framework: "d3",
-                            mode: "cluster"
+                            mode: "cluster",
+                            cluster_tab_name: "Group"
                         }
                     });
 
