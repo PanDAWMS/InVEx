@@ -413,6 +413,8 @@ class DataVisualization extends Scene{
                         }
                     });
 
+                window.location.href = "#groups";
+
                 requestAnimationFrame(render);
             };
 
