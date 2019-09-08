@@ -42,6 +42,12 @@ function numberWithSpaces(x) {
 }
 
 class ParallelCoordinates {
+    // ********
+    // Constructor
+    // 
+    // Passes all arguments to updateData(...)
+    //
+    // ********
     constructor(element_id, dimension_names, data_array, clusters_list, clusters_color_scheme,
         aux_features, aux_data_array, options = {}) {
         // Update data and draw the graph
@@ -56,7 +62,12 @@ class ParallelCoordinates {
     // Parameters:
     //  element_id - DOM id where to attach the Parallel Coordinates
     //  feature_names - array with feature names
-    //
+    //  data_array - array with all data about objects under consideration
+    //  clusters_list - array with all clusters in those data
+    //  clusters_color_scheme - array with the color scheme
+    //  aux_features - auxillary features that are not presented on the graph
+    //  aux_data_array - auxillaty data 
+    //  options - graph options
     //
     // ********
     updateData(element_id, feature_names, data_array, clusters_list, clusters_color_scheme,
@@ -444,6 +455,7 @@ class ParallelCoordinates {
                 }
             });
 
+        // Bug fixes related to css 
         d3.select('#t' + this.element_id)
             .style('display', 'block')
             .style('width', 'auto')
