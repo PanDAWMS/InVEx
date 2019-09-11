@@ -153,7 +153,7 @@
                         ['MiniBatchKMeans',
                             'MiniBatchKMeans',
                             {
-                                'name': 'numberofcl',
+                                'name': 'cluster_number',
                                 'label': 'Number of clusters',
                                 'type': 'integer',
                                 'attributes': [['placeholder', '5']],
@@ -186,7 +186,6 @@
                                 'label': 'Weight of categorical data in distance',
                                 'type': 'float',
                                 'attributes': [['placeholder', 'Enter negative weight to calculate automatically']],
-                                // 'defvalue': '1',
                                 'min': -10000,
                                 'max': 10000
                             }],
@@ -206,7 +205,6 @@
                                 'label': 'Weight of categorical data in distance',
                                 'type': 'float',
                                 'attributes': [['placeholder', 'Enter negative weight to calculate automatically']],
-                                // 'defvalue': '1',
                                 'min': -10000,
                                 'max': 10000
                             }],
@@ -230,15 +228,15 @@
                                 'min': 0,
                                 'max': 50
                             }],
-                          ['GroupData',
+                        ['GroupData',
                             'GroupData',
-                              {
-                                  'name': 'feature_name',
-                                  'label': 'feature name',
-                                  'type': 'list',
-                                  'attributes': [['placeholder', '']],
-                                  'values': get_categorical_features_names()
-                              }]
+                            {
+                                'name': 'feature_name',
+                                'label': 'feature name',
+                                'type': 'list',
+                                'attributes': [['placeholder', '']],
+                                'values': get_categorical_features_names()
+                            }]
                     ];
 
                     var curr_algorithm;
