@@ -6,7 +6,7 @@ from random import randint
 from kmodes.kprototypes import KPrototypes
 from kmodes.util.dissim import matching_dissim
 from . import baseoperationclass
-from .util import dissimilarity
+from .util import dissimilarity_python
 from .util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
 
 
@@ -66,22 +66,22 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         return result
 
     def _get_initial_centers(self, dataset, categorical_indices):
-        dataset_cat = dataset.take(categorical_indices, axis=1).values.astype(np.float64)
+        dataset_cat = dataset.take(categorical_indices, axis=1).values
         categorical_labels = [column for index, column in enumerate(dataset.columns) if index in categorical_indices]
-        dataset_num = dataset.drop(categorical_labels, axis=1).values.astype(np.float64)
+        dataset_num = dataset.drop(categorical_labels, axis=1).values
 
         categorical_weight = self.categorical_weight
         if categorical_weight is None or categorical_weight < 0:
             categorical_weight = 0.5 * dataset_num.std()
-        initial_centroids_num = np.zeros((self.cluster_number, dataset_num.shape[1]), dtype=np.float64)
-        initial_centroids_cat = np.zeros((self.cluster_number, dataset_cat.shape[1]), dtype=np.float64)
+        initial_centroids_num = np.zeros((self.cluster_number, dataset_num.shape[1]))
+        initial_centroids_cat = np.zeros((self.cluster_number, dataset_cat.shape[1]))
         rand_index = randint(0, dataset.shape[0] - 1)
         initial_centroids_num[0], initial_centroids_cat[0] = dataset_num[rand_index], dataset_cat[rand_index]
 
         for i in range(1, self.cluster_number):
-            distances_num_cat = [np.zeros((i, dataset.shape[0]), dtype=np.float64), np.zeros((i, dataset.shape[0]), dtype=np.float64)]
+            distances_num_cat = [np.zeros((i, dataset.shape[0]), dtype=np.float64), np.zeros((i, dataset.shape[0]))]
             for j in range(0, i):
-                distances_num_cat[0][j] = dissimilarity.euclidean(dataset_num, initial_centroids_num[j])
+                distances_num_cat[0][j] = dissimilarity_python.euclidean(dataset_num, initial_centroids_num[j])
                 distances_num_cat[1][j] = matching_dissim(dataset_cat, initial_centroids_cat[j])
             distances = np.amin(distances_num_cat[0] + categorical_weight * distances_num_cat[1], axis=0)
             probabilities = distances / np.sum(distances)
@@ -112,8 +112,8 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         dataset = normalized_dataset(dataset, categorical_indices)
 
         initial_centers = self._get_initial_centers(dataset, categorical_indices)
-        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=dissimilarity.euclidean, n_jobs=1)
-        dataset = dataset.values.astype(np.float64)
+        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=dissimilarity_python.euclidean, n_jobs=1)
+        dataset = dataset.values
         self.model.fit(dataset, categorical=categorical_indices)
         self.results = self.model.predict(dataset, categorical=categorical_indices)
         self.cent = self.model.cluster_centroids_

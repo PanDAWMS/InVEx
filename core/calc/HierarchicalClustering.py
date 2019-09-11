@@ -68,9 +68,9 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
             dataset = encode_nominal_parameters(dataset, categorical_indices)
             if self.categorical_weight is None or self.categorical_weight < 0:
                 self.categorical_weight = 0.5 * dataset.take(numerical_indices, axis=1).values.std()
-            from .util.dissimilarity import mixed_metric
+            from .util.dissimilarity_python import mixed_metric
             distance_metric = partial(mixed_metric, categorical_indices=np.array(categorical_indices, dtype=np.int32), categorical_weight=self.categorical_weight)
-        dataset = dataset.values.astype(np.float64)
+        dataset = dataset.values
         self.linkage = linkage(dataset, method='single', metric=distance_metric, optimal_ordering=False)
         return True
 
