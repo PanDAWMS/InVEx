@@ -381,18 +381,28 @@ def clusterize(request, dataset_id, group_ids=None):
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'MiniBatchKMeans' and \
-                'numberofcl' in request.POST and 'batch_size' in request.POST):
+                'cluster_number' in request.POST and 'batch_size' in request.POST):
 
             operation = calc.MiniBatchKMeansClustering.\
                 MiniBatchKMeansClustering()
-            operation.set_parameters(int(request.POST['numberofcl']),
+            operation.set_parameters(int(request.POST['cluster_number']),
                                      int(request.POST['batch_size']))
+            mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'KPrototypes' and \
                 'cluster_number' in request.POST and \
                 'categorical_data_weight' in request.POST):
 
             operation = calc.KPrototypesClustering.KPrototypesClustering()
+            operation.set_parameters(int(request.POST['cluster_number']),
+                                     int(request.POST['categorical_data_weight']))
+            mode = 'all'
+
+        elif (request.POST['algorithm'] == 'Hierarchical' and \
+                'cluster_number' in request.POST and \
+                'categorical_data_weight' in request.POST):
+
+            operation = calc.HierarchicalClustering.HierarchicalClustering()
             operation.set_parameters(int(request.POST['cluster_number']),
                                      int(request.POST['categorical_data_weight']))
             mode = 'all'

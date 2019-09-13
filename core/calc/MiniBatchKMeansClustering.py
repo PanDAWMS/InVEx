@@ -29,11 +29,11 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def save_parameters(self):
-        return {'cluster_numbers': self.clust_numbers, 'batch_size': self.batch_size}
+        return {'cluster_number': self.clust_numbers, 'batch_size': self.batch_size}
 
     def load_parameters(self, parameters):
-        if parameters.get("cluster_numbers") is not None:
-            self.clust_numbers = parameters["cluster_numbers"]
+        if parameters.get("cluster_number") is not None:
+            self.clust_numbers = parameters["cluster_number"]
         else:
             self.clust_numbers = CLUST_NUM
         if parameters.get("batch_size") is not None:
@@ -55,7 +55,7 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {'numberofcl': self.clust_numbers, 'batch_size': self.batch_size}
+        result = {'cluster_number': self.clust_numbers, 'batch_size': self.batch_size}
         return result
 
     def process_data(self, dataset):

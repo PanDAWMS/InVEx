@@ -85,9 +85,10 @@ ENV/
 # Rope project settings
 .ropeproject
 
-# IntellijIdea files
+# IDE folders
 *.iml
 out
+*.vscode
 
 # System stuff
 *~

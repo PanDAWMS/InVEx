@@ -10,12 +10,14 @@ parameters = {
     "KMeansClustering": (5, []),
     "MiniBatchKMeansClustering": (5, 200),
     "DBScanClustering": (5, 0.5),
+    "HierarchicalClustering": (5, None),
     "KPrototypesClustering": (5, None)
 }
 results = {
     "KMeansClustering": [],
     "MiniBatchKMeansClustering": [],
     "DBScanClustering": [],
+    "HierarchicalClustering": [],
     "KPrototypesClustering": []
 }
 
@@ -36,8 +38,8 @@ def _benchmark_algorithm(algorithm_name, dataset):
     return timedelta(microseconds=((end_time - start_time) * 1000))
 
 
-def run_benchmarks(n_runs):
-    dataset = _numeric_columns_from_csv("../../datasets/job_records_80k_13305102.csv")
+def run_benchmarks(n_runs, filename):
+    dataset = _numeric_columns_from_csv(filename)
     dataset.dropna(axis=0, how='any', inplace=True)
     for algorithm_name in parameters:
         for i in range(0, n_runs):
@@ -48,8 +50,19 @@ def run_benchmarks(n_runs):
         print(f"{algorithm_name}: {sum(result) / n_runs} ms")
 
 
-def profile_algorithm(algorithm_name):
-    dataset = _numeric_columns_from_csv("../../datasets/job_records_80k_13305102.csv")
+def dendrogram(filename):
+    dataset = _numeric_columns_from_csv(filename)
+    dataset.dropna(axis=0, how='any', inplace=True)
+    algorithm_module = import_module("..." + "HierarchicalClustering", package=__name__)
+    algorithm = getattr(algorithm_module, "HierarchicalClustering")
+    algorithm_instance = algorithm()
+    algorithm_instance.set_parameters(5, None)
+    algorithm_instance.find_linkage(dataset)
+    algorithm_instance.dendrogram()
+
+
+def profile_algorithm(algorithm_name, filename):
+    dataset = _numeric_columns_from_csv(filename)
     dataset.dropna(axis=0, how='any', inplace=True)
 
     prof = pprofile.Profile()

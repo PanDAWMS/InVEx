@@ -6,11 +6,12 @@ from random import randint
 from kmodes.kprototypes import KPrototypes
 from kmodes.util.dissim import matching_dissim
 from . import baseoperationclass
-from .util.dissimilarity import euclidean
+from .util import dissimilarity_python
+from .util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
 
 
 CLUSTER_NUMBER = 5
-CATEGORICAL_WEIGHT = None
+CATEGORICAL_WEIGHT = -1
 
 
 class KPrototypesClustering(baseoperationclass.BaseOperationClass):
@@ -64,39 +65,13 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         result = {'cluster_number': self.cluster_number, 'categorical_data_weight': self.categorical_weight}
         return result
 
-    @staticmethod
-    def _get_categorical_indices(dataset):
-        categorical_indices = []
-        for index, column in enumerate(dataset.columns):
-            if dataset[column].dtype.name not in ("float64", "float32", "int64", "int32"):
-                categorical_indices.append(index)
-            elif float(dataset[column].nunique()) / dataset[column].count() < 0.1:
-                categorical_indices.append(index)
-        return tuple(categorical_indices)
-
-    @staticmethod
-    def _get_encoding_map(values):
-        unique_values = np.unique(values.values)
-        encoding_map = {}
-        for index, value in enumerate(unique_values):
-            encoding_map[value] = index
-        return encoding_map
-
-    @staticmethod
-    def _encode_nominal_parameters(dataset):
-        for column, values in dataset.items():
-            if dataset[column].dtype.name not in ("float64", "float32", "int64", "int32"):
-                encoding_map = KPrototypesClustering._get_encoding_map(values)
-                dataset[column] = values.apply(encoding_map.get)
-        return dataset
-
     def _get_initial_centers(self, dataset, categorical_indices):
         dataset_cat = dataset.take(categorical_indices, axis=1).values
         categorical_labels = [column for index, column in enumerate(dataset.columns) if index in categorical_indices]
         dataset_num = dataset.drop(categorical_labels, axis=1).values
 
         categorical_weight = self.categorical_weight
-        if categorical_weight is None:
+        if categorical_weight is None or categorical_weight < 0:
             categorical_weight = 0.5 * dataset_num.std()
         initial_centroids_num = np.zeros((self.cluster_number, dataset_num.shape[1]))
         initial_centroids_cat = np.zeros((self.cluster_number, dataset_cat.shape[1]))
@@ -104,9 +79,9 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         initial_centroids_num[0], initial_centroids_cat[0] = dataset_num[rand_index], dataset_cat[rand_index]
 
         for i in range(1, self.cluster_number):
-            distances_num_cat = [np.zeros((i, dataset.shape[0])), np.zeros((i, dataset.shape[0]))]
+            distances_num_cat = [np.zeros((i, dataset.shape[0]), dtype=np.float64), np.zeros((i, dataset.shape[0]))]
             for j in range(0, i):
-                distances_num_cat[0][j] = euclidean(dataset_num, initial_centroids_num[j])
+                distances_num_cat[0][j] = dissimilarity_python.euclidean(dataset_num, initial_centroids_num[j])
                 distances_num_cat[1][j] = matching_dissim(dataset_cat, initial_centroids_cat[j])
             distances = np.amin(distances_num_cat[0] + categorical_weight * distances_num_cat[1], axis=0)
             probabilities = distances / np.sum(distances)
@@ -130,13 +105,14 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
     # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
     def process_data(self, dataset):
-        categorical_indices = self._get_categorical_indices(dataset)
+        categorical_indices = get_categorical_indices(dataset)
         if not categorical_indices:
             return self._fallback_algorithm(dataset)
-        dataset = self._encode_nominal_parameters(dataset)
+        dataset = encode_nominal_parameters(dataset)
+        dataset = normalized_dataset(dataset, categorical_indices)
 
         initial_centers = self._get_initial_centers(dataset, categorical_indices)
-        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=euclidean, n_jobs=1)
+        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=dissimilarity_python.euclidean, n_jobs=1)
         dataset = dataset.values
         self.model.fit(dataset, categorical=categorical_indices)
         self.results = self.model.predict(dataset, categorical=categorical_indices)
@@ -148,7 +124,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         return self.results
 
     def predict(self, dataset):
-        categorical_indices = self._get_categorical_indices(dataset)
+        categorical_indices = get_categorical_indices(dataset)
         dataset = dataset.values
         return self.model.predict(dataset, categorical=categorical_indices)
 
