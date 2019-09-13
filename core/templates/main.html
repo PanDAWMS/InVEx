@@ -2,11 +2,18 @@
 {% load staticfiles %}
 
 {% block extra_css %}
-    <!-- for minified version add this -->
-    <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/scroller/2.0.0/css/scroller.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.foundation.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.1.5/css/fixedHeader.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.5.1/css/colReorder.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/css/select2.min.css" />
+
+    <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
+    <link rel="stylesheet" href="{% static "css/ParallelCoordinates.css" %}">
 {% endblock %}
 
 {% block body %}
@@ -31,30 +38,41 @@
     </div>
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+<script src="https://cdn.datatables.net/fixedheader/3.1.5/js/dataTables.fixedHeader.min.js"></script>
+<script src="https://cdn.datatables.net/colreorder/1.5.1/js/dataTables.colReorder.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+<script src="https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
+<script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js),datatables.mark.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/js/select2.full.js"></script>
+
+<script src="{% static "js/foundation/vendor/foundation.min.js" %}"></script>
+<script src="{% static "js/dat.gui.min.js" %}"></script>
+<script src="{% static "js/plotly-1.47.4.min.js" %}"></script>
+<script src="{% static "js/spectrum.js" %}"></script>
 <script src="{% static "js/three.js" %}"></script>
+
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/controls/DragControls.js" %}"></script>
+
 <script src="{% static "js/VAP/sup_func.js" %}"></script>
 <script src="{% static "js/VAP/cookies.js" %}"></script>
 <script src="{% static "js/VAP/main.js" %}"></script>
 <script src="{% static "js/VAP/datavisualization.js" %}"></script>
+<script src="{% static "js/VAP/ParallelCoordinates.js" %}"></script>
 <script src="{% static "js/VAP/statCharts.js" %}"></script>
-<script src="{% static "js/dat.gui.min.js" %}"></script>
 <script src="{% static "js/VAP/correlation_matrix.js" %}"></script>
-<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
-<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
-<script src="{% static 'js/foundation/vendor/foundation.min.js' %}"></script>
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
-{#<script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>#}
-<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
-<script src='https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js'></script>
-<script src="{% static "js/spectrum.js" %}"></script>
-<script src="{% static "js/plotly-1.47.4.min.js" %}"></script>
 <script src="{% static "js/VAP/dataset_stat.js" %}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
+
 <script>
     var preview_url = "{{ PREVIEW_URL }}";
     var next_group_url = "{{ NEXT_GROUP_URL|safe }}";
@@ -117,13 +135,31 @@
                 var new_dataArray = fix_array(dataArray);
                 scene.setDataArray(new_dataArray);
             {% endif %}
+            
+            {% if visualparameters %}
+                scene.loadVisualParameters({{ visualparameters|safe }});
+            {% endif %}
+
+            {% if aux_dataset %}
+                var auxData = {{ aux_dataset|safe }};
+                var new_auxData = fix_array(auxData);
+                scene.setAuxiliaryData(new_auxData);
+                var auxNames = {{ aux_names|safe }};
+                scene.setAuxiliaryColumns(auxNames);
+            {% endif %}
 
             {% if real_dataset %}
                 var realData = {{ real_dataset|safe }};
                 var new_realData = fix_array(realData);
                 scene.setRealData(new_realData);
-                {% if data_is_ready %}
-                    printDataset(document.getElementById("print"), [index].concat(dimNames), new_realData, 10);
+            {% if data_is_ready %} 
+                scene._coord = new ParallelCoordinates("ParallelCoordinatesGraph",
+                    scene.dimNames,
+                    scene.realData,
+                    [],
+                    [],
+                    scene.auxNames,
+                    scene.auxData);
                 {% endif %}
             {% endif %}
 
@@ -249,18 +285,6 @@
                 });
             {% endif %}
 
-            {% if visualparameters %}
-                scene.loadVisualParameters({{ visualparameters|safe }});
-            {% endif %}
-
-            {% if aux_dataset %}
-                var auxData = {{ aux_dataset|safe }};
-                var new_auxData = fix_array(auxData);
-                scene.setAuxiliaryData(new_auxData);
-                var auxNames = {{ aux_names|safe }};
-                scene.setAuxiliaryColumns(auxNames);
-            {% endif %}
-
             var lodData = [];
             {% if lod_data %}
                 lodData = {{ lod_data|safe }};
@@ -273,10 +297,25 @@
             {% else %}
                 scene.setClusters([0]);
             {% endif %}
+
             scene.clusters_color_scheme = scene.createColorScheme();
+
             {% if cluster_ready %}
-               cluster_selector(scene.clusters_color_scheme, "cluster_stat");
-               drawParallelCoordinates("radar_chart_all", scene.realData, scene.clusters, scene.clusters_color_scheme, scene.dimNames);
+                scene._coord.updateData("ParallelCoordinatesGraph",
+                    scene.dimNames,
+                    scene.realData,
+                    scene.clusters,
+                    scene.clusters_color_scheme,
+                    scene.auxNames,
+                    scene.auxData,
+                    {
+                        draw: {
+                            framework: "d3",
+                            mode: "cluster" 
+                        }
+                    });
+                
+                cluster_selector(scene.clusters_color_scheme, "print", "cluster_stat");
             {% endif %}
 
             {% if norm_dataset %}

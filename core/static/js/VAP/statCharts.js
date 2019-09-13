@@ -94,65 +94,16 @@ function drawMultipleClusterRadarChart(element_id, norm_data, real_data, cluster
     Plotly.plot(element_id, data, layout);
 }
 
-function drawParallelCoordinates(element_id, real_data, clusters_list, clusters_color_scheme, dimNames) {
-    var _dimensions = dimNames.map((dim, index) => {
-        var _values = real_data.map((row) => { return row[1][index]; });
-
-        return {
-            label: dim,
-            range: [Math.min(..._values), Math.max(..._values)],
-            values: _values
-        };
-    }),
-
-    color_max = Math.max(...Object.keys(clusters_color_scheme)),
-    color_min = Math.min(...Object.keys(clusters_color_scheme)),
-    zero_color = rgbToHex(clusters_color_scheme[color_min]),
-
-    _colorscale = ((Object.keys(clusters_color_scheme).length === 1) ?
-        [["0.0", zero_color], ["1.0", zero_color]] :
-        Object.keys(clusters_color_scheme).
-            map((x) => {
-                return [(x - color_min) / (color_max - color_min),
-                    rgbToHex(clusters_color_scheme[x])];
-            })),
-
-    _color = clusters_list.map((x) => { return x; }),
-
-    data = [{
-        type: 'parcoords',
-        line: {
-            showscale: true,
-            colorscale: _colorscale,
-            color: _color
-        },
-
-        dimensions: _dimensions
-    }],
-
-    layout = {
-        width: 80 * dimNames.length,
-        height: 500,
-        annotations: {
-            visible: false
-        }
-    },
-
-    config = {
-        toImageButtonOptions: {
-            format: 'png', // one of png, svg, jpeg, webp
-            filename: 'parallel_coordinates',
-            scale: 1 // Multiply title/legend/axis/canvas sizes by this factor
-        }
-    };
-    
-    Plotly.newPlot(element_id, data, layout, config);
-
-    d3.select("#" + element_id)
-        .style("overflow", "auto");
-
-    d3.selectAll("#" + element_id + " .axis-title")
-        .style("transform", "translate(0, -28px) rotate(-9deg)");
+// This function draws the Parallel Coordinates graph
+// --------------
+// Inputs:
+//  element_id - id of DOM element where to put ParCoords
+//  scene - object with the scene to take data from
+//  options - ParCoords display options
+//
+function drawParallelCoordinates(element_id, scene, options = {})
+{
+    this._coord = new ParallelCoordinates(element_id, scene, options);
 }
 
 function drawSingleClusterRadarCharts(element_id, norm_data, real_data, clusters_list, clusters_color_scheme, dimNames) {

@@ -625,10 +625,10 @@ class DatasetStats {
             button_submit.onclick = function (e) {
                 var form = document.createElement("form");
                 form.setAttribute("method", "post");
-                if (typeof(preview_url) !== "undefined")
-                    form.setAttribute("action", "");
+                if (typeof (preview_url) !== "undefined")
+                    form.setAttribute("action", "#print");
                 else
-                    form.setAttribute("action", preview_url);
+                    form.setAttribute("action", preview_url + "#print");
                 form.style.display = "hidden";
 
                 var action = document.createElement("input");
