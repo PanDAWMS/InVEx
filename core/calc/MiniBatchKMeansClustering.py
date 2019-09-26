@@ -5,6 +5,7 @@ import pickle
 
 CLUST_NUM = 5
 BATCH_SIZE = 200
+CLUST_ARRAY = []
 
 
 class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
@@ -17,29 +18,38 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         super().__init__()
         self.clust_numbers = CLUST_NUM
         self.batch_size = BATCH_SIZE
+        self.clust_array = CLUST_ARRAY
         self.model = None
         self.results = None
         self.cent = None
 
-    def set_parameters(self, clust_numbers, batch_size):
+    def set_parameters(self, clust_numbers, batch_size, clust_array):
         if clust_numbers is not None:
             self.clust_numbers = clust_numbers
         if batch_size is not None:
             self.batch_size = batch_size
+        if clust_array is not None:
+            self.clust_array = clust_array
         return True
 
     def save_parameters(self):
-        return {'cluster_number': self.clust_numbers, 'batch_size': self.batch_size}
+        return {'cluster_number': self.clust_numbers, 'batch_size': self.batch_size, 'clust_array': self.clust_array}
 
     def load_parameters(self, parameters):
         if parameters.get("cluster_number") is not None:
             self.clust_numbers = parameters["cluster_number"]
         else:
             self.clust_numbers = CLUST_NUM
+
         if parameters.get("batch_size") is not None:
             self.batch_size = parameters["batch_size"]
         else:
             self.batch_size = BATCH_SIZE
+
+        if parameters.get("clust_array") is not None:
+            self.clust_array = parameters["clust_array"]
+        else:
+            self.clust_array = CLUST_ARRAY
         return True
 
     def save_results(self):
@@ -55,21 +65,24 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {'cluster_number': self.clust_numbers, 'batch_size': self.batch_size}
+        result = {'cluster_number': self.clust_numbers, 'batch_size': self.batch_size, 'clust_array': self.clust_array}
         return result
 
     def process_data(self, dataset):
         # I'm using normalised center change instead of mini batches not yielding improvement
         # as an early stopping heuristics for the results to be closer to original K-Means.
         # It includes a slight overhead though, so it should be reverted if perfomance is a priority.
+        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
+
         self.model = MiniBatchKMeans(n_clusters=self.clust_numbers, batch_size=self.batch_size, tol=1e-5, max_no_improvement=None)
-        self.model.fit(dataset)
-        self.results = self.model.predict(dataset)
+        self.model.fit(dataset_cut)
+        self.results = self.model.predict(dataset_cut)
         self.cent = self.model.cluster_centers_
         return self.results
 
     def predict(self, dataset):
-        return self.model.predict(dataset)
+        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
+        return self.model.predict(dataset_cut)
 
 
 try:
