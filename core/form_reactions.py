@@ -406,7 +406,8 @@ def clusterize(request, dataset_id, group_ids=None):
 
             operation = calc.HierarchicalClustering.HierarchicalClustering()
             operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['categorical_data_weight']))
+                                     int(request.POST['categorical_data_weight']),
+                                     clusters_list)
             mode = 'all'
 
         elif (request.POST['algorithm'] == 'DBSCAN' and \
@@ -414,7 +415,8 @@ def clusterize(request, dataset_id, group_ids=None):
 
             operation = calc.DBScanClustering.DBScanClustering()
             operation.set_parameters(int(request.POST['min_samples']),
-                                     float(request.POST['eps']))
+                                     float(request.POST['eps']),
+                                     clusters_list)
 
             mode = 'numeric'
 
