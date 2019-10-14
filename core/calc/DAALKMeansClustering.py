@@ -1,33 +1,30 @@
+"""
+Clustering class to support Intel® Data Analytics Acceleration Library.
+"""
 
 import numpy as np
-import pickle
 
-from sklearn.cluster import MiniBatchKMeans
+try:
+    import daal4py as d4p
+except ImportError as e:
+    d4p = None
 
 from . import baseoperationclass
 
 NUM_CLUSTERS_DEFAULT = 5
-BATCH_SIZE_DEFAULT = 200
-EXTRA_PARAMS_DEFAULT = {
-    'random_state': 0,
-    'max_iter': 10,
-    'init_size': 3000,
-    # 'tol': 1e-5,
-    # 'max_no_improvement': None
-}
+NUM_ITERATIONS_DEFAULT = 5
 
 
-class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
+class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
 
-    _operation_name = 'MiniBatch K-Means Clustering'
-    _operation_code_name = 'MiniBatchKMeans'
+    _operation_name = 'Intel DAAL K-Means Clustering'
+    _operation_code_name = 'DAALKMeans'
     _type_of_operation = 'cluster'
 
     def __init__(self):
         super().__init__()
         self.num_clusters = NUM_CLUSTERS_DEFAULT
         self.selected_features = []
-        self.batch_size = BATCH_SIZE_DEFAULT
         self.model = None
         self.centers = None
         self.labels = None
@@ -36,34 +33,34 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         return data if not self.selected_features \
             else data.loc[:, self.selected_features]
 
-    def set_parameters(self, num_clusters, features=None, batch_size=None):
+    def set_parameters(self, num_clusters, features=None):
         if num_clusters is not None:
             self.num_clusters = num_clusters
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
-        if batch_size is not None:
-            self.batch_size = batch_size
         return True  # TODO: "return"-statement should be removed
 
     def get_parameters(self):
-        return {'numclustersMiniBatchKMeans': self.num_clusters,
-                'featuresMiniBatchKMeans': self.selected_features,
-                'batchsizeMiniBatchKMeans': self.batch_size}
+        return {'numclustersDAALKMeans': self.num_clusters,
+                'featuresDAALKMeans': self.selected_features}
 
     def get_labels(self, data, reprocess=False):
         data = self._preprocessed_data(data)
 
         if self.model is None or reprocess:
-            self.model = MiniBatchKMeans(
-                n_clusters=self.num_clusters,
-                batch_size=self.batch_size,
-                **EXTRA_PARAMS_DEFAULT)
+            self.model = d4p.\
+                kmeans(nClusters=self.num_clusters,
+                       maxIterations=NUM_ITERATIONS_DEFAULT,
+                       assignFlag=True)
 
-            self.labels = self.model.fit_predict(data)
-            self.centers = self.model.cluster_centers_
-        else:
-            self.labels = self.model.predict(data)
+        if self.centers is None or reprocess:
+            self.centers = d4p.\
+                kmeans_init(nClusters=self.num_clusters, method='randomDense').\
+                compute(data).\
+                centroids
 
+        _labels = self.model.compute(data, self.centers).assignments
+        self.labels = np.reshape(_labels, len(_labels))
         return self.labels
 
 # methods that should be re-worked or removed
@@ -78,24 +75,20 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
     def load_parameters(self, parameters):
         self.set_parameters(
             num_clusters=parameters.
-            get('numclustersMiniBatchKMeans') or NUM_CLUSTERS_DEFAULT,
-            features=parameters.get('featuresMiniBatchKMeans') or [],
-            batch_size=parameters.get('batchsizeMiniBatchKMeans' or
-                                      BATCH_SIZE_DEFAULT))
+            get('numclustersDAALKMeans') or NUM_CLUSTERS_DEFAULT,
+            features=parameters.get('featuresDAALKMeans') or [])
         return True
 
     def save_results(self):
         return {'results': self.labels.tolist(),
                 'cent': self.centers.tolist(),
-                'dump': pickle.dumps(self.model).hex()}
+                'dump': None}
 
     def load_results(self, results_dict):
         if results_dict.get('results'):
             self.labels = np.array(results_dict['results'])
         if results_dict.get('cent'):
             self.centers = np.array(results_dict['cent'])
-        if results_dict.get('dump'):
-            self.model = pickle.loads(bytes.fromhex(results_dict['dump']))
         return True
 
     def process_data(self, data):
@@ -106,6 +99,6 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
 
 try:
-    baseoperationclass.register(MiniBatchKMeansClustering)
-except ValueError as error:
-    print(repr(error))
+    baseoperationclass.register(DAALKMeansClustering)
+except ValueError as e:
+    print(repr(e))
