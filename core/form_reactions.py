@@ -369,7 +369,7 @@ def clusterize(request, dataset_id, group_ids=None):
     operation = None
     mode = None
     if 'algorithm' in request.POST:
-        if (request.POST['algorithm'] == 'KMeans' and \
+        if (request.POST['algorithm'] == 'KMeans' and
                 'numberofclKMeans' in request.POST):
 
             clusters_list = [] if request.POST['clustering_list_json'] == '' \
@@ -380,17 +380,29 @@ def clusterize(request, dataset_id, group_ids=None):
                                      clusters_list)
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and \
-                'cluster_number' in request.POST and 'batch_size' in request.POST):
+        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
+                'cluster_number' in request.POST and
+                'batch_size' in request.POST):
 
             operation = calc.MiniBatchKMeansClustering.\
                 MiniBatchKMeansClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['batch_size']))
+            operation.set_parameters(
+                num_clusters=int(request.POST['numclustersMiniBatchKMeans']),
+                batch_size=int(request.POST['batchsizeMiniBatchKMeans']))
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'KPrototypes' and \
-                'cluster_number' in request.POST and \
+        elif (request.POST['algorithm'] == 'DAALKMeans' and
+                'numclustersDAALKMeans' in request.POST):
+
+            operation = calc.DAALKMeansClustering.DAALKMeansClustering()
+            operation.set_parameters(
+                num_clusters=int(request.POST['numclustersDAALKMeans']),
+                features=[] if request.POST['clustering_list_json'] == ''
+                else json.loads(request.POST['clustering_list_json']))
+            mode = 'numeric'
+
+        elif (request.POST['algorithm'] == 'KPrototypes' and
+                'cluster_number' in request.POST and
                 'categorical_data_weight' in request.POST):
 
             operation = calc.KPrototypesClustering.KPrototypesClustering()
@@ -398,8 +410,8 @@ def clusterize(request, dataset_id, group_ids=None):
                                      int(request.POST['categorical_data_weight']))
             mode = 'all'
 
-        elif (request.POST['algorithm'] == 'Hierarchical' and \
-                'cluster_number' in request.POST and \
+        elif (request.POST['algorithm'] == 'Hierarchical' and
+                'cluster_number' in request.POST and
                 'categorical_data_weight' in request.POST):
 
             operation = calc.HierarchicalClustering.HierarchicalClustering()
@@ -407,7 +419,7 @@ def clusterize(request, dataset_id, group_ids=None):
                                      int(request.POST['categorical_data_weight']))
             mode = 'all'
 
-        elif (request.POST['algorithm'] == 'DBSCAN' and \
+        elif (request.POST['algorithm'] == 'DBSCAN' and
                 'min_samples' in request.POST and 'eps' in request.POST):
 
             operation = calc.DBScanClustering.DBScanClustering()
@@ -416,7 +428,7 @@ def clusterize(request, dataset_id, group_ids=None):
 
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'GroupData' and \
+        elif (request.POST['algorithm'] == 'GroupData' and
                 'feature_name' in request.POST):
 
             operation = calc.GroupData.GroupData()
