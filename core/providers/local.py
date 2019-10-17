@@ -1,10 +1,11 @@
 """
 Module with class to work with local data sources.
 """
-
+import h5py
 import json
 import os
 
+import numpy as np
 import pandas as pd
 
 from ._basereader import BaseReader
@@ -12,7 +13,7 @@ from ._basereader import BaseReader
 
 class LocalReader(BaseReader):
 
-    SOURCE_FILE_FORMATS = ['csv', 'json']
+    SOURCE_FILE_FORMATS = ['csv', 'json', 'hdf']
 
     def read_df(self, file_path, file_format=None, **kwargs):
         """
@@ -48,6 +49,8 @@ class LocalReader(BaseReader):
             data = self._from_csv(file_path=file_path, **kwargs)
         elif file_format == 'json':
             data = self._from_json(file_path=file_path, **kwargs)
+        elif file_format == 'hdf':
+            data = self._from_hdf(file_path=file_path, **kwargs)
 
         # check the consistency of data
         # self._check_data_format(data=data)
@@ -72,7 +75,31 @@ class LocalReader(BaseReader):
         :return: Data for analysis.
         :rtype: DataFrame
         """
+
         return pd.read_csv(file_path, **kwargs)
+
+    def _from_hdf(self, file_path, **kwargs):
+        """
+        Read data of DataFrame format from hdf-file.
+
+        :param file_path: Full file path.
+        :type file_path: str
+        :param kwargs: Additional parameters.
+        :type kwargs: dict
+
+        :return: Data for analysis.
+        :rtype: DataFrame
+        """
+        # TODO it should be redesigned
+
+        output = ""
+        # with h5py.File(file_path, 'r') as f:
+        #     np_array = np.load(file_path)
+        #
+        #     output = pd.DataFrame(np_array[0].tolist(), index=None, columns=np_array.dtype.names)
+        #     output = output.set_index('pandaid')
+
+        return output
 
     def _from_json(self, file_path, **kwargs):
         """

@@ -8,6 +8,7 @@ import logging
 import os
 import h5py
 
+import numpy as np
 import pandas as pd
 
 from ...providers import LocalReader
@@ -20,8 +21,9 @@ from ..operationshistory import OperationHistory
 from ._base import BaseDataHandler
 from .groupeddata import GroupedDataHandler
 
+from datetime import datetime, timedelta
 
-FILE_EXTENSION_DEFAULT = 'csv'
+FILE_EXTENSION_DEFAULT = 'hdf'
 HISTORY_FILE_EXTENSION = 'history'
 
 local_reader = LocalReader()
@@ -120,10 +122,10 @@ class DatasetHandler(BaseDataHandler):
             if kwargs.get('usecols'):
                 kwargs['usecols'].insert(0, local_reader.read_df(
                     file_path=full_file_name,
-                    file_format='csv',
+                    file_format='hdf',
                     **{'nrows': 1}).columns.tolist()[0])
             output = local_reader.read_df(file_path=full_file_name,
-                                          file_format='csv',
+                                          file_format='hdf',
                                           **{'index_col': 0,
                                              'header': 0,
                                              'usecols': kwargs.get('usecols')})
@@ -256,12 +258,34 @@ class DatasetHandler(BaseDataHandler):
         self._remove_file(file_name=file_name)
         try:
             with h5py.File(file_name, 'w') as f:
-                f.create_dataset("origin", data=self._origin.to_json(orient='table'))
-                f.create_dataset("normalized", data=self._normalized.to_json(orient='table'))
-                f.create_dataset("auxiliary", data=self._auxiliary.to_json(orient='table'))
-                f.create_dataset("features", data=json.dumps(self._property_set['features']))
-                f.create_dataset("lod", data=json.dumps(self._property_set['lod']))
-                f.create_dataset("operations", data=self.operation_history.save_to_json())
+                base_group = f.create_group("base_group")
+
+                #base_group
+                base_group.attrs["user"] = ''
+                base_group.attrs["date"] = str(datetime.utcnow())
+                base_group.create_dataset("origin", data=self._origin.to_json(orient='table')) #
+                # statistics     def _get_dataset_features_description(df): list of dict
+
+                #modified_n
+                modified_n = base_group.create_group("modified_n")
+
+                modified_n.attrs["date"] = str(datetime.utcnow())
+                modified_n.attrs["selected_features"] = ''
+
+                modified_n.create_dataset("normalized", data=self._normalized.to_json(orient='table'))
+                modified_n.create_dataset("auxiliary", data=self._auxiliary.to_json(orient='table'))
+                modified_n.create_dataset("lod", data=json.dumps(self._property_set['lod']))
+                # statistics  class BasicStatistics(baseoperationclass.BaseOperationClass):
+                #operation_n.m
+                operation_n_m = modified_n.create_group("operation_n.m")
+
+                modified_n.attrs["name"] = ''
+                modified_n.attrs["number_of_groups"] = ''
+                modified_n.attrs["selected_features"] = ''
+                modified_n.attrs["settings"] = 'json'
+
+                operation_n_m.create_dataset("operations", data=self.operation_history.save_to_json())
+                operation_n_m.create_dataset("features", data=json.dumps(self._property_set['features']))
 
         except Exception as e:
             logger.error('[DatasetHandler._save_history_data] '

@@ -6,6 +6,9 @@ import io
 import json
 import logging
 import os.path
+import h5py
+
+import numpy as np
 
 import pandas as pd
 
@@ -21,6 +24,7 @@ from .calc.handlers import DatasetHandler, ViewDataHandler
 from .calc.handlers.viewdata import list_csv_data_files, DATASET_FILES_PATH
 from .providers import LocalReader
 
+FILE_EXTENSION_DEFAULT = 'hdf'
 SITE_SITE_DATASET_FILES_PATH = BASE_DIR + '/site_site_datasets/'
 
 logger = logging.getLogger(__name__)
@@ -65,7 +69,7 @@ def _process_input_data(source_type, source_data, **kwargs):
 
     output = str(datetime.now().timestamp())
     dataset_path = os.path.join(create_dataset_storage(output),
-                                '{}.csv'.format(output))
+                                '{0}.{1}'.format(output, FILE_EXTENSION_DEFAULT))
     try:
         if source_type == 'file':
             with open(dataset_path, 'wb+') as f:
@@ -73,7 +77,15 @@ def _process_input_data(source_type, source_data, **kwargs):
                     f.write(chunk)
 
         elif source_type == 'dataframe':
-            source_data.to_csv(dataset_path)
+
+            data = np.array(source_data.to_records().view(type=np.matrix))
+            with h5py.File(dataset_path, 'w') as f:
+                base_group = f.create_group("base_group")
+
+                base_group.attrs["user"] = ''
+                base_group.attrs["date"] = str(datetime.utcnow())
+                base_group.create_dataset("origin", data=data)#It does not work:  TypeError: Object dtype dtype('O') has no native HDF5 equivalent
+
 
         elif source_type == 'json' and 'index_name' in kwargs:
             df = pd.read_json(json.dumps(source_data))
@@ -84,7 +96,6 @@ def _process_input_data(source_type, source_data, **kwargs):
                      format(err_msg_subj, e))
 
     return output
-
 
 def set_csv_file_from_server(request):
     """
