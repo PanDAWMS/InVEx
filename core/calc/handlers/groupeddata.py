@@ -1,7 +1,9 @@
 """
 Class GroupedDataHandler provides methods to deal with grouped data.
 """
-import h5py
+
+# import h5py  # use original implementation for groups
+# (will be merged with hdf5 storage later)
 import linecache
 import os
 
@@ -39,13 +41,10 @@ class GroupedDataHandler(BaseDataHandler):
         :return: Full file name.
         :rtype: str
         """
-        group_ids = group_ids or []
+        gr_extension = ''.join(['.group{}'.format(i) for i in group_ids or []])
         return os.path.join(
-            self._get_full_dir_name(),
-            '{}{}.{}'.format(
-                self._did,
-                ''.join(['.group{}'.format(i) for i in group_ids]),
-                FILE_EXTENSION_DEFAULT))
+            self._get_private_storage_dir_name(),
+            f'{self._did}{gr_extension}.{FILE_EXTENSION_DEFAULT}')
 
     def set_file_name(self, group_ids):
         """
@@ -74,13 +73,15 @@ class GroupedDataHandler(BaseDataHandler):
 
         if save_to_file:
             self._remove_file(file_name=self._file_name)
-            with h5py.File(self._file_name, 'w') as f:
-                for group in self._groups:
-                    f.create_dataset('groups', data=group.to_json(orient='table'),
-                                 compression="gzip", compression_opts=9)
-            # with open(self._file_name, 'w') as f:
+            # with h5py.File(self._file_name, 'w') as f:
             #     for group in self._groups:
-            #         f.write('{}\n'.format(group.to_json(orient='table')))
+            #         f.create_dataset(name='groups',
+            #                          data=group.to_json(orient='table'),
+            #                          compression='gzip',
+            #                          compression_opts=9)
+            with open(self._file_name, 'w') as f:
+                for group in self._groups:
+                    f.write('{}\n'.format(group.to_json(orient='table')))
 
     # TODO: Check the correctness of group_id and corresponding extracted data.
     def get_group(self, group_id):

@@ -22,11 +22,22 @@ class BaseDataHandler:
         """
         self._did = str(did) or ''
 
-    def _get_full_dir_name(self):
+    @staticmethod
+    def _get_storage_dir_name():
         """
-        Form full directory name with dataset sample related data.
+        Form full directory name with dataset samples.
 
-        :return: Full file name/path.
+        :return: Full directory name.
+        :rtype: str
+        """
+        return settings.MEDIA_ROOT
+
+    def _get_private_storage_dir_name(self):  # TODO: scheduled to be deleted.
+        """
+        Form full directory name with dataset sample related data
+        (per dataset sample for groups related data).
+
+        :return: Full directory name.
         :rtype: str
         """
         return os.path.join(settings.MEDIA_ROOT, '{}'.format(self._did))
