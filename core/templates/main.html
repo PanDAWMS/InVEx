@@ -189,7 +189,7 @@
                         ['MiniBatchKMeans',
                             'MiniBatchKMeans',
                             {
-                                'name': 'cluster_number',
+                                'name': 'numclustersMiniBatchKMeans',
                                 'label': 'Number of clusters',
                                 'type': 'integer',
                                 'attributes': [['placeholder', '5']],
@@ -198,13 +198,24 @@
                                 'max': 40
                             },
                             {
-                                'name': 'batch_size',
+                                'name': 'batchsizeMiniBatchKMeans',
                                 'label': 'Number of samples in minibatch',
                                 'type': 'integer',
                                 'attributes': [['placeholder', '100']],
                                 'defvalue': '100',
                                 'min': 5,
                                 'max': 99999
+                            }],
+                        ['DAALKMeans',
+                            'DAALKMeans',
+                            {
+                                'name': 'numclustersDAALKMeans',
+                                'label': 'Number of clusters',
+                                'type': 'integer',
+                                'attributes': [['placeholder', '5']],
+                                'defvalue': '5',
+                                'min': 1,
+                                'max': 100
                             }],
                         ['KPrototypes',
                             'KPrototypes',

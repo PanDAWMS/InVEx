@@ -1,19 +1,20 @@
+
 from math import log1p
 
-from sklearn.cluster import MiniBatchKMeans
 import pandas as pd
 
-from .KPrototypesClustering import KPrototypesClustering
+from . import (
+    DAALKMeansClustering,
+    KPrototypesClustering,
+    MiniBatchKMeansClustering)
 
-
-MINIBATCH_PARAMS_DEFAULT = {
-    'random_state': 0,
-    'batch_size': 6,
-    'max_iter': 10,
-    'init_size': 3000
-}
 MODE_DEFAULT = 'minibatch'
 NUM_GROUPS_DEFAULT = 100
+CLUSTERING_BY_MODE = {
+    'minibatch': MiniBatchKMeansClustering.MiniBatchKMeansClustering,
+    'kprototypes': KPrototypesClustering.KPrototypesClustering,
+    'daal': DAALKMeansClustering.DAALKMeansClustering
+}
 
 
 class LoDGenerator:
@@ -23,24 +24,25 @@ class LoDGenerator:
     [large] data sample (default grouping mode is k-means clustering).
     """
 
-    def __init__(self, dataset, mode=MODE_DEFAULT, num_groups=None, features=None, **kwargs):
+    def __init__(self, dataset, mode=None, num_groups=None, features=None):
         """
         Initialization.
 
-        :param dataset: Input data sample
+        :param dataset: Input data sample.
         :type dataset: pandas.DataFrame
+        :param mode: Mode of grouping (default: minibatch).
+        :type mode: str/None
         :param num_groups: Level of Detail value.
         :type num_groups: int/None
         :param features: List of features used for grouping.
         :type features: list/None
-
-        :keyword mode: Mode of grouping (default: minibatch).
         """
         self.dataset = dataset.copy()
         self.num_initial_elements = self.dataset.shape[0]
         self.grouped_dataset = None
+        self.grouping_key = 'group_id'
 
-        self._init_metadata = {'mode': mode,
+        self._init_metadata = {'mode': mode or MODE_DEFAULT,
                                'value': num_groups or NUM_GROUPS_DEFAULT,
                                'features': features}
         self._groups_metadata = []
@@ -58,92 +60,78 @@ class LoDGenerator:
         num_groups = kwargs.get('num_groups', self._init_metadata['value'])
         features = kwargs.get('features', self._init_metadata['features'])
 
-        if mode == 'minibatch':
-            group_labels = self._get_labels_kmeans_clustering(
-                n_clusters=num_groups,
-                features=features)
-            self.group_features = '_cluster_number'
-            self.dataset[self.group_features] = group_labels
-            self.dataset.set_index(self.group_features)
+        if mode in CLUSTERING_BY_MODE:
+            self.grouping_key = '_cluster_id'
+
+            clustering_ = CLUSTERING_BY_MODE[mode]()
+            clustering_.set_parameters(num_groups)
+            self.dataset[self.grouping_key] = clustering_.process_data(
+                self.dataset if not features
+                else self.dataset.loc[:, features])
+
+            if mode != 'kprototypes':
+                self.dataset.set_index(self.grouping_key)
+
             self.grouped_dataset = self._get_groups_mean()
-            self._update_groups_metadata()
-        elif mode == 'kprototypes':
-            group_labels = self._get_labels_kprototypes_clustering(
-                n_clusters=num_groups,
-                categorical_weight=None,
-                features=features)
-            self.group_features = '_cluster_number'
-            self.dataset[self.group_features] = group_labels
-            self.grouped_dataset = self._get_groups_mean()
-            self._update_groups_metadata()
+            self._update_groups_metadata(
+                groups=self.dataset.groupby(self.grouping_key))
+
         elif mode == 'param_categorical':
-            self.group_features = features
+            self.grouping_key = features
             self.grouped_dataset = self._get_groups_mean()
-            self._update_groups_metadata()
+            self._update_groups_metadata(
+                groups=self.dataset.groupby(self.grouping_key))
+
         elif mode == 'param_num_continuous':
-            curr_variable = self.dataset[features[0]].max()
-            intervals = self.set_intervals(curr_variable)
-            group_number = -1
-            self.group_features = str(features[0]) + '_intervals'
-
-            if self._groups_metadata:
-                del self._groups_metadata[:]
-
+            selected_feature = features[0]
+            self.grouping_key = f'{selected_feature}_intervals'
             self.grouped_dataset = pd.DataFrame()
 
-            for i in intervals:
-                group_number += 1
-                group = self.dataset[((self.dataset[features[0]] >= i[0]) & (self.dataset[features[0]] < i[1]))]
-                group_meta = {}
-                group_meta['group_name'] = str(round(i[0], 2)) + '-' + str(round(i[1], 2))
-                group_meta['group_number'] = group_number
-                group_meta['group_indexes'] = group.index.tolist()
-                group_meta['group_length'] = len(group)
-                group_meta['group_koeff'] = log1p(len(group) * 100 / self.num_initial_elements)
-                self._groups_metadata.append(group_meta)
+            groups = []
+            for i in self.get_intervals(self.dataset[selected_feature].max()):
+                group = self.dataset[((self.dataset[selected_feature] >= i[0]) &
+                                      (self.dataset[selected_feature] < i[1]))]
+                name = f'{i[0]}-{i[1]}'
                 group_mean = self.f(group)
-                group_mean[self.group_features] = group_meta['group_name']
-                self.grouped_dataset = self.grouped_dataset.append(group_mean, ignore_index=True)
-            self.grouped_dataset.set_index(self.group_features, inplace=True)
+                group_mean[self.grouping_key] = name
+                self.grouped_dataset = self.grouped_dataset.append(
+                    group_mean, ignore_index=True)
+
+                groups.append((name, group))
+
+            self.grouped_dataset.set_index(self.grouping_key, inplace=True)
+            self._update_groups_metadata(groups=groups)
+
         else:
             raise NotImplementedError
 
-    def set_intervals(self, number):
-        part = number / self._init_metadata['value']
-        return [(i * part, (i + 1) * part) for i in range(self._init_metadata['value'])]
-
-    def _get_labels_kmeans_clustering(self, n_clusters, features=None):
-        data = self.dataset if not features else self.dataset.loc[:, features]
-        return MiniBatchKMeans(n_clusters=n_clusters,
-                               **MINIBATCH_PARAMS_DEFAULT).fit_predict(data)
-
-    def _get_labels_kprototypes_clustering(self, n_clusters, categorical_weight=None, features=None):
-        data = self.dataset if not features else self.dataset.filter(items=features)
-        algorithm = KPrototypesClustering()
-        algorithm.set_parameters(n_clusters, categorical_weight)
-        return algorithm.process_data(data)
+    def get_intervals(self, max_value):
+        dur_ = max_value / self._init_metadata['value']
+        return [(i * dur_, (i + 1) * dur_)
+                for i in range(self._init_metadata['value'])]  # TODO: Re-work
 
     def f(self, data):
         columns_dict = {}
         for i in data.columns:
-            if (data[i].dtype.name in ['int64', 'float64', 'int32', 'float32', 'int', 'float']):
+            if (data[i].dtype.name in
+                    ['int64', 'float64', 'int32', 'float32', 'int', 'float']):
                 columns_dict[i] = data[i].mean()
             else:
-                unique_values = data[i].unique()
-                columns_dict[i] = "%s" % ', '.join(unique_values)
+                columns_dict[i] = ', '.join(data[i].unique())
         return pd.Series(dict(columns_dict))
 
     def _get_groups_mean(self):
-        result = self.dataset.groupby(self.group_features).apply(self.f)
-        # We cannot drop self.group_features if we group by it, cause in that case it serves as an index
+        result = self.dataset.groupby(self.grouping_key).apply(self.f)
+        # We cannot drop self.group_features if we group by it,
+        # cause in that case it serves as an index
         try:
-            result = result.drop(self.group_features, axis=1)
+            result = result.drop(self.grouping_key, axis=1)
         except KeyError:
             pass
         return result
         # return self.dataset.groupby(self.group_features).mean()
 
-    def _update_groups_metadata(self):
+    def _update_groups_metadata(self, groups):
         """
         Groups metadata is set in a form of list of dictionaries:
         for each groups:
@@ -152,27 +140,21 @@ class LoDGenerator:
         - group_indexes
         - group_length
         - group_koeff
-        :return:
         """
         if self.grouped_dataset is not None:
 
             if self._groups_metadata:
                 del self._groups_metadata[:]
 
-            grouped = self.dataset.groupby(self.group_features)
-
-            # assotiate groups with ordinal numbers
-            group_number = -1
             # store in groups metadata original groups with its numbers
-            for name, group in grouped:
-                group_number += 1
-                group_meta = {}
-                group_meta['group_name'] = str(name)
-                group_meta['group_number'] = group_number
-                group_meta['group_indexes'] = group.index.tolist()
-                group_meta['group_length'] = len(group)
-                group_meta['group_koeff'] = log1p(len(group) * 100 / self.num_initial_elements)
-                self._groups_metadata.append(group_meta)
+            for idx, (name, group) in enumerate(groups):
+                self._groups_metadata.append({
+                    'group_name': str(name),
+                    'group_number': idx,
+                    'group_indexes': group.index.tolist(),
+                    'group_length': len(group),
+                    'group_koeff': log1p(len(group) * 100 /
+                                         self.num_initial_elements)})
 
     def get_full_metadata(self):
         output = dict(self._init_metadata)
