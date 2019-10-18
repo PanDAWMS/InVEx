@@ -28,7 +28,7 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         self.results = None
         self.cent = None
 
-    def set_parameters(self, cluster_number, categorical_weight):
+    def set_parameters(self, cluster_number, categorical_weight=None):
         if cluster_number is not None:
             self.cluster_number = cluster_number
         if categorical_weight is not None:

@@ -24,36 +24,44 @@ class DatasetStats {
                          {'type':'non-categorical',
                           'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
         this.lods = [
-              {
+            {
                 'idx': 0,
                 'mode': 'minibatch',
-                'title': 'MiniBatchKMeans(sklearn/python) clusterization',
+                'title': 'MiniBatch K-Means (scikit-learn) clustering',
                 'message': 'Set the number of clusters and select numerical continuous features using "group" selector',
                 'number_of_groups': 'user_defined'
-              },
-              {
+            },
+            {
                 'idx': 1,
+                'mode': 'daal',
+                'title': 'Intel DAAL K-Means (daal4py) clustering',
+                'message': 'Set the number of clusters and select numerical continuous features using "group" selector',
+                'number_of_groups': 'user_defined'
+            },
+            {
+                'idx': 2,
+                'mode': 'kprototypes',
+                'title': 'K-Prototype (kmodes) clustering',
+                'message': 'Set the number of clusters and select features using "group" selector',
+                'number_of_groups': 'user_defined'
+            },
+            {
+                'idx': 3,
                 'mode': 'param_categorical',
                 'title': 'Group by nominal/ordinal parameter(s)',
-                'message': 'Select from one to several categorical features for grouping using "group" selector. ' +
-                'The sequence of checking features = the sequence of grouping',
+                'message': ('Select from one to several categorical features for grouping using "group" selector. ' +
+                            'The sequence of checking features = the sequence of grouping'),
                 'number_of_groups': 'auto'
-              }, 
-              {
-                'idx': 2,
+            },
+            {
+                'idx': 4,
                 'mode': 'param_num_continuous',
-                'title': 'Group by numerical continuous parameter', 
+                'title': 'Group by numerical continuous parameter',
                 'message': 'Select single numerical continuous parameter for grouping using "group" selector and ' +
                 'set the number of groups',
                 'number_of_groups': 'user_defined'
-            }, 
-            {
-              'idx': 3,
-              'mode': 'kprototypes',
-              'title': 'K-prototypes clusterisation', 
-              'message': 'Set the number of clusters and select features using "group" selector',
-              'number_of_groups': 'user_defined'
-            }
+            },
+
         ];
     }
 
