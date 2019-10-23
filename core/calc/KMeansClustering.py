@@ -29,17 +29,17 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def save_parameters(self):
-        result = {'numberofclKMeans': self.clust_numbers, 'clust_array': self.clust_array}
+        result = {'numberofcl_KMeans': self.clust_numbers, 'clust_array_KMeans': self.clust_array}
         return result
 
     def load_parameters(self, parameters):
-        if "numberofclKMeans" in parameters and parameters["numberofclKMeans"] is not None:
-            self.clust_numbers = parameters["numberofclKMeans"]
+        if "numberofcl_KMeans" in parameters and parameters["numberofcl_KMeans"] is not None:
+            self.clust_numbers = parameters["numberofcl_KMeans"]
         else:
             self.clust_numbers = CLUST_NUM
 
-        if "clust_array" in parameters and parameters["clust_array"] is not None:
-            self.clust_array = parameters["clust_array"]
+        if "clust_array_KMeans" in parameters and parameters["clust_array_KMeans"] is not None:
+            self.clust_array = parameters["clust_array_KMeans"]
         else:
             self.clust_array = CLUST_ARRAY
         return True
@@ -57,7 +57,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {'numberofclKMeans': self.clust_numbers, 'clust_array': self.clust_array}
+        result = {'numberofcl_KMeans': self.clust_numbers, 'clust_array_KMeans': self.clust_array}
         return result
 
     def process_data(self, dataset):

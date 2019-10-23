@@ -41,8 +41,8 @@ class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
         return True  # TODO: "return"-statement should be removed
 
     def get_parameters(self):
-        return {'numclustersDAALKMeans': self.num_clusters,
-                'featuresDAALKMeans': self.selected_features}
+        return {'numclusters_DAALKMeans': self.num_clusters,
+                'features_DAALKMeans': self.selected_features}
 
     def get_labels(self, data, reprocess=False):
         data = self._preprocessed_data(data)
@@ -74,9 +74,8 @@ class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def load_parameters(self, parameters):
         self.set_parameters(
-            num_clusters=parameters.
-            get('numclustersDAALKMeans') or NUM_CLUSTERS_DEFAULT,
-            features=parameters.get('featuresDAALKMeans') or [])
+            num_clusters=parameters.get('numclusters_DAALKMeans') or NUM_CLUSTERS_DEFAULT,
+            features=parameters.get('features_DAALKMeans') or [])
         return True
 
     def save_results(self):

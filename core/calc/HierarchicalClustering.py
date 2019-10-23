@@ -32,15 +32,15 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def save_parameters(self):
-        return {"cluster_number": self.cluster_number, "categorical_weight": self.categorical_weight}
+        return {"cluster_number_Hierarchical": self.cluster_number, "categorical_data_weight_Hierarchical": self.categorical_weight}
 
     def load_parameters(self, parameters):
-        if parameters.get("cluster_number") is not None:
-            self.cluster_number = parameters["cluster_number"]
+        if parameters.get("cluster_number_Hierarchical") is not None:
+            self.cluster_number = parameters["cluster_number_Hierarchical"]
         else:
             self.cluster_number = CLUSTER_NUMBER
-        if parameters.get("categorical_weight") is not None:
-            self.categorical_weight = parameters["categorical_weight"]
+        if parameters.get("categorical_data_weight_Hierarchical") is not None:
+            self.categorical_weight = parameters["categorical_data_weight_Hierarchical"]
         else:
             self.categorical_weight = CATEGORICAL_WEIGHT
         return True
@@ -56,7 +56,7 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def print_parameters(self):
-        result = {"cluster_number": self.cluster_number, "categorical_weight": self.categorical_weight}
+        result = {"cluster_number_Hierarchical": self.cluster_number, "categorical_data_weight_Hierarchical": self.categorical_weight}
         return result
 
     def find_linkage(self, dataset):

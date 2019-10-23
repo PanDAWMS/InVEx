@@ -36,29 +36,31 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def save_parameters(self):
-        return {'min_samples': self.min_samples,
-                'eps': self.eps, 
-                'clust_array': self.clust_array}
+        return {'min_samples_DBSCAN': self.min_samples,
+                'eps_DBSCAN': self.eps,
+                'clust_array_DBSCAN': self.clust_array}
 
     def load_parameters(self, parameters):
-        if "min_samples" in parameters and parameters["min_samples"] is not None:
-            self.min_samples = parameters["min_samples"]
+        if "min_samples_DBSCAN" in parameters and parameters["min_samples_DBSCAN"] is not None:
+            self.min_samples = parameters["min_samples_DBSCAN"]
         else:
             self.min_samples = MIN_SAMPLES
 
-        if "eps" in parameters and parameters["eps"] is not None:
-            self.eps = parameters["eps"]
+        if "eps_DBSCAN" in parameters and parameters["eps_DBSCAN"] is not None:
+            self.eps = parameters["eps_DBSCAN"]
         else:
             self.eps = EPS
 
-        if "clust_array" in parameters and parameters["clust_array"] is not None:
-            self.clust_array = parameters["clust_array"]
+        if "clust_array_DBSCAN" in parameters and parameters["clust_array_DBSCAN"] is not None:
+            self.clust_array = parameters["clust_array_DBSCAN"]
         else:
             self.clust_array = CLUST_ARRAY
         return True
 
     def print_parameters(self):
-        result = {'eps': self.eps, 'min_samples': self.min_samples, 'clust_array': self.clust_array}
+        result = {'eps_DBSCAN': self.eps,
+                  'min_samples_DBSCAN': self.min_samples,
+                  'clust_array_DBSCAN': self.clust_array}
         return result
 
     def save_results(self):
@@ -80,14 +82,15 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
         return True
 
     def process_data(self, dataset):
-        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
-        self.model = DBSCAN(eps=self.eps, min_samples=self.min_samples).fit(dataset_cut)
+        #dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
+
+        self.model = DBSCAN(eps=self.eps, min_samples=self.min_samples).fit(dataset)
         self.results = self.model.labels_
         return self.results
 
     def predict(self, dataset):
-        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
-        return self.model.fit_predict(dataset_cut)
+        #dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
+        return self.model.fit_predict(dataset)
 
 
 try:

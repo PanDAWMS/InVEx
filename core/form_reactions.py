@@ -373,66 +373,67 @@ def clusterize(request, dataset_id, group_ids=None):
                 else json.loads(request.POST['clustering_list_json'])
 
         if (request.POST['algorithm'] == 'KMeans' and
-                'numberofclKMeans' in request.POST):
+                'numberofcl_KMeans' in request.POST):
 
             operation = calc.KMeansClustering.KMeansClustering()
-            operation.set_parameters(int(request.POST['numberofclKMeans']),
+            operation.set_parameters(int(request.POST['numberofcl_KMeans']),
                                      clusters_list)
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
-                'cluster_number' in request.POST and
-                'batch_size' in request.POST):
+                'numclusters_MiniBatchKMeans' in request.POST and
+                'batchsize_MiniBatchKMeans' in request.POST):
 
             operation = calc.MiniBatchKMeansClustering.\
                 MiniBatchKMeansClustering()
             operation.set_parameters(
-                num_clusters=int(request.POST['numclustersMiniBatchKMeans']),
-                batch_size=int(request.POST['batchsizeMiniBatchKMeans']))
+                num_clusters=int(request.POST['numclusters_MiniBatchKMeans']),
+                clust_array=clusters_list,
+                batch_size=int(request.POST['batchsize_MiniBatchKMeans']))
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'DAALKMeans' and
-                'numclustersDAALKMeans' in request.POST):
+                'numclusters_DAALKMeans' in request.POST):
 
             operation = calc.DAALKMeansClustering.DAALKMeansClustering()
             operation.set_parameters(
-                num_clusters=int(request.POST['numclustersDAALKMeans']),
-                features=[] if request.POST['clustering_list_json'] == ''
-                else json.loads(request.POST['clustering_list_json']))
+                int(request.POST['numclusters_DAALKMeans']),
+                clusters_list)
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'KPrototypes' and
-                'cluster_number' in request.POST and
-                'categorical_data_weight' in request.POST):
+                'cluster_number_KPrototypes' in request.POST and
+                'categorical_data_weight_KPrototypes' in request.POST):
 
             operation = calc.KPrototypesClustering.KPrototypesClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['categorical_data_weight']))
+            operation.set_parameters(int(request.POST['cluster_number_KPrototypes']),
+                                     int(request.POST['categorical_data_weight_KPrototypes']))
             mode = 'all'
 
         elif (request.POST['algorithm'] == 'Hierarchical' and
-                'cluster_number' in request.POST and
-                'categorical_data_weight' in request.POST):
+                'cluster_number_Hierarchical' in request.POST and
+                'categorical_data_weight_Hierarchical' in request.POST):
 
             operation = calc.HierarchicalClustering.HierarchicalClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['categorical_data_weight']))
+            operation.set_parameters(int(request.POST['cluster_number_Hierarchical']),
+                                     int(request.POST['categorical_data_weight_Hierarchical']))
             mode = 'all'
 
         elif (request.POST['algorithm'] == 'DBSCAN' and
-                'min_samples' in request.POST and 'eps' in request.POST):
+                'min_samples_DBSCAN' in request.POST and 'eps_DBSCAN' in request.POST):
 
             operation = calc.DBScanClustering.DBScanClustering()
-            operation.set_parameters(int(request.POST['min_samples']),
-                                     float(request.POST['eps']))
+            operation.set_parameters(int(request.POST['min_samples_DBSCAN']),
+                                     float(request.POST['eps_DBSCAN']),
+                                     clusters_list)
 
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'GroupData' and
-                'feature_name' in request.POST):
+                'feature_name_GroupData' in request.POST):
 
             operation = calc.GroupData.GroupData()
-            operation.set_parameters(request.POST['feature_name'])
+            operation.set_parameters(request.POST['feature_name_GroupData'])
 
             mode = 'all'
 
