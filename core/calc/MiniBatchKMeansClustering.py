@@ -28,7 +28,6 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         self.num_clusters = NUM_CLUSTERS_DEFAULT
         self.selected_features = []
         self.batch_size = BATCH_SIZE_DEFAULT
-        self.clust_array = CLUST_ARRAY
         self.model = None
         self.centers = None
         self.labels = None
@@ -37,11 +36,9 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         return data if not self.selected_features \
             else data.loc[:, self.selected_features]
 
-    def set_parameters(self, num_clusters, clust_array, features=None, batch_size=None):
+    def set_parameters(self, num_clusters, features=None, batch_size=None):
         if num_clusters is not None:
             self.num_clusters = num_clusters
-        if clust_array is not None:
-            self.clust_array = clust_array
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
         if batch_size is not None:
@@ -50,7 +47,6 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def get_parameters(self):
         return {'numclusters_MiniBatchKMeans': self.num_clusters,
-                'clust_array_MiniBatchKMeans': self.clust_array,
                 'features_MiniBatchKMeans': self.selected_features,
                 'batchsize_MiniBatchKMeans': self.batch_size}
 
@@ -82,7 +78,6 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
     def load_parameters(self, parameters):
         self.set_parameters(
             num_clusters=parameters.get('numclusters_MiniBatchKMeans') or NUM_CLUSTERS_DEFAULT,
-            clust_array=parameters.get('clust_array_MiniBatchKMeans') or [],
             features=parameters.get('features_MiniBatchKMeans') or [],
             batch_size=parameters.get('batchsize_MiniBatchKMeans' or BATCH_SIZE_DEFAULT))
         return True
@@ -106,8 +101,6 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def predict(self, data):
         return self.get_labels(data)
-
-
 try:
     baseoperationclass.register(MiniBatchKMeansClustering)
 except ValueError as error:

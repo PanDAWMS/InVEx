@@ -388,7 +388,7 @@ def clusterize(request, dataset_id, group_ids=None):
                 MiniBatchKMeansClustering()
             operation.set_parameters(
                 num_clusters=int(request.POST['numclusters_MiniBatchKMeans']),
-                clust_array=clusters_list,
+                features=clusters_list,
                 batch_size=int(request.POST['batchsize_MiniBatchKMeans']))
             mode = 'numeric'
 
