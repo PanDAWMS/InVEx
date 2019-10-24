@@ -386,19 +386,17 @@ def clusterize(request, dataset_id, group_ids=None):
 
             operation = calc.MiniBatchKMeansClustering.\
                 MiniBatchKMeansClustering()
-            operation.set_parameters(
-                num_clusters=int(request.POST['numclusters_MiniBatchKMeans']),
-                features=clusters_list,
-                batch_size=int(request.POST['batchsize_MiniBatchKMeans']))
+            operation.set_parameters(num_clusters=int(request.POST['numclusters_MiniBatchKMeans']),
+                                     features=clusters_list,
+                                     batch_size=int(request.POST['batchsize_MiniBatchKMeans']))
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'DAALKMeans' and
                 'numclusters_DAALKMeans' in request.POST):
 
             operation = calc.DAALKMeansClustering.DAALKMeansClustering()
-            operation.set_parameters(
-                int(request.POST['numclusters_DAALKMeans']),
-                clusters_list)
+            operation.set_parameters(int(request.POST['numclusters_DAALKMeans']),
+                                     clusters_list)
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'KPrototypes' and
@@ -407,7 +405,8 @@ def clusterize(request, dataset_id, group_ids=None):
 
             operation = calc.KPrototypesClustering.KPrototypesClustering()
             operation.set_parameters(int(request.POST['cluster_number_KPrototypes']),
-                                     int(request.POST['categorical_data_weight_KPrototypes']))
+                                     int(request.POST['categorical_data_weight_KPrototypes']),
+                                     clusters_list)
             mode = 'all'
 
         elif (request.POST['algorithm'] == 'Hierarchical' and
@@ -416,7 +415,8 @@ def clusterize(request, dataset_id, group_ids=None):
 
             operation = calc.HierarchicalClustering.HierarchicalClustering()
             operation.set_parameters(int(request.POST['cluster_number_Hierarchical']),
-                                     int(request.POST['categorical_data_weight_Hierarchical']))
+                                     int(request.POST['categorical_data_weight_Hierarchical']),
+                                     clusters_list)
             mode = 'all'
 
         elif (request.POST['algorithm'] == 'DBSCAN' and

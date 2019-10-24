@@ -17,6 +17,7 @@ EXTRA_PARAMS_DEFAULT = {
 }
 CLUST_ARRAY = []
 
+
 class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
     _operation_name = 'MiniBatch K-Means Clustering'
@@ -66,8 +67,8 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
         return self.labels
 
-# methods that should be re-worked or removed
-# (for now keep these methods for consistency with others clustering modules)
+    # methods that should be re-worked or removed
+    # (for now keep these methods for consistency with others clustering modules)
 
     def print_parameters(self):
         return self.get_parameters()
@@ -101,6 +102,7 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def predict(self, data):
         return self.get_labels(data)
+
 
 try:
     baseoperationclass.register(MiniBatchKMeansClustering)

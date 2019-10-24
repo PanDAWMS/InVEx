@@ -63,8 +63,8 @@ class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
         self.labels = np.reshape(_labels, len(_labels))
         return self.labels
 
-# methods that should be re-worked or removed
-# (for now keep these methods for consistency with others clustering modules)
+    # methods that should be re-worked or removed
+    # (for now keep these methods for consistency with others clustering modules)
 
     def print_parameters(self):
         return self.get_parameters()
@@ -95,6 +95,7 @@ class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def predict(self, data):
         return self.get_labels(data)
+
 
 try:
     baseoperationclass.register(DAALKMeansClustering)

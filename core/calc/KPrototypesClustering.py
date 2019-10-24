@@ -24,47 +24,28 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         super().__init__()
         self.cluster_number = CLUSTER_NUMBER
         self.categorical_weight = CATEGORICAL_WEIGHT
+        self.selected_features = []
         self.model = None
-        self.results = None
-        self.cent = None
+        self.labels = None
+        self.centers = None
 
-    def set_parameters(self, cluster_number, categorical_weight=None):
+    def _preprocessed_data(self, data):
+        return data if not self.selected_features \
+            else data.loc[:, self.selected_features]
+
+    def set_parameters(self, cluster_number, categorical_weight=None, features=None):
         if cluster_number is not None:
             self.cluster_number = cluster_number
         if categorical_weight is not None:
             self.categorical_weight = categorical_weight
+        if features is not None and isinstance(features, (list, tuple)):
+            self.selected_features = list(features)
         return True
 
-    def save_parameters(self):
+    def get_parameters(self):
         return {'cluster_number_KPrototypes': self.cluster_number,
-                'categorical_data_weight_KPrototypes': self.categorical_weight}
-
-    def load_parameters(self, parameters):
-        if parameters.get("cluster_number_KPrototypes") is not None:
-            self.cluster_number = parameters["cluster_number_KPrototypes"]
-        else:
-            self.cluster_number = CLUSTER_NUMBER
-        if parameters.get("categorical_data_weight_KPrototypes") is not None:
-            self.categorical_weight = parameters["categorical_data_weight_KPrototypes"]
-        else:
-            self.categorical_weight = CATEGORICAL_WEIGHT
-        return True
-
-    def save_results(self):
-        return {'results': self.results.tolist(), 'cent': self.cent.tolist(), 'dump': pickle.dumps(self.model).hex()}
-
-    def load_results(self, results_dict):
-        if results_dict.get("results") is not None:
-            self.results = np.array(results_dict['results'])
-        if results_dict.get("cent") is not None:
-            self.cent = np.array(results_dict['cent'])
-        if results_dict.get("dump") is not None:
-            self.model = pickle.loads(bytes.fromhex(results_dict['dump']))
-        return True
-
-    def print_parameters(self):
-        result = {'cluster_number_KPrototypes': self.cluster_number, 'categorical_data_weight_KPrototypes': self.categorical_weight}
-        return result
+                'categorical_data_weight_KPrototypes': self.categorical_weight,
+                'features_KPrototypes': self.selected_features}
 
     def _get_initial_centers(self, dataset, categorical_indices):
         dataset_cat = dataset.take(categorical_indices, axis=1).values
@@ -97,37 +78,76 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
     def _fallback_algorithm(self, dataset):
         from . import KMeansClustering
         self.model = KMeansClustering.KMeansClustering()
-        self.model.clust_numbers, self.model.clust_array = self.cluster_number, []
-        self.results = self.model.process_data(dataset)
-        self.cent = self.model.model.cluster_centers_
-        return self.results
+        self.model.set_parameters(self.cluster_number)
+        self.labels = self.model.get_labels(dataset)
+        self.centers = self.model.centers
+        return self.labels
 
     # By default, K-Prototypes uses euclidean distance for numerical data and Hamming distance for categorical data
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
     # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
-    def process_data(self, dataset):
-        categorical_indices = get_categorical_indices(dataset)
+    def get_labels(self, data, reprocess=False):
+        data = self._preprocessed_data(data)
+
+        categorical_indices = get_categorical_indices(data)
         if not categorical_indices:
-            return self._fallback_algorithm(dataset)
-        dataset = encode_nominal_parameters(dataset)
-        dataset = normalized_dataset(dataset, categorical_indices)
+            return self._fallback_algorithm(data)
 
-        initial_centers = self._get_initial_centers(dataset, categorical_indices)
-        self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10, gamma=self.categorical_weight, num_dissim=dissimilarity_python.euclidean, n_jobs=1)
-        dataset = dataset.values
-        self.model.fit(dataset, categorical=categorical_indices)
-        self.results = self.model.predict(dataset, categorical=categorical_indices)
-        self.cent = self.model.cluster_centroids_
-        centers = self.cent[0]
-        for index, cat_index in enumerate(categorical_indices):
-            centers = np.insert(centers, cat_index, values=self.cent[1].transpose()[index], axis=1)
-        self.cent = centers
-        return self.results
+        if self.model is None or reprocess:
+            data = encode_nominal_parameters(data)
+            data = normalized_dataset(data, categorical_indices)
 
-    def predict(self, dataset):
-        categorical_indices = get_categorical_indices(dataset)
-        dataset = dataset.values
-        return self.model.predict(dataset, categorical=categorical_indices)
+            initial_centers = self._get_initial_centers(data, categorical_indices)
+            self.model = KPrototypes(n_clusters=self.cluster_number, max_iter=1000, init=initial_centers, n_init=10,
+                                     gamma=self.categorical_weight, num_dissim=dissimilarity_python.euclidean, n_jobs=1)
+            data = data.values
+            self.model.fit(data, categorical=categorical_indices)
+            self.labels = self.model.predict(data, categorical=categorical_indices)
+            self.centers = self.model.cluster_centroids_
+            centers = self.centers[0]
+            for index, cat_index in enumerate(categorical_indices):
+                centers = np.insert(centers, cat_index, values=self.centers[1].transpose()[index], axis=1)
+            self.centers = centers
+        else:
+            self.labels = self.model.predict(data)
+
+        return self.labels
+
+    # Legacy methods
+
+    def print_parameters(self):
+        return self.get_parameters()
+
+    def save_parameters(self):
+        return self.get_parameters()
+
+    def load_parameters(self, parameters):
+        self.set_parameters(
+            cluster_number=parameters.get('cluster_number_KPrototypes') or CLUSTER_NUMBER,
+            categorical_weight=parameters.get('categorical_data_weight_KPrototypes') or CATEGORICAL_WEIGHT,
+            features=parameters.get('features_KPrototypes') or []
+        )
+        return True
+
+    def save_results(self):
+        return {'results': self.labels.tolist(),
+                'centers': self.centers.tolist(),
+                'dump': pickle.dumps(self.model).hex()}
+
+    def load_results(self, results_dict):
+        if results_dict.get("results") is not None:
+            self.labels = np.array(results_dict['results'])
+        if results_dict.get("centers") is not None:
+            self.centers = np.array(results_dict['centers'])
+        if results_dict.get("dump") is not None:
+            self.model = pickle.loads(bytes.fromhex(results_dict['dump']))
+        return True
+
+    def process_data(self, data):
+        return self.get_labels(data)
+
+    def predict(self, data):
+        return self.get_labels(data)
 
 
 try:

@@ -5,6 +5,7 @@ import pickle
 
 CLUST_NUM = 3
 
+
 class KMeansClustering(baseoperationclass.BaseOperationClass):
 
     _operation_name = 'K-Means Clustering'
@@ -16,7 +17,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         self.clust_numbers = CLUST_NUM
         self.selected_features = []
         self.model = None
-        self.results = None
+        self.labels = None
         self.centers = None
 
     def _preprocessed_data(self, data):
@@ -58,7 +59,8 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
     def load_parameters(self, parameters):
         self.set_parameters(
             clust_numbers=parameters.get('numberofcl_KMeans') or CLUST_NUM,
-            features=parameters.get('features_KMeans') or [])
+            features=parameters.get('features_KMeans') or []
+        )
         return True
 
     def save_results(self):
@@ -80,6 +82,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
 
     def predict(self, data):
         return self.get_labels(data)
+
 
 try:
     baseoperationclass.register(KMeansClustering)
