@@ -4,8 +4,6 @@ import numpy as np
 import pickle
 
 CLUST_NUM = 3
-CLUST_ARRAY = []
-
 
 class KMeansClustering(baseoperationclass.BaseOperationClass):
 
@@ -16,62 +14,72 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
     def __init__(self):
         super().__init__()
         self.clust_numbers = CLUST_NUM
-        self.clust_array = CLUST_ARRAY
+        self.selected_features = []
         self.model = None
         self.results = None
-        self.cent = None
+        self.centers = None
 
-    def set_parameters(self, clust_numbers, clust_array):
+    def _preprocessed_data(self, data):
+        return data if not self.selected_features \
+            else data.loc[:, self.selected_features]
+
+    def set_parameters(self, clust_numbers, features=None):
         if clust_numbers is not None:
             self.clust_numbers = clust_numbers
-        if clust_array is not None:
-            self.clust_array = clust_array
+        if features is not None and isinstance(features, (list, tuple)):
+            self.selected_features = list(features)
         return True
 
+    def get_parameters(self):
+        return {'numberofcl_KMeans': self.clust_numbers,
+                'features_KMeans': self.selected_features}
+
+    def get_labels(self, data, reprocess=False):
+        data = self._preprocessed_data(data)
+
+        if self.model is None or reprocess:
+            self.model = KMeans(self.clust_numbers)
+            self.model.fit(data)
+            self.labels = self.model.predict(data)
+            self.centers = self.model.cluster_centers_
+        else:
+            self.labels = self.model.predict(data)
+
+        return self.labels
+
+    # Legacy methods
+
+    def print_parameters(self):
+        return self.get_parameters()
+
     def save_parameters(self):
-        result = {'numberofcl_KMeans': self.clust_numbers, 'clust_array_KMeans': self.clust_array}
-        return result
+        return self.get_parameters()
 
     def load_parameters(self, parameters):
-        if "numberofcl_KMeans" in parameters and parameters["numberofcl_KMeans"] is not None:
-            self.clust_numbers = parameters["numberofcl_KMeans"]
-        else:
-            self.clust_numbers = CLUST_NUM
-
-        if "clust_array_KMeans" in parameters and parameters["clust_array_KMeans"] is not None:
-            self.clust_array = parameters["clust_array_KMeans"]
-        else:
-            self.clust_array = CLUST_ARRAY
+        self.set_parameters(
+            clust_numbers=parameters.get('numberofcl_KMeans') or CLUST_NUM,
+            features=parameters.get('features_KMeans') or [])
         return True
 
     def save_results(self):
-        return {'results': self.results.tolist(), 'cent': self.cent.tolist(), 'dump': pickle.dumps(self.model).hex()}
+        return {'results': self.labels.tolist(),
+                'centers': self.centers.tolist(),
+                'dump': pickle.dumps(self.model).hex()}
 
     def load_results(self, results_dict):
-        if 'results' in results_dict and results_dict['results'] is not None:
-            self.results = np.array(results_dict['results'])
-        if 'cent' in results_dict and results_dict['cent'] is not None:
-            self.cent = np.array(results_dict['cent'])
-        if 'dump' in results_dict and results_dict['dump'] is not None:
+        if results_dict.get('results'):
+            self.labels = np.array(results_dict['results'])
+        if results_dict.get('centers'):
+            self.centers = np.array(results_dict['centers'])
+        if results_dict.get('dump'):
             self.model = pickle.loads(bytes.fromhex(results_dict['dump']))
         return True
 
-    def print_parameters(self):
-        result = {'numberofcl_KMeans': self.clust_numbers, 'clust_array_KMeans': self.clust_array}
-        return result
+    def process_data(self, data):
+        return self.get_labels(data)
 
-    def process_data(self, dataset):
-        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
-        self.model = KMeans(self.clust_numbers)
-        self.model.fit(dataset_cut)
-        self.results = self.model.predict(dataset_cut)
-        self.cent = self.model.cluster_centers_
-        return self.results
-
-    def predict(self, dataset):
-        dataset_cut = dataset if self.clust_array == [] else dataset.loc[:, self.clust_array]
-        return self.model.predict(dataset_cut)
-
+    def predict(self, data):
+        return self.get_labels(data)
 
 try:
     baseoperationclass.register(KMeansClustering)

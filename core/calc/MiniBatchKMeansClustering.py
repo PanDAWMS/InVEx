@@ -101,6 +101,7 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def predict(self, data):
         return self.get_labels(data)
+
 try:
     baseoperationclass.register(MiniBatchKMeansClustering)
 except ValueError as error:

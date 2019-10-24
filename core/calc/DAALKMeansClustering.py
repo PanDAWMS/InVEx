@@ -96,7 +96,6 @@ class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
     def predict(self, data):
         return self.get_labels(data)
 
-
 try:
     baseoperationclass.register(DAALKMeansClustering)
 except ValueError as e:
