@@ -207,6 +207,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             // The group for the clustering features list
             // The div element with boundary
             var cluster_div = document.createElement("div");
+            cluster_div.id = "features_list_" + cluster_params[k][0];
             cluster_div.classList.add("form-group");
             cluster_div.style.border = '1px solid lightgray';
             cluster_div.style.paddingBottom = '15px';
@@ -231,6 +232,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                 if (j === 0) option.selected = true;
                 option.value = j.toString();
                 option.text = scene.dimNames[j];
+                option.id = 'option_' + scene.dimNames[j] + "_" + cluster_params[k][0];
                 selectbox.add(option);
             }
 
@@ -264,6 +266,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
 
             // The '+' button
             var inputElement = document.createElement('input');
+            inputElement.id = 'button_plus_' + cluster_params[k][0];
             inputElement.type = 'button';
             inputElement.value = '+';
             inputElement.classList.add('button');
@@ -370,6 +373,14 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                 element_div.style.display = 'block';
                 select_element.element_div = element_div;
                 select_element.validateFields = function () { return this.element_div.validateFields(); };
+
+                let current_id = "features_"+curr_algorithm,
+                    plus = document.getElementById("button_plus_"+curr_algorithm);
+
+                for(let y=0; y<curr_values[current_id].length; y++){
+                    document.getElementById("option_"+curr_values[current_id][y] + "_" + curr_algorithm).selected = true;
+                    plus.click();
+                }
             } else
                 element_div.style.display = 'none';
     }
