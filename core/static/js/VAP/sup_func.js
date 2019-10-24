@@ -339,6 +339,24 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             element_div.appendChild(cluster_div);
         }
 
+         // Div with 'use normalized dataset' input
+        var use_normalized_div = document.createElement('div');
+
+        // The checkbox
+        var use_normalized_input = document.createElement('input');
+        use_normalized_input.id = "normalized_checkbox";
+        use_normalized_input.name = "use_normalized_dataset";
+        use_normalized_input.type = 'checkbox';
+        use_normalized_input.checked = false;
+        use_normalized_div.appendChild(use_normalized_input);
+
+        // The label with a hint
+        var use_normalized_label = document.createElement('label');
+        use_normalized_label.innerText = 'Use normalized dataset';
+        use_normalized_label.for = 'normalized_checkbox';
+        use_normalized_div.appendChild(use_normalized_label);
+
+        element_div.appendChild(use_normalized_div);
         divElement.appendChild(element_div);
 
         //Make the right element visible

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class DatasetHandler(BaseDataHandler):
 
-    def __init__(self, did, group_ids=None, **kwargs):
+    def __init__(self, did, group_ids=None, use_normalized_dataset=False, **kwargs):
         """
         Initialization.
 
@@ -50,6 +50,7 @@ class DatasetHandler(BaseDataHandler):
         self._origin = None
         self._modifications = {}
         self._property_set = {}
+        self._use_normalized_dataset = use_normalized_dataset
 
         if (isinstance(kwargs.get('dataset'), pd.DataFrame) and \
                 not kwargs['dataset'].empty):
@@ -149,15 +150,18 @@ class DatasetHandler(BaseDataHandler):
             logger.error('[DatasetHandler.clustering_dataset] '
                          'Dataset for clustering is not prepared')
             raise
+
+        _dataset = self._normalized if self._use_normalized_dataset else self._origin
+
         if (self._mode == 'numeric'):
-            _set = set(self._origin.columns.tolist())
+            _set = set(_dataset.columns.tolist())
             _features = [x for x in self._property_set['features'] if x in _set]
             # TODO: Re-check that feature selection is needed here
             #  (it was processed at _form_dataset_modifications for _origin dataset)
             #  (Note: for LoD _origin dataset it might behave differently)
-            return self._origin.loc[:, _features]
+            return _dataset.loc[:, _features]
         elif (self._mode == 'all'):
-            return pd.concat([self._origin, self._auxiliary], axis=1, sort=True)
+            return pd.concat([_dataset, self._auxiliary], axis=1, sort=True)
 
     @property
     def operation_history(self):

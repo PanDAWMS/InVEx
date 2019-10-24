@@ -444,8 +444,11 @@ def clusterize(request, dataset_id, group_ids=None):
         logger.error('{} Request is incorrect: {}'.
                      format(err_msg_subj, json.dumps(request.POST)))
 
-    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
-                                  load_history_data=True)
+    dataset_hdlr = DatasetHandler(did=dataset_id,
+                                  group_ids=group_ids,
+                                  load_history_data=True,
+                                  use_normalized_dataset='use_normalized_dataset' in request.POST and
+                                                         request.POST['use_normalized_dataset'] == "on")
 
     dataset_hdlr._mode = mode
     clustering_dataset = dataset_hdlr.clustering_dataset

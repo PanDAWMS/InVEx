@@ -2,7 +2,6 @@ import pickle
 
 import numpy as np
 from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
 
 from . import baseoperationclass
 
@@ -45,7 +44,7 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
                 'features_DBSCAN': self.selected_features}
 
     def get_labels(self, data, reprocess=False):
-        data = StandardScaler().fit_transform(self._preprocessed_data(data))
+        data = self._preprocessed_data(data)
 
         if self.model is None or reprocess:
             self.model = DBSCAN(eps=self.eps, min_samples=self.min_samples)
