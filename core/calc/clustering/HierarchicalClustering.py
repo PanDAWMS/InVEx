@@ -4,7 +4,7 @@ from functools import partial
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 
 from . import baseoperationclass
-from .util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
+from ..util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
 
 
 CLUSTER_NUMBER = 5
@@ -53,7 +53,7 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
             dataset = encode_nominal_parameters(dataset, categorical_indices)
             if self.categorical_weight is None or self.categorical_weight < 0:
                 self.categorical_weight = 0.5 * dataset.take(numerical_indices, axis=1).values.std()
-            from .util.dissimilarity_python import mixed_metric
+            from ..util.dissimilarity_python import mixed_metric
             distance_metric = partial(mixed_metric,
                                       categorical_indices=np.array(categorical_indices, dtype=np.int32),
                                       categorical_weight=self.categorical_weight)

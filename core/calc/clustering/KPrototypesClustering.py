@@ -6,8 +6,8 @@ from random import randint
 from kmodes.kprototypes import KPrototypes
 from kmodes.util.dissim import matching_dissim
 from . import baseoperationclass
-from .util import dissimilarity_python
-from .util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
+from ..util import dissimilarity_python
+from ..util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
 
 
 CLUSTER_NUMBER = 5
@@ -78,20 +78,22 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
     def _fallback_algorithm(self, dataset):
         from . import KMeansClustering
         self.model = KMeansClustering.KMeansClustering()
-        self.model.set_parameters(self.cluster_number)
+        self.model.set_parameters(self.cluster_number, self.selected_features)
         self.labels = self.model.get_labels(dataset)
         self.centers = self.model.centers
         return self.labels
 
     # By default, K-Prototypes uses euclidean distance for numerical data and Hamming distance for categorical data
     # n_init is the number of time the k-modes algorithm will be run with different centroid seeds
-    # gamma is the weight to balance numerical data against categorical. If None, it defaults to half of standard deviation for numerical data
+    # gamma is the weight to balance numerical data against categorical.
+    # If None, it defaults to half of standard deviation for numerical data
     def get_labels(self, data, reprocess=False):
+        data_original = data
         data = self._preprocessed_data(data)
 
         categorical_indices = get_categorical_indices(data)
         if not categorical_indices:
-            return self._fallback_algorithm(data)
+            return self._fallback_algorithm(data_original)
 
         if self.model is None or reprocess:
             data = encode_nominal_parameters(data)

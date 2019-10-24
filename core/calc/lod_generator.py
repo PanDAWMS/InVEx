@@ -3,10 +3,7 @@ from math import log1p
 
 import pandas as pd
 
-from . import (
-    DAALKMeansClustering,
-    KPrototypesClustering,
-    MiniBatchKMeansClustering)
+from .clustering import DAALKMeansClustering, KPrototypesClustering, MiniBatchKMeansClustering
 
 MODE_DEFAULT = 'minibatch'
 NUM_GROUPS_DEFAULT = 100
