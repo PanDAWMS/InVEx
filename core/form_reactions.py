@@ -14,8 +14,8 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 
-from core.settings.base import BASE_DIR
-from core import calc
+from .settings.base import BASE_DIR
+from .calc import clustering
 
 from .calc.handlers import DatasetHandler, ViewDataHandler
 from .calc.handlers.viewdata import list_csv_data_files, DATASET_FILES_PATH
@@ -369,70 +369,71 @@ def clusterize(request, dataset_id, group_ids=None):
     operation = None
     mode = None
     if 'algorithm' in request.POST:
-        if (request.POST['algorithm'] == 'KMeans' and
-                'numberofclKMeans' in request.POST):
-
-            clusters_list = [] if request.POST['clustering_list_json'] == '' \
+        clusters_list = [] if request.POST['clustering_list_json'] == '' \
                 else json.loads(request.POST['clustering_list_json'])
 
-            operation = calc.KMeansClustering.KMeansClustering()
-            operation.set_parameters(int(request.POST['numberofclKMeans']),
+        if (request.POST['algorithm'] == 'KMeans' and
+                'numberofcl_KMeans' in request.POST):
+
+            operation = clustering.KMeansClustering.KMeansClustering()
+            operation.set_parameters(int(request.POST['numberofcl_KMeans']),
                                      clusters_list)
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
-                'cluster_number' in request.POST and
-                'batch_size' in request.POST):
+                'numclusters_MiniBatchKMeans' in request.POST and
+                'batchsize_MiniBatchKMeans' in request.POST):
 
-            operation = calc.MiniBatchKMeansClustering.\
+            operation = clustering.MiniBatchKMeansClustering.\
                 MiniBatchKMeansClustering()
-            operation.set_parameters(
-                num_clusters=int(request.POST['numclustersMiniBatchKMeans']),
-                batch_size=int(request.POST['batchsizeMiniBatchKMeans']))
+            operation.set_parameters(num_clusters=int(request.POST['numclusters_MiniBatchKMeans']),
+                                     features=clusters_list,
+                                     batch_size=int(request.POST['batchsize_MiniBatchKMeans']))
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'DAALKMeans' and
-                'numclustersDAALKMeans' in request.POST):
+                'numclusters_DAALKMeans' in request.POST):
 
-            operation = calc.DAALKMeansClustering.DAALKMeansClustering()
-            operation.set_parameters(
-                num_clusters=int(request.POST['numclustersDAALKMeans']),
-                features=[] if request.POST['clustering_list_json'] == ''
-                else json.loads(request.POST['clustering_list_json']))
+            operation = clustering.DAALKMeansClustering.DAALKMeansClustering()
+            operation.set_parameters(int(request.POST['numclusters_DAALKMeans']),
+                                     clusters_list)
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'KPrototypes' and
-                'cluster_number' in request.POST and
-                'categorical_data_weight' in request.POST):
+                'cluster_number_KPrototypes' in request.POST and
+                'categorical_data_weight_KPrototypes' in request.POST):
 
-            operation = calc.KPrototypesClustering.KPrototypesClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['categorical_data_weight']))
+            operation = clustering.KPrototypesClustering.KPrototypesClustering()
+            operation.set_parameters(int(request.POST['cluster_number_KPrototypes']),
+                                     int(request.POST['categorical_data_weight_KPrototypes']),
+                                     clusters_list)
             mode = 'all'
 
         elif (request.POST['algorithm'] == 'Hierarchical' and
-                'cluster_number' in request.POST and
-                'categorical_data_weight' in request.POST):
+                'cluster_number_Hierarchical' in request.POST and
+                'categorical_data_weight_Hierarchical' in request.POST):
 
-            operation = calc.HierarchicalClustering.HierarchicalClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['categorical_data_weight']))
+            operation = clustering.HierarchicalClustering.HierarchicalClustering()
+            operation.set_parameters(int(request.POST['cluster_number_Hierarchical']),
+                                     int(request.POST['categorical_data_weight_Hierarchical']),
+                                     clusters_list)
             mode = 'all'
 
         elif (request.POST['algorithm'] == 'DBSCAN' and
-                'min_samples' in request.POST and 'eps' in request.POST):
+                'min_samples_DBSCAN' in request.POST and 'eps_DBSCAN' in request.POST):
 
-            operation = calc.DBScanClustering.DBScanClustering()
-            operation.set_parameters(int(request.POST['min_samples']),
-                                     float(request.POST['eps']))
+            operation = clustering.DBScanClustering.DBScanClustering()
+            operation.set_parameters(int(request.POST['min_samples_DBSCAN']),
+                                     float(request.POST['eps_DBSCAN']),
+                                     clusters_list)
 
             mode = 'numeric'
 
         elif (request.POST['algorithm'] == 'GroupData' and
-                'feature_name' in request.POST):
+                'feature_name_GroupData' in request.POST):
 
-            operation = calc.GroupData.GroupData()
-            operation.set_parameters(request.POST['feature_name'])
+            operation = clustering.GroupData.GroupData()
+            operation.set_parameters(request.POST['feature_name_GroupData'])
 
             mode = 'all'
 
@@ -443,8 +444,11 @@ def clusterize(request, dataset_id, group_ids=None):
         logger.error('{} Request is incorrect: {}'.
                      format(err_msg_subj, json.dumps(request.POST)))
 
-    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
-                                  load_history_data=True)
+    dataset_hdlr = DatasetHandler(did=dataset_id,
+                                  group_ids=group_ids,
+                                  load_history_data=True,
+                                  use_normalized_dataset='use_normalized_dataset' in request.POST and
+                                                         request.POST['use_normalized_dataset'] == "on")
 
     dataset_hdlr._mode = mode
     clustering_dataset = dataset_hdlr.clustering_dataset

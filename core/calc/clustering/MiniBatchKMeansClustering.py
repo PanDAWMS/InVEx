@@ -15,6 +15,7 @@ EXTRA_PARAMS_DEFAULT = {
     # 'tol': 1e-5,
     # 'max_no_improvement': None
 }
+CLUST_ARRAY = []
 
 
 class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
@@ -46,9 +47,9 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
         return True  # TODO: "return"-statement should be removed
 
     def get_parameters(self):
-        return {'numclustersMiniBatchKMeans': self.num_clusters,
-                'featuresMiniBatchKMeans': self.selected_features,
-                'batchsizeMiniBatchKMeans': self.batch_size}
+        return {'numclusters_MiniBatchKMeans': self.num_clusters,
+                'features_MiniBatchKMeans': self.selected_features,
+                'batchsize_MiniBatchKMeans': self.batch_size}
 
     def get_labels(self, data, reprocess=False):
         data = self._preprocessed_data(data)
@@ -66,8 +67,8 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
         return self.labels
 
-# methods that should be re-worked or removed
-# (for now keep these methods for consistency with others clustering modules)
+    # methods that should be re-worked or removed
+    # (for now keep these methods for consistency with others clustering modules)
 
     def print_parameters(self):
         return self.get_parameters()
@@ -77,11 +78,9 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def load_parameters(self, parameters):
         self.set_parameters(
-            num_clusters=parameters.
-            get('numclustersMiniBatchKMeans') or NUM_CLUSTERS_DEFAULT,
-            features=parameters.get('featuresMiniBatchKMeans') or [],
-            batch_size=parameters.get('batchsizeMiniBatchKMeans' or
-                                      BATCH_SIZE_DEFAULT))
+            num_clusters=parameters.get('numclusters_MiniBatchKMeans') or NUM_CLUSTERS_DEFAULT,
+            features=parameters.get('features_MiniBatchKMeans') or [],
+            batch_size=parameters.get('batchsize_MiniBatchKMeans' or BATCH_SIZE_DEFAULT))
         return True
 
     def save_results(self):

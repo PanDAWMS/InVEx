@@ -1,4 +1,4 @@
-from . import baseoperationclass
+from .clustering import baseoperationclass
 import json
 
 OPERATION_NAME_STRING = "operationname"

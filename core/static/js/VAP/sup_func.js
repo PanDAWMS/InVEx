@@ -73,9 +73,9 @@ function removeElement(id) {
 //
 
 function get_categorical_features() {
-		return features_stat.features.filter(function(obj) {
-		  return (['nominal','ordinal'].indexOf(obj.measure_type) >= 0);
-		});
+    return features_stat.features.filter(function(obj) {
+        return (['nominal','ordinal'].indexOf(obj.measure_type) >= 0);
+    });
 }
 
 function get_categorical_features_names() {
@@ -135,14 +135,14 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             var form_group = document.createElement("div");
             form_group.classList.add("form-group");
 
-            if (el[i]['type'] == 'list') {
+            if (el[i]['type'] === 'list') {
                 var selector = document.createElement('select');
                 selector.classList.add('form-control', 'form-control-sm');
                 selector.id = 'inp' + ("00000" + Math.random() * 100000).slice(-5);
                 selector.setAttribute("name", el[i]['name']);
                 var values = el[i]['values'];
-                for ( var val = 0; val < values.length; val++ ) {
-                    var option = document.createElement('option');
+                for (var val = 0; val < values.length; val++) {
+                    let option = document.createElement('option');
                     option.innerText = values[val];
                     option.value = values[val];
                     selector.appendChild(option);
@@ -202,12 +202,12 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             element_div.appendChild(form_group);
         }
 
-        // The group for the clustering features list
-        // Shows only for KMeans
-        if (cluster_params[k][0] === 'KMeans') {
+        if (cluster_params[k][0] !== "GroupData")
+        {
+            // The group for the clustering features list
             // The div element with boundary
             var cluster_div = document.createElement("div");
-            cluster_div.id = 'clustering_div';
+            cluster_div.id = "features_list_" + cluster_params[k][0];
             cluster_div.classList.add("form-group");
             cluster_div.style.border = '1px solid lightgray';
             cluster_div.style.paddingBottom = '15px';
@@ -223,65 +223,68 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             // The SelectBox with the features list
             var selectbox = document.createElement('select');
             selectbox.classList.add('form-control', 'form-control-sm');
-            selectbox.id = 'clusteringSelectBox';
+            selectbox.id = 'clusteringSelectBox_' + cluster_params[k][0];
             selectbox.style.width = '80%';
 
             // Options of that box
-            for (var j = 0; j < scene.dimNames.length; j++) {
-                var option = document.createElement("option");
+            for (let j = 0; j < scene.dimNames.length; j++) {
+                let option = document.createElement("option");
                 if (j === 0) option.selected = true;
                 option.value = j.toString();
                 option.text = scene.dimNames[j];
+                option.id = 'option_' + scene.dimNames[j] + "_" + cluster_params[k][0];
                 selectbox.add(option);
             }
 
             cluster_div.appendChild(selectbox);
 
             // The function for filling the clustering_list_json text
-            var recalculate_json = function () {
+            var recalculate_json = function (params) {
                 var clustering_list_json = document.getElementsByName('clustering_list_json')[0];
 
                 var clustering_list = [],
-                    nodes = $('#clustering_elements')[0].childNodes;
+                    nodes = $('#clustering_elements_' + params)[0].childNodes;
 
-                for (var i = 0; i < nodes.length; i++) {
+                for (var i = 0; i < nodes.length; i++)
                     clustering_list.push(nodes[i].dataset.arrayId);
-                }
 
                 clustering_list_json.value = JSON.stringify(clustering_list);
 
-                var labelHint = document.getElementById('labelHint');
-                labelHint.style.display = ((clustering_list.length === 0) ? 'block' : 'none');
+                var labelHint = document.getElementById('labelHint_' + params);
+                labelHint.style.display = (clustering_list.length === 0) ? 'block' : 'none';
             };
 
             // The label with a hint
             var labelHint = document.createElement('label');
-            labelHint.id = 'labelHint';
+            labelHint.id = 'labelHint_' + cluster_params[k][0];
             labelHint.style.fontStyle = 'italic';
             labelHint.innerText = 'If the list is empty, clusterization is conducted through all features.';
 
             // The div for holding the chosen features list
             var clustering_elements = document.createElement('div');
-            clustering_elements.id = 'clustering_elements';
+            clustering_elements.id = 'clustering_elements_' + cluster_params[k][0];
 
             // The '+' button
             var inputElement = document.createElement('input');
-            inputElement.id = 'cluster_elements_input';
+            inputElement.id = 'button_plus_' + cluster_params[k][0];
             inputElement.type = 'button';
             inputElement.value = '+';
             inputElement.classList.add('button');
             inputElement.classList.add('small');
             inputElement.style.margin = '0px';
             inputElement.style.cssFloat = 'right';
+            inputElement.dataset.params = cluster_params[k][0];
+
+            //this.cluster_params = cluster_params;
 
             // '+' onclick
             inputElement.onclick = function () {
-                var selectbox = document.getElementById('clusteringSelectBox');
+                var selectbox = document.getElementById('clusteringSelectBox_' + this.dataset.params);
 
                 // If nothing selected then return
                 if (selectbox.selectedIndex === -1) return;
 
-                var c_elements = document.getElementById('clustering_elements'),
+                var c_elements = document.getElementById('clustering_elements_' + this.dataset.params),
                     c_elementN = document.createElement('div');
 
                 // Fill the variable to remember the id
@@ -302,18 +305,19 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                 deleteBtn.classList.add('small');
                 deleteBtn.style.cssFloat = 'right';
                 deleteBtn.style.margin = '0px';
+                deleteBtn.dataset.params = this.dataset.params;
 
                 // '-' onclick
                 // Takes the id of the feature, deletes its 'c_elementN' and enables in the SelectBox
-                deleteBtn.onclick = function () {
+                deleteBtn.onclick = function (k) {
                     var selectedId = this.dataset.selectedId,
-                        clusteringSelectBox = document.getElementById('clusteringSelectBox');
+                        clusteringSelectBox = document.getElementById('clusteringSelectBox_' + this.dataset.params);
 
                     removeElement('clusteringElement' + selectedId);
 
                     clusteringSelectBox.options[selectedId].disabled = false;
 
-                    recalculate_json();
+                    recalculate_json(this.dataset.params);
                 };
 
                 // Adding this stuff to divs
@@ -327,7 +331,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                 selectbox.options[selectbox.selectedIndex].disabled = true;
                 selectbox.options[selectbox.selectedIndex].selected = false;
 
-                recalculate_json();
+                recalculate_json(this.dataset.params);
             };
 
             // Adding the stuff to divs
@@ -336,19 +340,26 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             cluster_div.appendChild(labelHint);
 
             element_div.appendChild(cluster_div);
-
-            // Allows moving the selected features up and down
-            $(clustering_elements).sortable({
-                axis: 'y',
-                placeholder: "sortable-placeholder",
-                cancel: '.selectedLabel'
-            });
-
-            /*inputElement.click();
-            inputElement.click();
-            inputElement.click();*/
         }
 
+         // Div with 'use normalized dataset' input
+        var use_normalized_div = document.createElement('div');
+
+        // The checkbox
+        var use_normalized_input = document.createElement('input');
+        use_normalized_input.id = "normalized_checkbox";
+        use_normalized_input.name = "use_normalized_dataset";
+        use_normalized_input.type = 'checkbox';
+        use_normalized_input.checked = false;
+        use_normalized_div.appendChild(use_normalized_input);
+
+        // The label with a hint
+        var use_normalized_label = document.createElement('label');
+        use_normalized_label.innerText = 'Use normalized dataset';
+        use_normalized_label.for = 'normalized_checkbox';
+        use_normalized_div.appendChild(use_normalized_label);
+
+        element_div.appendChild(use_normalized_div);
         divElement.appendChild(element_div);
 
         //Make the right element visible
@@ -362,6 +373,14 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                 element_div.style.display = 'block';
                 select_element.element_div = element_div;
                 select_element.validateFields = function () { return this.element_div.validateFields(); };
+
+                let current_id = "features_"+curr_algorithm,
+                    plus = document.getElementById("button_plus_"+curr_algorithm);
+
+                for(let y=0; y<curr_values[current_id].length; y++){
+                    document.getElementById("option_"+curr_values[current_id][y] + "_" + curr_algorithm).selected = true;
+                    plus.click();
+                }
             } else
                 element_div.style.display = 'none';
     }
@@ -374,6 +393,8 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             this.elements[i].style.display = 'none';
         }
         this.elements[this.selectedIndex].style.display = 'block';
+
+        recalculate_json(this.selectedOptions[0].label);
         select_element.element_div = this.elements[this.selectedIndex];
     };
 
