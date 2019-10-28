@@ -48,19 +48,17 @@ class OperationHandler:
                 'operation_{}'.format(root_group.attrs['operations_count']))
             operation_group.attrs['name'] = self.operation.operation_name
             operation_group.attrs['date'] = str(datetime.utcnow())
-
-            # TODO: create method per each operation that will return
-            #  the number of groups/clusters.
-            #operation_group.attrs['number_of_groups'] = len(self.operation.centers)
+            operation_group.attrs['number_of_groups'] = len(
+                set(self.operation.labels))
 
             operation_group.attrs['operation_parameters'] = json.dumps(
-                self.operation.save_parameters())
+                self.operation.get_parameters())
             operation_group.attrs['visual_parameters'] = json.dumps(
                 self.visual_parameters)
 
             operation_group.create_dataset(
                 name='operation_results',
-                data=self.operation.results)  # TODO: change to labels
+                data=self.operation.labels)
 
             root_group.attrs['operations_count'] += 1
             self.operations_count = root_group.attrs['operations_count']
@@ -90,7 +88,7 @@ class OperationHandler:
                  visual_parameters=json.loads(
                  operation_group.attrs['visual_parameters']))
 
+        # TODO: Re-work method "load_parameters"
         self.operation.load_parameters(json.loads(
             operation_group.attrs['operation_parameters']))
-        self.operation.load_results({
-            'results': operation_group['operation_results'][()]})
+        self.operation.labels = operation_group['operation_results'][()]

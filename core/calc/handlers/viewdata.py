@@ -247,10 +247,10 @@ class ViewDataHandler(BaseDataHandler):
         :param camera_params: Camera parameters.
         :type camera_params: dict
         """
-        cluster_labels = operation.results.tolist()  # TODO: change to labels
+        cluster_labels = operation.labels.tolist()
         self._data.update({
             'algorithm': operation._operation_code_name,
-            'parameters': operation.print_parameters(),  # TODO: to be changed
+            'parameters': operation.get_parameters(),  # TODO: to be changed
             'clusters': cluster_labels,
             'count_of_clusters': len(set(cluster_labels)),
             'cluster_ready': True,
