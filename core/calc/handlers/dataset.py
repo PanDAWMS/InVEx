@@ -6,28 +6,31 @@ the original dataset, and to process it according to the required view.
 import json
 import logging
 import os
-import h5py
 
+import h5py
 import numpy as np
 import pandas as pd
 
+from datetime import datetime
+
 from ...providers import LocalReader
 
-from .. import data_converters
-from ..basicstatistics import BasicStatistics
 from ..lod_generator import LoDGenerator
-from ..operationshistory import OperationHistory
 
 from ._base import BaseDataHandler
 from .groupeddata import GroupedDataHandler
+from .operation import OperationHandler
 
-from datetime import datetime, timedelta
-
-FILE_EXTENSION_DEFAULT = 'hdf'
-HISTORY_FILE_EXTENSION = 'history'
+FILE_EXTENSION_DEFAULT = 'h5'
 
 local_reader = LocalReader()
 logger = logging.getLogger(__name__)
+
+
+def json_default_int(o):
+    if isinstance(o, np.integer):
+        return int(o)
+    raise TypeError
 
 
 class DatasetHandler(BaseDataHandler):
@@ -41,12 +44,13 @@ class DatasetHandler(BaseDataHandler):
         :param group_ids: Group ids (if dataset groups were created).
         :type group_ids: list/None
 
-        :keyword dataset: Initial dataset sample.
         :keyword features: Selected features (for further analysis).
         :keyword lod_data: Level-of-Detail Generator descriptive data.
         :keyword load_initial_dataset: Flag to load initial dataset only.
         :keyword process_initial_dataset: Flag to process initial dataset.
         :keyword load_history_data: Flag to load history data.
+        :keyword use_normalized_dataset: Flag to use normalized dataset.
+        :keyword operation_id: Operation id to be loaded.
         """
         super().__init__(did=did)
 
@@ -55,11 +59,14 @@ class DatasetHandler(BaseDataHandler):
         self._modifications = {}
         self._property_set = {}
 
-        if (isinstance(kwargs.get('dataset'), pd.DataFrame) and \
-                not kwargs['dataset'].empty):
-            self._origin = kwargs['dataset']
+        self._mode = 'all'
+        self._use_normalized_dataset = kwargs.get(
+            'use_normalized_dataset', False)
 
-        elif (kwargs.get('load_initial_dataset', False) or \
+        self.features_description = []
+        self.operation_handler = OperationHandler()
+
+        if (kwargs.get('load_initial_dataset', False) or
                 kwargs.get('process_initial_dataset', False)):
 
             features = kwargs.get('features') or []
@@ -75,38 +82,48 @@ class DatasetHandler(BaseDataHandler):
             if kwargs.get('process_initial_dataset', False):
                 self._property_set = {
                     'features': features or dataset.columns.tolist(),
-                    'lod': lod_data,  # if set then will be extended with groups
-                    'op_history': None}
+                    'lod': lod_data}  # if set then will be extended with groups
 
                 self._form_dataset_modifications(dataset=dataset)
             else:
                 self._origin = dataset
 
         elif kwargs.get('load_history_data', False):
-            #self._load_history_data()
-            self._load_history_data_hdf5()
+            self._load_data_stack(operation_id=kwargs.get('operation_id'))
 
-    def _get_full_file_name(self, is_history_file=False):
+    def create_dataset_storage(self, df):
         """
-        Form full file name with initial dataset or with history information.
+        Create storage-file for defined DataFrame data.
 
-        :param is_history_file: Flag to get file name with history data.
-        :type is_history_file: bool
-        :return: Full file name.
-        :rtype: str
+        :param df: Input [raw] dataset sample.
+        :type df: pandas.DataFrame
         """
-        if is_history_file:
-            group_ids = self._group_ids or []
-            file_name = '{}{}.{}'.format(
-                self._did,
-                ''.join(['.group{}'.format(i) for i in group_ids]),
-                HISTORY_FILE_EXTENSION)
-        else:
-            file_name = '{}.{}'.format(
-                self._did,
-                FILE_EXTENSION_DEFAULT)
+        with h5py.File(self._file_name, 'w') as f:
 
-        return os.path.join(self._get_full_dir_name(), file_name)
+            # "base" group
+            base_group = f.create_group('base')
+            base_group.attrs['user'] = ''
+            base_group.attrs['date'] = str(datetime.utcnow())
+
+            # "default" dataset
+            base_group.create_dataset(
+                name='default',
+                data=np.array(df.to_records(
+                    column_dtypes=dict(zip(df.columns.to_list(), map(
+                        lambda x: h5py.special_dtype(vlen=str)
+                        if x in [np.dtype('O'), np.dtype('S'), np.dtype('U')]
+                        else x, df.dtypes.to_list()))),
+                    index=True)))
+            base_group['default'].attrs['index'] = df.index.name
+
+            # "features_description" dataset
+            # TODO: Check - is it necessary to apply "dropNA"?
+            df.dropna(axis=1, how='all', inplace=True)
+            df.dropna(axis=0, how='all', inplace=True)
+            base_group.create_dataset(
+                name='features_description',
+                data=json.dumps(self._get_dataset_features_description(df),
+                                default=json_default_int))
 
     def _get_initial_dataset(self, **kwargs):
         """
@@ -118,17 +135,19 @@ class DatasetHandler(BaseDataHandler):
         :rtype: pandas.DataFrame/None
         """
         if self._group_ids is None:
-            full_file_name = self._get_full_file_name(is_history_file=False)
-            if kwargs.get('usecols'):
-                kwargs['usecols'].insert(0, local_reader.read_df(
-                    file_path=full_file_name,
-                    file_format='hdf',
-                    **{'nrows': 1}).columns.tolist()[0])
-            output = local_reader.read_df(file_path=full_file_name,
-                                          file_format='hdf',
-                                          **{'index_col': 0,
-                                             'header': 0,
-                                             'usecols': kwargs.get('usecols')})
+
+            with h5py.File(self._file_name, 'r') as f:
+
+                output = pd.DataFrame.from_records(f['base']['default'][()])
+                output.set_index(f['base']['default'].attrs['index'],
+                                 inplace=True)
+
+                if kwargs.get('usecols'):
+                    output = output.loc[:, kwargs['usecols']]
+
+                self.features_description = json.loads(
+                    f['base']['features_description'][()])
+
         elif self._group_ids:
             output = GroupedDataHandler(did=self._did,
                                         group_ids=self._group_ids[:-1]).\
@@ -136,9 +155,14 @@ class DatasetHandler(BaseDataHandler):
         else:
             output = None
             logger.error('[DatasetHandler._get_initial_dataset] '
-                         'Group ids are not set - did: {}, group_ids: {}'.
-                         format(self._did, self._group_ids))
+                         'Group ids are not set - '
+                         f'did: {self._did}, group_ids: {self._group_ids}')
         return output
+
+    @property
+    def _file_name(self):
+        return os.path.join(self._get_storage_dir_name(),
+                            f'{self._did}.{FILE_EXTENSION_DEFAULT}')
 
     @property
     def _normalized(self):
@@ -153,24 +177,19 @@ class DatasetHandler(BaseDataHandler):
         if not self._modifications:
             logger.error('[DatasetHandler.clustering_dataset] '
                          'Dataset for clustering is not prepared')
-            raise DatasetHandler
-        if (self._mode == 'numeric'):
-            _set = set(self._origin.columns.tolist())
+
+        _dataset = self._normalized if self._use_normalized_dataset \
+            else self._origin
+
+        if self._mode == 'numeric':
+            _set = set(_dataset.columns.tolist())
             _features = [x for x in self._property_set['features'] if x in _set]
             # TODO: Re-check that feature selection is needed here
             #  (it was processed at _form_dataset_modifications for _origin dataset)
             #  (Note: for LoD _origin dataset it might behave differently)
-            return self._origin.loc[:, _features]
-        elif (self._mode == 'all'):
-            return pd.concat([self._origin, self._auxiliary], axis=1, sort=True)
-
-    @property
-    def operation_history(self):
-        return self._property_set.get('op_history')
-
-    @operation_history.setter
-    def operation_history(self, value):
-        self._property_set['op_history'] = value
+            return _dataset.loc[:, _features]
+        elif self._mode == 'all':
+            return pd.concat([_dataset, self._auxiliary], axis=1, sort=True)
 
     def _form_dataset_modifications(self, dataset):
         """
@@ -207,169 +226,216 @@ class DatasetHandler(BaseDataHandler):
 
         self._modifications['normalized'] = local_reader.scaler(self._origin)
 
-        basic_statistics = BasicStatistics()
-        basic_statistics.process_data(self._normalized)
-        operation_history = OperationHistory()
-        operation_history.append(self._normalized, basic_statistics)
-        self.operation_history = operation_history
-
-    def _save_history_data(self):
+    def _save_data_stack(self, reprocess=False):
         """
-        Save modifications of the in initial dataset and corresponding data.
+        Save modifications of the initial dataset and corresponding data.
 
-        1st line - origin (numeric) dataset
-        2nd line - normalized dataset
-        3rd line - auxiliary data (not numeric values)
-        4th line - selected features
-        5th line - Level-of-Detail Generator metadata
-        6th line - operations history (list of clustering operations)
+        :param reprocess: Flag to force re-creation of dataset modifications.
+        :type reprocess: bool
         """
-        file_name = self._get_full_file_name(is_history_file=True)
-        self._remove_file(file_name=file_name)
+        err_msg_subj = '[DatasetHandler._save_data_stack]'
+
+        if not os.path.isfile(self._file_name):
+            logger.error(f'{err_msg_subj} Failed to find the file '
+                         f'({self._file_name})')
+
+        if reprocess:
+            with h5py.File(self._file_name, 'a') as f:
+                if f['base'].get('modified') is not None:
+                    del f['base']['modified']
 
         try:
-            with open(file_name, 'w') as f:
-                f.write('{}\n'.format(self._origin.to_json(orient='table')))
-                f.write('{}\n'.format(self._normalized.to_json(orient='table')))
-                f.write('{}\n'.format(self._auxiliary.to_json(orient='table')))
+            with h5py.File(self._file_name, 'r+') as f:
 
-                f.write('{}\n'.format(
-                    json.dumps(self._property_set['features'])))
-                f.write('{}\n'.format(json.dumps(self._property_set['lod'])))
+                # "modified" group
+                modified_group = f['base'].get('modified')
+                if modified_group is None:
+                    modified_group = f['base'].create_group('modified')
+                    modified_group.attrs['date'] = str(datetime.utcnow())
+                    modified_group.attrs['selected_features'] = json.dumps(
+                        self._property_set['features'])
+                    modified_group.attrs['operations_count'] = 0
 
-                f.write('{}'.format(self.operation_history.save_to_json()))
-        except Exception as e:
-            logger.error('[DatasetHandler._save_history_data] '
-                         'Failed to save data ({}): {}'.format(file_name, e))
-            raise
+                    # "numeric_real" dataset
+                    modified_group.create_dataset(
+                        name='numeric_real',
+                        data=np.array(self._origin.to_records(index=True)))
 
-    def _save_history_data_hdf5(self):
-        """
-        Save modifications of the in initial dataset and corresponding data. HDF5
+                    # "numeric_norm" dataset
+                    modified_group.create_dataset(
+                        name='numeric_norm',
+                        data=np.array(self._normalized.to_records(index=True)))
 
-        1st line - origin (numeric) dataset
-        2nd line - normalized dataset
-        3rd line - auxiliary data (not numeric values)
-        4th line - selected features
-        5th line - Level-of-Detail Generator metadata
-        6th line - operations history (list of clustering operations)
-        """
-        file_name = self._get_full_file_name(is_history_file=True)
-        self._remove_file(file_name=file_name)
-        try:
-            with h5py.File(file_name, 'w') as f:
-                base_group = f.create_group("base_group")
+                    # "auxiliary" dataset
+                    modified_group.create_dataset(
+                        name='auxiliary',
+                        data=np.array(self._auxiliary.to_records(
+                            column_dtypes=dict(map(
+                                lambda x: (x, h5py.special_dtype(vlen=str)),
+                                self._auxiliary.columns.to_list())),
+                            index=True)))
 
-                #base_group
-                base_group.attrs["user"] = ''
-                base_group.attrs["date"] = str(datetime.utcnow())
-                base_group.create_dataset("origin", data=self._origin.to_json(orient='table')) #
-                # statistics     def _get_dataset_features_description(df): list of dict
+                    # "lod" dataset
+                    modified_group.create_dataset(
+                        name='lod',
+                        data=json.dumps(self._property_set['lod'],
+                                        default=json_default_int))
 
-                #modified_n
-                modified_n = base_group.create_group("modified_n")
-
-                modified_n.attrs["date"] = str(datetime.utcnow())
-                modified_n.attrs["selected_features"] = ''
-
-                modified_n.create_dataset("normalized", data=self._normalized.to_json(orient='table'))
-                modified_n.create_dataset("auxiliary", data=self._auxiliary.to_json(orient='table'))
-                modified_n.create_dataset("lod", data=json.dumps(self._property_set['lod']))
-                # statistics  class BasicStatistics(baseoperationclass.BaseOperationClass):
-                #operation_n.m
-                operation_n_m = modified_n.create_group("operation_n.m")
-
-                modified_n.attrs["name"] = ''
-                modified_n.attrs["number_of_groups"] = ''
-                modified_n.attrs["selected_features"] = ''
-                modified_n.attrs["settings"] = 'json'
-
-                operation_n_m.create_dataset("operations", data=self.operation_history.save_to_json())
-                operation_n_m.create_dataset("features", data=json.dumps(self._property_set['features']))
+                # "operation" group
+                self.operation_handler.save_to_hdf5(root_group=modified_group)
 
         except Exception as e:
-            logger.error('[DatasetHandler._save_history_data] '
-                         'Failed to save data ({}): {}'.format(file_name, e))
+            logger.error(f'{err_msg_subj} Failed to save data '
+                         f'({self._file_name}): {e}')
             raise
 
-    def _load_history_data(self):
+    def _load_data_stack(self, **kwargs):
         """
-        Load dataset modifications and corresponding data from history file.
+        Load dataset modifications and corresponding data from the storage file.
 
-        1st line - origin (numeric) dataset
-        2nd line - normalized dataset
-        3rd line - auxiliary data (not numeric values)
-        4th line - selected features
-        5th line - Level-of-Detail Generator metadata
-        6th line - operations history (list of clustering operations)
+        :keyword operation_id: Operation id to be loaded.
         """
-        err_msg_subj = '[DatasetHandler._load_history_data]'
+        err_msg_subj = '[DatasetHandler._load_data_stack]'
 
-        file_name = self._get_full_file_name(is_history_file=True)
-        if not os.path.isfile(file_name):
-            logger.error('{} Failed to find the file ({})'
-                         .format(err_msg_subj, file_name))
+        if not os.path.isfile(self._file_name):
+            logger.error(f'{err_msg_subj} Failed to find the file '
+                         f'({self._file_name})')
 
         try:
-            with open(file_name, 'r') as f:
-                self._origin = data_converters.table_to_df(f.readline())
+            with h5py.File(self._file_name, 'r') as f:
+                modified_group = f['base']['modified']
+
+                self._origin = pd.DataFrame.from_records(
+                    modified_group['numeric_real'][()])
+                self._origin.set_index(f['base']['default'].attrs['index'],
+                                       inplace=True)
+
                 self._modifications.update({
-                    'normalized': data_converters.table_to_df(f.readline()),
-                    'auxiliary': data_converters.table_to_df(f.readline())})
+                    'normalized': pd.DataFrame.from_records(
+                        modified_group['numeric_norm'][()]),
+                    'auxiliary': pd.DataFrame.from_records(
+                        modified_group['auxiliary'][()])})
+
+                self._normalized.set_index(f['base']['default'].attrs['index'],
+                                           inplace=True)
+                self._auxiliary.set_index(f['base']['default'].attrs['index'],
+                                          inplace=True)
 
                 self._property_set.update({
-                    'features': json.loads(f.readline()),
-                    'lod': json.loads(f.readline())})
+                    'features': json.loads(
+                        modified_group.attrs['selected_features']),
+                    'lod': json.loads(
+                        modified_group['lod'][()])})
 
-                operation_history = OperationHistory()
-                operation_history.load_from_json(f.readline())
-                self._property_set['op_history'] = operation_history
+                if kwargs.get('operation_id') is not None:
+                    self.operation_handler.load_from_hdf5(
+                        root_group=modified_group,
+                        operation_id=int(kwargs['operation_id']))
+
         except Exception as e:
-            logger.error('{} Failed to load data ({}): {}'.
-                         format(err_msg_subj, file_name, e))
+            logger.error(f'{err_msg_subj} Failed to load data '
+                         f'({self._file_name}): {e}')
             raise
 
-    def _load_history_data_hdf5(self):
+    @staticmethod
+    def _get_dataset_features_description(df):
         """
-        Load dataset modifications and corresponding data from history file. HDF5
+        Get list of features with descriptive and statistical metrics.
 
-        1st line - origin (numeric) dataset
-        2nd line - normalized dataset
-        3rd line - auxiliary data (not numeric values)
-        4th line - selected features
-        5th line - Level-of-Detail Generator metadata
-        6th line - operations history (list of clustering operations)
+        :param df: Dataset for features analysis.
+        :type df: pandas.DataFrame
+        :return: Feature descriptions.
+        :rtype: list
         """
-        err_msg_subj = '[DatasetHandler._load_history_data]'
+        output = []
 
-        file_name = self._get_full_file_name(is_history_file=True)
-        if not os.path.isfile(file_name):
-            logger.error('{} Failed to find the file ({})'
-                         .format(err_msg_subj, file_name))
+        for column in df:
 
-        try:
-            with h5py.File(file_name, 'r') as hf:
-                self._origin = data_converters.table_to_df(hf.get('origin').value)
-                self._modifications.update({
-                    'normalized': data_converters.table_to_df(hf.get('normalized').value),
-                    'auxiliary': data_converters.table_to_df(hf.get('auxiliary').value)})
+            if not df[column].count():
+                continue
+            # TODO: Re-check that feature with no values should be skipped
 
-                self._property_set.update({
-                    'features': json.loads(hf.get('features').value),
-                    'lod': json.loads(hf.get('lod').value)})
+            item = {
+                'feature_name': column,
+                'feature_type': df[column].dtype.name,
+                'percentage_missing':
+                    (np.count_nonzero(df[column].isnull()) * 100.) /
+                    len(df[column]),
+                'measure_type': 'unknown'}
+            # TODO: Re-check the formula for percentage_missing
 
-                operation_history = OperationHistory()
-                operation_history.load_from_json(hf.get('operations').value)
-                self._property_set['op_history'] = operation_history
-        except Exception as e:
-            logger.error('{} Failed to load data ({}): {}'.
-                         format(err_msg_subj, file_name, e))
-            raise
-    def save(self):
+            is_category = float(df[column].nunique()) / df[column].count() < .1
+
+            if item['feature_type'] in ['int64', 'float64', 'int32',
+                                        'float32', 'int', 'float']:
+
+                if is_category:
+                    unique_values = df[column].dropna().unique().tolist()
+                    item.update({
+                        'measure_type': 'ordinal',
+                        'unique_values': unique_values,
+                        'unique_number': len(unique_values),
+                        'distribution': {str(k): v for k, v in df[column].
+                            value_counts().to_dict().items()},
+                        'enabled': 'false'})
+                else:
+                    item.update({
+                        'measure_type': 'continuous',
+                        'min': df[column].min(),
+                        'max': df[column].max(),
+                        'mean': df[column].mean(),
+                        'std': df[column].std(),
+                        'q10': df[column].quantile(.1),
+                        'q25': df[column].quantile(.25),
+                        'q50': df[column].quantile(.5),
+                        'q75': df[column].quantile(.75),
+                        'q90': df[column].quantile(.9),
+                        'enabled': 'true'})
+
+            elif item['feature_type'] == 'object':
+
+                item.update({
+                    'measure_type': 'nominal',
+                    'unique_number': len(df[column].dropna().unique().tolist()),
+                    'distribution': {},
+                    'enabled': 'false'})
+
+                is_datetime_object = False
+                if any(n in column for n in ['time', 'date', 'start', 'end']):
+                    try:
+                        dt_object = pd.to_datetime(df[column].dropna())
+                    except ValueError:
+                        pass
+                    else:
+                        item.update({
+                            'measure_type': 'range',
+                            'unique_values': [dt_object.min().isoformat(),
+                                              dt_object.max().isoformat()]})
+                        is_datetime_object = True
+
+                if not is_datetime_object:
+
+                    unique_values = df[column].dropna().unique().tolist()
+                    if is_category:
+                        item.update({
+                            'unique_values': unique_values,
+                            'distribution':
+                                df[column].value_counts().to_dict()})
+                    else:
+                        item.update({
+                            'measure_type': 'non-categorical',
+                            'unique_values': unique_values[:10]})
+
+            output.append(item)
+        return output
+
+    def save(self, reprocess=False):
         """
-        Public method to save changes into the history file.
+        Public method to save changes into the storage file.
+
+        :param reprocess: Flag to force re-creation of dataset modifications.
+        :type reprocess: bool
         """
-        if (self._origin is not None and \
+        if (self._origin is not None and
                 self._modifications and self._property_set):
-            #self._save_history_data()
-            self._save_history_data_hdf5()
+            self._save_data_stack(reprocess=reprocess)

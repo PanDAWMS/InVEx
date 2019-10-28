@@ -7,7 +7,7 @@ import json
 
 from datetime import datetime
 
-from .. import baseoperationclass
+from ..clustering import baseoperationclass
 
 
 class OperationHandler:

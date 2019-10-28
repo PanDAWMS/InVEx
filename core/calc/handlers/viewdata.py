@@ -138,19 +138,6 @@ class ViewDataHandler(BaseDataHandler):
             logger.error('[ViewDataHandler.__init__] Failed to read the list '
                          'of files with dataset samples: {}'.format(e))
 
-    def _get_full_stats_file_name(self):
-        """
-        Form full file name for keeping dataset descriptive information (stats).
-
-        :return: Full stats file name.
-        :rtype: str
-        """
-        return os.path.join(
-            self._get_full_dir_name(),
-            '{}.{}'.format(
-                self._did,
-                STAT_FILE_EXTENSION))
-
     @property
     def context_data(self):
         return self._data
@@ -168,103 +155,10 @@ class ViewDataHandler(BaseDataHandler):
             columns=df_imputer.columns)
         return scaled_df
 
-    @staticmethod
-    def _get_dataset_features_description(df):
-        """
-        Get list of features with descriptive and statistical metrics.
-
-        :param df: Dataset for features analysis.
-        :type df: pandas.DataFrame
-        :return: Feature descriptions.
-        :rtype: list
-        """
-        output = []
-
-        for column in df:
-
-            if not df[column].count():
-                continue
-            # TODO: Re-check that feature with no values should be skipped
-
-            item = {
-                'feature_name': column,
-                'feature_type': df[column].dtype.name,
-                'percentage_missing':
-                    (np.count_nonzero(df[column].isnull()) * 100.) / len(df[column]),
-                'measure_type': 'unknown'}
-            # TODO: Re-check the formula for percentage_missing
-
-            is_category = float(df[column].nunique()) / df[column].count() < .1
-
-            if item['feature_type'] in ['int64', 'float64', 'int32',
-                                        'float32', 'int', 'float']:
-
-                if is_category:
-                    unique_values = df[column].dropna().unique().tolist()
-                    item.update({
-                        'measure_type': 'ordinal',
-                        'unique_values': unique_values,
-                        'unique_number': len(unique_values),
-                        'distribution': {str(k): v for k, v in df[column].
-                                         value_counts().to_dict().items()},
-                        'enabled': 'false'})
-                else:
-                    item.update({
-                        'measure_type': 'continuous',
-                        'min': df[column].min(),
-                        'max': df[column].max(),
-                        'mean': df[column].mean(),
-                        'std': df[column].std(),
-                        'q10': df[column].quantile(.1),
-                        'q25': df[column].quantile(.25),
-                        'q50': df[column].quantile(.5),
-                        'q75': df[column].quantile(.75),
-                        'q90': df[column].quantile(.9),
-                        'enabled': 'true'})
-
-            elif item['feature_type'] == 'object':
-
-                item.update({
-                    'measure_type': 'nominal',
-                    'unique_number': len(df[column].dropna().unique().tolist()),
-                    'distribution': {},
-                    'enabled': 'false'})
-
-                is_datetime_object = False
-                if any(n in column for n in ['time', 'date', 'start', 'end']):
-                    try:
-                        dt_object = pd.to_datetime(df[column].dropna())
-                    except ValueError:
-                        pass
-                    else:
-                        item.update({
-                            'measure_type': 'range',
-                            'unique_values': [dt_object.min().isoformat(),
-                                              dt_object.max().isoformat()]})
-                        is_datetime_object = True
-
-                if not is_datetime_object:
-
-                    unique_values = df[column].dropna().unique().tolist()
-                    if is_category:
-                        item.update({
-                            'unique_values': unique_values,
-                            'distribution':
-                                df[column].value_counts().to_dict()})
-                    else:
-                        item.update({
-                            'measure_type': 'non-categorical',
-                            'unique_values': unique_values[:10]})
-
-            output.append(item)
-        return output
-
-    def set_dataset_description(self, save_stats=None, with_full_set=False):
+    def set_dataset_description(self, with_full_set=False):
         """
         Set corresponding parameters that describe the dataset.
 
-        :param save_stats: Flag to save dataset descriptive information (stats).
-        :type save_stats: bool
         :param with_full_set: Flag to get full set of context parameters.
         :type with_full_set: bool
         """
@@ -290,19 +184,8 @@ class ViewDataHandler(BaseDataHandler):
             'dsID': self._did,
             'index_name': df.index.name,
             'num_records': len(df.index),
-            'features': self._get_dataset_features_description(df=df),
+            'features': self._dataset_handler.features_description,
             'data_uploaded': True})
-
-        if save_stats:
-            file_name = self._get_full_stats_file_name()
-            self._remove_file(file_name=file_name)
-            with open(file_name, 'w') as f:
-                f.write(json.dumps({
-                    'index_name': self._data['index_name'],
-                    'num_records': self._data['num_records'],
-                    'features': json.loads(
-                        pd.DataFrame.from_records(self._data['features']).T.
-                        to_json())}))
 
         if with_full_set:
             try:
@@ -315,9 +198,7 @@ class ViewDataHandler(BaseDataHandler):
                     'aux_dataset':
                         data_converters.pandas_to_js_list(_auxiliary),
                     'dim_names': _normalized.columns.tolist(),
-                    'aux_names': _auxiliary.columns.tolist(),
-                    'operation_history':
-                        self._dataset_handler.operation_history})
+                    'aux_names': _auxiliary.columns.tolist()})
 
                 ds_origin_stats = BasicStatistics().process_data(_origin)
                 ds_stats_values = []
@@ -325,6 +206,7 @@ class ViewDataHandler(BaseDataHandler):
                     ds_stats_values.append(ds_origin_stats[i].tolist())
                 self._data['real_metrics'] = [STAT_DESCRIPTION, ds_stats_values]
                 # TODO: Re-work this.
+                # TODO: Data should be taken from "features_description"
 
                 corr_matrix = _origin.corr()
                 corr_matrix.dropna(axis=0, how='all', inplace=True)
@@ -332,8 +214,8 @@ class ViewDataHandler(BaseDataHandler):
                 self._data['corr_matrix'] = corr_matrix.values.tolist()
 
             except Exception as e:
-                logger.error('{} Failed to prepare basics of the view data: {}'.
-                             format(err_msg_subj, e))
+                logger.error(f'{err_msg_subj} Failed to prepare basics of '''
+                             f'the view data: {e}')
                 raise
 
             # prepare LoD information
@@ -365,10 +247,10 @@ class ViewDataHandler(BaseDataHandler):
         :param camera_params: Camera parameters.
         :type camera_params: dict
         """
-        cluster_labels = operation.save_results()['results']
+        cluster_labels = operation.results.tolist()  # TODO: change to labels
         self._data.update({
             'algorithm': operation._operation_code_name,
-            'parameters': operation.print_parameters(),
+            'parameters': operation.print_parameters(),  # TODO: to be changed
             'clusters': cluster_labels,
             'count_of_clusters': len(set(cluster_labels)),
             'cluster_ready': True,

@@ -1,4 +1,4 @@
-from . import baseoperationclass
+from .clustering import baseoperationclass
 import pandas as pd
 
 DESCRIPTION = ['Count', 'Min', 'Max', 'Mean', 'Std', '25%', '50%', '75%', 'Sum', 'Skew', 'Median']

@@ -6,9 +6,6 @@ import io
 import json
 import logging
 import os.path
-import h5py
-
-import numpy as np
 
 import pandas as pd
 
@@ -17,27 +14,28 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 
-from core.settings.base import BASE_DIR
-from core import calc
+from .settings.base import BASE_DIR
+from .calc import clustering
 
 from .calc.handlers import DatasetHandler, ViewDataHandler
 from .calc.handlers.viewdata import list_csv_data_files, DATASET_FILES_PATH
 from .providers import LocalReader
 
-FILE_EXTENSION_DEFAULT = 'hdf'
 SITE_SITE_DATASET_FILES_PATH = BASE_DIR + '/site_site_datasets/'
 
 logger = logging.getLogger(__name__)
 local_reader = LocalReader()
 
 
-def create_dataset_storage(dataset_id):
+def create_dataset_storage_dir(dataset_id):
+    # TODO: After groups data storing is updated according to hdf5 format,
+    #  then this method should be deleted.
     """
     Create directory for service files related to analyzed dataset sample.
 
     :param dataset_id: Dataset sample id.
     :type dataset_id: int/str
-    :return: Full path for dataset storage.
+    :return: Full path for dataset storage directory.
     :rtype: str
     """
     output = os.path.join(settings.MEDIA_ROOT, str(dataset_id))
@@ -45,8 +43,8 @@ def create_dataset_storage(dataset_id):
     try:
         os.mkdir(output)
     except OSError as e:
-        logger.error('[form_reactions.create_dataset_storage] '
-                     'Failed to create dataset storage: {}'.format(e))
+        logger.error('[form_reactions.create_dataset_storage_dir] '
+                     f'Failed to create dataset storage: {e}')
 
     return output
 
@@ -55,10 +53,10 @@ def _process_input_data(source_type, source_data, **kwargs):
     """
     Get and process data to prepare data sample (i.e., store at the server).
 
-    :param source_type: Type of the source: file, dataframe, json.
+    :param source_type: Type of the source: dataframe, file, json.
     :type source_type: str
     :param source_data: Source data.
-    :type source_data: dict/pandas.DataFrame/json
+    :type source_data: pandas.DataFrame/dict/json
 
     :keyword index_name: Column name that would be used as an index.
 
@@ -67,35 +65,35 @@ def _process_input_data(source_type, source_data, **kwargs):
     """
     err_msg_subj = '[form_reactions._process_input_data]'
 
-    output = str(datetime.now().timestamp())
-    dataset_path = os.path.join(create_dataset_storage(output),
-                                '{0}.{1}'.format(output, FILE_EXTENSION_DEFAULT))
+    did = str(datetime.now().timestamp())
+    # - to be deleted -
+    create_dataset_storage_dir(did)
+    # TODO: scheduled to be deleted (for consistency with groups storing).
+
     try:
-        if source_type == 'file':
-            with open(dataset_path, 'wb+') as f:
-                for chunk in source_data.chunks():
-                    f.write(chunk)
+        if source_type == 'dataframe':
+            df = source_data
 
-        elif source_type == 'dataframe':
-
-            data = np.array(source_data.to_records().view(type=np.matrix))
-            with h5py.File(dataset_path, 'w') as f:
-                base_group = f.create_group("base_group")
-
-                base_group.attrs["user"] = ''
-                base_group.attrs["date"] = str(datetime.utcnow())
-                base_group.create_dataset("origin", data=data)#It does not work:  TypeError: Object dtype dtype('O') has no native HDF5 equivalent
-
+        elif source_type == 'file':
+            df = pd.read_csv(source_data)
 
         elif source_type == 'json' and 'index_name' in kwargs:
             df = pd.read_json(json.dumps(source_data))
             df.set_index(kwargs['index_name'], inplace=True)
-            df.to_csv(dataset_path)
-    except Exception as e:
-        logger.error('{} Failed to prepare dataset sample: {}'.
-                     format(err_msg_subj, e))
 
-    return output
+        else:
+            df = None
+            logger.error(f'{err_msg_subj} Data source type is unknown')
+
+    except Exception as e:
+        logger.error(f'{err_msg_subj} Failed to prepare dataset sample: {e}')
+
+    else:
+        if df is not None:
+            DatasetHandler(did=did).create_dataset_storage(df=df)
+
+    return did
+
 
 def set_csv_file_from_server(request):
     """
@@ -123,11 +121,11 @@ def set_csv_file_from_server(request):
                             **{'index_col': 0,
                                'header': 0}))
                 else:
-                    logger.error('{} Failed to read data from server ({})'.
-                                 format(err_msg_subj, full_file_name))
+                    logger.error(f'{err_msg_subj} Failed to read data '
+                                 f'from server ({full_file_name})')
     else:
-        logger.error('{} Request parameters are incorrect: {}'.
-                     format(err_msg_subj, json.dumps(request.POST)))
+        logger.error(f'{err_msg_subj} Request parameters are incorrect: '
+                     f'{json.dumps(request.POST)}')
 
     return output
 
@@ -181,14 +179,13 @@ def set_jobs_data_from_panda(request):
             try:
                 parsed_url = urlparse(request.GET['bigpandaUrl'])
             except ValueError as e:
-                logger.error('{} No URL provided or provided str is not URL: '
-                             '{}'.format(err_msg_subj, e))
+                logger.error(f'{err_msg_subj} No URL provided or '
+                             f'provided str is not URL: {e}')
                 raise
 
             if parsed_url.path != '/jobs/':
-                logger.error('{} Provided BigPanDA URL is incorrect: {}'.
-                             format(err_msg_subj, json.dumps(request.GET)))
-                #raise
+                logger.error(f'{err_msg_subj} Provided BigPanDA URL '
+                             f'is incorrect: {json.dumps(request.GET)}')
 
             filter_params = {'fulllist': 'true'}
             if len(parsed_url.query) > 0 and '=' in parsed_url.query:
@@ -206,13 +203,12 @@ def set_jobs_data_from_panda(request):
                 source_data=source_data,
                 **{'index_name': 'pandaid'})
         else:
-            logger.error('{} Data from BigPanDA was not collected: {}'.
-                         format(err_msg_subj, json.dumps(request.GET)))
-            #raise
+            logger.error(f'{err_msg_subj} Data from BigPanDA '
+                         f'was not collected: {json.dumps(request.GET)}')
 
     else:
-        logger.error('{} Request parameters are incorrect: {}'.
-                     format(err_msg_subj, json.dumps(request.GET)))
+        logger.error(f'{err_msg_subj} Request parameters are incorrect: '
+                     f'{json.dumps(request.GET)}')
 
     return output
 
@@ -316,7 +312,7 @@ def set_processed_view_data(request, dataset_id, group_ids=None, **kwargs):
     """
     dataset_hdlr = _get_dataset_handler_by_request_data(
         request=request, dataset_id=dataset_id, group_ids=group_ids)
-    dataset_hdlr.save()
+    dataset_hdlr.save(reprocess=True)
 
     viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
     viewdata_hdlr.set_dataset_description(with_full_set=True)
@@ -340,13 +336,10 @@ def get_operational_view_data(dataset_id, group_ids, op_number, **kwargs):
     :rtype: dict
     """
     dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
-                                  load_history_data=True)
+                                  load_history_data=True,
+                                  operation_id=op_number)
 
-    op_history = dataset_hdlr.operation_history
-    if op_number >= op_history.length():
-        op_number = op_history.length() - 1
-
-    operation, _, camera_params = op_history.get_step(op_number)
+    operation = dataset_hdlr.operation_handler.operation
     if operation._type_of_operation != 'cluster':
         logger.error('[form_reactions.get_operational_view_data] '
                      'The type of the operation is not "cluster": type={}'.
@@ -354,8 +347,9 @@ def get_operational_view_data(dataset_id, group_ids, op_number, **kwargs):
 
     viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
     viewdata_hdlr.set_dataset_description(with_full_set=True)
-    viewdata_hdlr.set_clustering_data(operation=operation,
-                                      camera_params=camera_params)
+    viewdata_hdlr.set_clustering_data(
+        operation=operation,
+        camera_params=dataset_hdlr.operation_handler.visual_parameters)
     if 'preview_url' in kwargs:
         viewdata_hdlr.set_preview_url(kwargs['preview_url'])
     viewdata_hdlr.set_data_readiness()
@@ -380,70 +374,91 @@ def clusterize(request, dataset_id, group_ids=None):
     operation = None
     mode = None
     if 'algorithm' in request.POST:
-        if (request.POST['algorithm'] == 'KMeans' and \
-                'numberofclKMeans' in request.POST):
 
-            clusters_list = [] if request.POST['clustering_list_json'] == '' \
-                else json.loads(request.POST['clustering_list_json'])
+        clusters_list = [] if request.POST['clustering_list_json'] == '' \
+            else json.loads(request.POST['clustering_list_json'])
 
-            operation = calc.KMeansClustering.KMeansClustering()
-            operation.set_parameters(int(request.POST['numberofclKMeans']),
+        if (request.POST['algorithm'] == 'KMeans' and
+                'numberofcl_KMeans' in request.POST):
+
+            operation = clustering.KMeansClustering.KMeansClustering()
+            operation.set_parameters(int(request.POST['numberofcl_KMeans']),
                                      clusters_list)
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and \
-                'cluster_number' in request.POST and 'batch_size' in request.POST):
+        elif (request.POST['algorithm'] == 'MiniBatchKMeans' and
+                'numclusters_MiniBatchKMeans' in request.POST and
+                'batchsize_MiniBatchKMeans' in request.POST):
 
-            operation = calc.MiniBatchKMeansClustering.\
+            operation = clustering.MiniBatchKMeansClustering.\
                 MiniBatchKMeansClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['batch_size']))
+            operation.set_parameters(
+                num_clusters=int(request.POST['numclusters_MiniBatchKMeans']),
+                features=clusters_list,
+                batch_size=int(request.POST['batchsize_MiniBatchKMeans']))
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'KPrototypes' and \
-                'cluster_number' in request.POST and \
-                'categorical_data_weight' in request.POST):
+        elif (request.POST['algorithm'] == 'DAALKMeans' and
+                'numclusters_DAALKMeans' in request.POST):
 
-            operation = calc.KPrototypesClustering.KPrototypesClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['categorical_data_weight']))
-            mode = 'all'
-
-        elif (request.POST['algorithm'] == 'Hierarchical' and \
-                'cluster_number' in request.POST and \
-                'categorical_data_weight' in request.POST):
-
-            operation = calc.HierarchicalClustering.HierarchicalClustering()
-            operation.set_parameters(int(request.POST['cluster_number']),
-                                     int(request.POST['categorical_data_weight']))
-            mode = 'all'
-
-        elif (request.POST['algorithm'] == 'DBSCAN' and \
-                'min_samples' in request.POST and 'eps' in request.POST):
-
-            operation = calc.DBScanClustering.DBScanClustering()
-            operation.set_parameters(int(request.POST['min_samples']),
-                                     float(request.POST['eps']))
-
+            operation = clustering.DAALKMeansClustering.DAALKMeansClustering()
+            operation.set_parameters(
+                int(request.POST['numclusters_DAALKMeans']),
+                clusters_list)
             mode = 'numeric'
 
-        elif (request.POST['algorithm'] == 'GroupData' and \
-                'feature_name' in request.POST):
+        elif (request.POST['algorithm'] == 'KPrototypes' and
+                'cluster_number_KPrototypes' in request.POST and
+                'categorical_data_weight_KPrototypes' in request.POST):
 
-            operation = calc.GroupData.GroupData()
-            operation.set_parameters(request.POST['feature_name'])
+            operation = clustering.KPrototypesClustering.KPrototypesClustering()
+            operation.set_parameters(
+                int(request.POST['cluster_number_KPrototypes']),
+                int(request.POST['categorical_data_weight_KPrototypes']),
+                clusters_list)
+            mode = 'all'
 
+        elif (request.POST['algorithm'] == 'Hierarchical' and
+              'cluster_number_Hierarchical' in request.POST and
+              'categorical_data_weight_Hierarchical' in request.POST):
+
+            operation = clustering.HierarchicalClustering.\
+                HierarchicalClustering()
+            operation.set_parameters(
+                int(request.POST['cluster_number_Hierarchical']),
+                int(request.POST['categorical_data_weight_Hierarchical']),
+                clusters_list)
+            mode = 'all'
+
+        elif (request.POST['algorithm'] == 'DBSCAN' and
+                'min_samples_DBSCAN' in request.POST and
+                'eps_DBSCAN' in request.POST):
+
+            operation = clustering.DBScanClustering.DBScanClustering()
+            operation.set_parameters(int(request.POST['min_samples_DBSCAN']),
+                                     float(request.POST['eps_DBSCAN']),
+                                     clusters_list)
+            mode = 'numeric'
+
+        elif (request.POST['algorithm'] == 'GroupData' and
+              'feature_name_GroupData' in request.POST):
+
+            operation = clustering.GroupData.GroupData()
+            operation.set_parameters(request.POST['feature_name_GroupData'])
             mode = 'all'
 
         else:
-            logger.error('{} Requested algorithm is not found: {}'.
-                         format(err_msg_subj, json.dumps(request.POST)))
+            logger.error(f'{err_msg_subj} Requested algorithm is not found: '
+                         f'{json.dumps(request.POST)}')
     else:
-        logger.error('{} Request is incorrect: {}'.
-                     format(err_msg_subj, json.dumps(request.POST)))
+        logger.error(f'{err_msg_subj} Request is incorrect: '
+                     f'{json.dumps(request.POST)}')
 
-    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
-                                  load_history_data=True)
+    dataset_hdlr = DatasetHandler(
+        did=dataset_id, group_ids=group_ids,
+        load_history_data=True,
+        use_normalized_dataset='use_normalized_dataset' in request.POST and
+                               request.POST['use_normalized_dataset'] == 'on')
 
     dataset_hdlr._mode = mode
     clustering_dataset = dataset_hdlr.clustering_dataset
@@ -458,14 +473,13 @@ def clusterize(request, dataset_id, group_ids=None):
             raise
         else:
             if clusters is not None:
-                op_history = dataset_hdlr.operation_history
-                op_history.append(clustering_dataset,
-                                  operation,
-                                  request.POST['visualparameters'])
-                dataset_hdlr.operation_history = op_history
+                dataset_hdlr.operation_handler.set(
+                    operation=operation,
+                    visual_parameters=request.POST['visualparameters'])
                 dataset_hdlr.save()
 
-                output_op_number = op_history.length() - 1
+                output_op_number = dataset_hdlr.\
+                    operation_handler.operations_count - 1
             else:
                 logger.error('{} No clusters were created: {}'.format(
                     err_msg_subj, json.dumps(operation.save_parameters())))
