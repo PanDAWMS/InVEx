@@ -5,6 +5,8 @@ the analysis dataset sample.
 
 import json
 
+from datetime import datetime
+
 from .. import baseoperationclass
 
 
@@ -45,6 +47,7 @@ class OperationHandler:
             operation_group = root_group.create_group(
                 'operation_{}'.format(root_group.attrs['operations_count']))
             operation_group.attrs['name'] = self.operation.operation_name
+            operation_group.attrs['date'] = str(datetime.utcnow())
 
             # TODO: create method per each operation that will return
             #  the number of groups/clusters.
