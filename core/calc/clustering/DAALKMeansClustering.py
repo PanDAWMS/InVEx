@@ -38,7 +38,12 @@ class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
             self.num_clusters = num_clusters
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
-        return True  # TODO: "return"-statement should be removed
+
+    def load_parameters(self, **kwargs):
+        self.set_parameters(
+            num_clusters=kwargs.get('numclusters_DAALKMeans') or
+            NUM_CLUSTERS_DEFAULT,
+            features=kwargs.get('features_DAALKMeans') or [])
 
     def get_parameters(self):
         return {'numclusters_DAALKMeans': self.num_clusters,
@@ -71,12 +76,6 @@ class DAALKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def save_parameters(self):
         return self.get_parameters()
-
-    def load_parameters(self, parameters):
-        self.set_parameters(
-            num_clusters=parameters.get('numclusters_DAALKMeans') or NUM_CLUSTERS_DEFAULT,
-            features=parameters.get('features_DAALKMeans') or [])
-        return True
 
     def save_results(self):
         return {'results': self.labels.tolist(),

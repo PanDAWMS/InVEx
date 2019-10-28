@@ -1,6 +1,7 @@
-import pickle
 
 import numpy as np
+import pickle
+
 from sklearn.cluster import DBSCAN
 
 from . import baseoperationclass
@@ -36,7 +37,12 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
             self.eps = eps
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
-        return True
+
+    def load_parameters(self, **kwargs):
+        self.set_parameters(
+            min_samples=kwargs.get('min_samples_DBSCAN') or MIN_SAMPLES,
+            eps=kwargs.get('eps_DBSCAN') or EPS,
+            features=kwargs.get('features_DBSCAN') or [])
 
     def get_parameters(self):
         return {'min_samples_DBSCAN': self.min_samples,
@@ -61,14 +67,6 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
 
     def save_parameters(self):
         return self.get_parameters()
-
-    def load_parameters(self, parameters):
-        self.set_parameters(
-            min_samples=parameters.get('min_samples_DBSCAN') or MIN_SAMPLES,
-            eps=parameters.get('eps_DBSCAN') or EPS,
-            features=parameters.get('features_DBSCAN') or []
-        )
-        return True
 
     def save_results(self):
         # Number of clusters in labels, ignoring noise if present.

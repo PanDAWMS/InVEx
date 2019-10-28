@@ -1,9 +1,12 @@
-from . import baseoperationclass
-from sklearn.cluster import KMeans
+
 import numpy as np
 import pickle
 
-CLUST_NUM = 3
+from sklearn.cluster import KMeans
+
+from . import baseoperationclass
+
+NUM_CLUSTERS_DEFAULT = 3
 
 
 class KMeansClustering(baseoperationclass.BaseOperationClass):
@@ -14,7 +17,7 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
 
     def __init__(self):
         super().__init__()
-        self.clust_numbers = CLUST_NUM
+        self.num_clusters = NUM_CLUSTERS_DEFAULT
         self.selected_features = []
         self.model = None
         self.labels = None
@@ -24,22 +27,27 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
         return data if not self.selected_features \
             else data.loc[:, self.selected_features]
 
-    def set_parameters(self, clust_numbers, features=None):
-        if clust_numbers is not None:
-            self.clust_numbers = clust_numbers
+    def set_parameters(self, num_clusters, features=None):
+        if num_clusters is not None:
+            self.num_clusters = num_clusters
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
-        return True
+
+    def load_parameters(self, **kwargs):
+        self.set_parameters(
+            num_clusters=kwargs.get('numberofcl_KMeans') or
+            NUM_CLUSTERS_DEFAULT,
+            features=kwargs.get('features_KMeans') or [])
 
     def get_parameters(self):
-        return {'numberofcl_KMeans': self.clust_numbers,
+        return {'numberofcl_KMeans': self.num_clusters,
                 'features_KMeans': self.selected_features}
 
     def get_labels(self, data, reprocess=False):
         data = self._preprocessed_data(data)
 
         if self.model is None or reprocess:
-            self.model = KMeans(self.clust_numbers)
+            self.model = KMeans(self.num_clusters)
             self.model.fit(data)
             self.labels = self.model.predict(data)
             self.centers = self.model.cluster_centers_
@@ -55,13 +63,6 @@ class KMeansClustering(baseoperationclass.BaseOperationClass):
 
     def save_parameters(self):
         return self.get_parameters()
-
-    def load_parameters(self, parameters):
-        self.set_parameters(
-            clust_numbers=parameters.get('numberofcl_KMeans') or CLUST_NUM,
-            features=parameters.get('features_KMeans') or []
-        )
-        return True
 
     def save_results(self):
         return {'results': self.labels.tolist(),

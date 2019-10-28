@@ -88,7 +88,6 @@ class OperationHandler:
                  visual_parameters=json.loads(
                  operation_group.attrs['visual_parameters']))
 
-        # TODO: Re-work method "load_parameters"
-        self.operation.load_parameters(json.loads(
+        self.operation.load_parameters(**json.loads(
             operation_group.attrs['operation_parameters']))
         self.operation.labels = operation_group['operation_results'][()]
