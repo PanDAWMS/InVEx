@@ -7,13 +7,13 @@ import json
 import logging
 import os
 
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 
 from sklearn import preprocessing
 from sklearn.impute import SimpleImputer
-
-from datetime import datetime
 
 from ...settings.base import BASE_DIR
 
@@ -24,8 +24,6 @@ from ._base import BaseDataHandler
 
 DATASET_FILES_PATH = BASE_DIR + '/datasets/'
 FILES_LIST_NAME = 'files_list.json'
-
-STAT_FILE_EXTENSION = 'stat'
 
 LOD_MODE_DEFAULT = 'minibatch'
 LOD_VALUE_DEFAULT = 50
@@ -250,7 +248,7 @@ class ViewDataHandler(BaseDataHandler):
         cluster_labels = operation.labels.tolist()
         self._data.update({
             'algorithm': operation._operation_code_name,
-            'parameters': operation.get_parameters(),  # TODO: to be changed
+            'parameters': operation.get_parameters(),
             'clusters': cluster_labels,
             'count_of_clusters': len(set(cluster_labels)),
             'cluster_ready': True,

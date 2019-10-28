@@ -7,11 +7,11 @@ import json
 import logging
 import os
 
+from datetime import datetime
+
 import h5py
 import numpy as np
 import pandas as pd
-
-from datetime import datetime
 
 from ...providers import LocalReader
 
