@@ -1,11 +1,13 @@
 import numpy as np
 from functools import partial
 
+from core.calc.logger import ServiceLogger
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 
 from . import baseoperationclass
 from ..util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
 
+_logger = ServiceLogger('Hierarchical').logger
 
 CLUSTER_NUMBER = 5
 CATEGORICAL_WEIGHT = -1
@@ -33,32 +35,45 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
     def set_parameters(self, cluster_number, categorical_weight, features=None):
         if cluster_number is not None:
             self.cluster_number = cluster_number
+        else:
+            _logger.error("cluster number is None")
         if categorical_weight is not None:
             self.categorical_weight = categorical_weight
+        else:
+            _logger.error("categorical weight is None")
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
+        _logger.debug("Parametrs have been set. Cluster number: {0}, categorical weight: {1}, selected features: {2}"
+                      .format(self.cluster_number, self.categorical_weight, self.selected_features))
         return True
 
     def get_parameters(self):
-        return {"cluster_number_Hierarchical": self.cluster_number,
+        data = {"cluster_number_Hierarchical": self.cluster_number,
                 "categorical_data_weight_Hierarchical": self.categorical_weight,
                 'features_Hierarchical': self.selected_features}
+        _logger.debug("Parametrs have been got: {0}".format(data))
+        return data
 
     def _find_linkage(self, dataset):
-        distance_metric = 'euclidean'
-        categorical_indices = get_categorical_indices(dataset)
-        numerical_indices = [x for x in range(dataset.shape[1]) if x not in categorical_indices]
-        if categorical_indices:
-            dataset = normalized_dataset(dataset, categorical_indices)
-            dataset = encode_nominal_parameters(dataset, categorical_indices)
-            if self.categorical_weight is None or self.categorical_weight < 0:
-                self.categorical_weight = 0.5 * dataset.take(numerical_indices, axis=1).values.std()
-            from ..util.dissimilarity_python import mixed_metric
-            distance_metric = partial(mixed_metric,
-                                      categorical_indices=np.array(categorical_indices, dtype=np.int32),
-                                      categorical_weight=self.categorical_weight)
-        dataset = dataset.values
-        self.linkage = linkage(dataset, method='single', metric=distance_metric, optimal_ordering=False)
+        try:
+            distance_metric = 'euclidean'
+            categorical_indices = get_categorical_indices(dataset)
+            numerical_indices = [x for x in range(dataset.shape[1]) if x not in categorical_indices]
+            if categorical_indices:
+                dataset = normalized_dataset(dataset, categorical_indices)
+                dataset = encode_nominal_parameters(dataset, categorical_indices)
+                if self.categorical_weight is None or self.categorical_weight < 0:
+                    self.categorical_weight = 0.5 * dataset.take(numerical_indices, axis=1).values.std()
+                from ..util.dissimilarity_python import mixed_metric
+                distance_metric = partial(mixed_metric,
+                                          categorical_indices=np.array(categorical_indices, dtype=np.int32),
+                                          categorical_weight=self.categorical_weight)
+            dataset = dataset.values
+            self.linkage = linkage(dataset, method='single', metric=distance_metric, optimal_ordering=False)
+        except Exception as error:
+            _logger.error(error)
+            print(error)
+        _logger.debug("Linkage has been found {0}".format(self.linkage))
         return True
 
     def _dendrogram(self):
@@ -73,7 +88,7 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
         if self.labels is None or reprocess:
             self._find_linkage(data)
             self.labels = fcluster(self.linkage, self.cluster_number, criterion='maxclust')
-
+        _logger.debug("Labels have been got: {0}".format(data))
         return self.labels
 
     # Legacy methods
@@ -90,17 +105,21 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
             categorical_weight=parameters.get('categorical_data_weight_Hierarchical') or CATEGORICAL_WEIGHT,
             features=parameters.get('features_Hierarchical') or []
         )
+        _logger.debug("Parametrs have been loaded {0}".format(parameters))
         return True
 
     def save_results(self):
-        return {'results': self.labels.tolist(),
+        data = {'results': self.labels.tolist(),
                 'linkage': self.linkage.tolist()}
+        _logger.debug("Save results: {0}".format(data))
+        return data
 
     def load_results(self, results_dict):
         if results_dict.get("results") is not None:
             self.labels = np.array(results_dict['results'])
         if results_dict.get("linkage") is not None:
             self.linkage = np.array(results_dict['linkage'])
+        _logger.debug("Results have been loaded")
         return True
 
     def process_data(self, data):
@@ -113,4 +132,5 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
 try:
     baseoperationclass.register(HierarchicalClustering)
 except ValueError as error:
+    _logger.error(error)
     print(repr(error))

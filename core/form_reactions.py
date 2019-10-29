@@ -14,8 +14,9 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 
-from .settings.base import BASE_DIR
-from .calc import clustering
+from core import calc
+from core.settings.base import BASE_DIR
+from core.calc import clustering
 
 from .calc.handlers import DatasetHandler, ViewDataHandler
 from .calc.handlers.viewdata import list_csv_data_files, DATASET_FILES_PATH
@@ -369,6 +370,9 @@ def clusterize(request, dataset_id, group_ids=None):
     operation = None
     mode = None
     if 'algorithm' in request.POST:
+
+        logger.debug(request.POST)
+
         clusters_list = [] if request.POST['clustering_list_json'] == '' \
                 else json.loads(request.POST['clustering_list_json'])
 
@@ -460,7 +464,6 @@ def clusterize(request, dataset_id, group_ids=None):
         except Exception as e:
             logger.error('{} Failed to perform data clustering: {} - {}'.
                          format(err_msg_subj, json.dumps(request.POST), e))
-            raise
         else:
             if clusters is not None:
                 op_history = dataset_hdlr.operation_history

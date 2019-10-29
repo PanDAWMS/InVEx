@@ -57,14 +57,14 @@ LOGGING = {
             'level': 'ERROR',
         },
         'django': {
-            'handlers': ['null', ],
+            'handlers': ['null', 'console'],
         },
         'py.warnings': {
             'handlers': ['null', ],
         },
         '': {
-            'handlers': ['logfile-django', 'logfile-error'],
-            'level': "DEBUG",
+            'handlers': ['logfile-django', 'logfile-error', 'console'],
+            'level': "ERROR",
         },
     },
     'formatters': {

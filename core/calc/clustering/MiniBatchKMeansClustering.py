@@ -3,8 +3,11 @@ import numpy as np
 import pickle
 
 from sklearn.cluster import MiniBatchKMeans
+from core.calc.logger import ServiceLogger
 
 from . import baseoperationclass
+
+_logger = ServiceLogger('MiniBatchKMeans').logger
 
 NUM_CLUSTERS_DEFAULT = 5
 BATCH_SIZE_DEFAULT = 200
@@ -40,16 +43,22 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
     def set_parameters(self, num_clusters, features=None, batch_size=None):
         if num_clusters is not None:
             self.num_clusters = num_clusters
+        else:
+            _logger.error('num clusters is None')
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
         if batch_size is not None:
             self.batch_size = batch_size
+        _logger.debug("Parametrs have been set. Num clusters: {0}, selected features: {2}, batch size: {3}"
+                      .format(self.num_clusters, self.selected_features, self.batch_size))
         return True  # TODO: "return"-statement should be removed
 
     def get_parameters(self):
-        return {'numclusters_MiniBatchKMeans': self.num_clusters,
+        data = {'numclusters_MiniBatchKMeans': self.num_clusters,
                 'features_MiniBatchKMeans': self.selected_features,
                 'batchsize_MiniBatchKMeans': self.batch_size}
+        _logger.debug("Parametrs have been got: {0}".format(data))
+        return data
 
     def get_labels(self, data, reprocess=False):
         data = self._preprocessed_data(data)
@@ -64,7 +73,7 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
             self.centers = self.model.cluster_centers_
         else:
             self.labels = self.model.predict(data)
-
+        _logger.debug("Labels have been got: {0}".format(data))
         return self.labels
 
     # methods that should be re-worked or removed
@@ -81,12 +90,15 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
             num_clusters=parameters.get('numclusters_MiniBatchKMeans') or NUM_CLUSTERS_DEFAULT,
             features=parameters.get('features_MiniBatchKMeans') or [],
             batch_size=parameters.get('batchsize_MiniBatchKMeans' or BATCH_SIZE_DEFAULT))
+        _logger.debug("Parametrs have been loaded: {0}".format(parameters))
         return True
 
     def save_results(self):
-        return {'results': self.labels.tolist(),
+        data = {'results': self.labels.tolist(),
                 'cent': self.centers.tolist(),
                 'dump': pickle.dumps(self.model).hex()}
+        _logger.debug("Results have been saved: {0}".format(data))
+        return data
 
     def load_results(self, results_dict):
         if results_dict.get('results'):
@@ -95,6 +107,7 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
             self.centers = np.array(results_dict['cent'])
         if results_dict.get('dump'):
             self.model = pickle.loads(bytes.fromhex(results_dict['dump']))
+        _logger.debug("Results have been loaded")
         return True
 
     def process_data(self, data):
@@ -107,4 +120,5 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 try:
     baseoperationclass.register(MiniBatchKMeansClustering)
 except ValueError as error:
+    _logger.error(error)
     print(repr(error))

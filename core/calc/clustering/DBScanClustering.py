@@ -2,8 +2,11 @@ import pickle
 
 import numpy as np
 from sklearn.cluster import DBSCAN
+from core.calc.logger import ServiceLogger
 
 from . import baseoperationclass
+
+_logger = ServiceLogger('DBSCAN').logger
 
 MIN_SAMPLES = 5
 EPS = 0.5
@@ -32,16 +35,24 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
     def set_parameters(self, min_samples, eps, features=None):
         if min_samples is not None:
             self.min_samples = min_samples
+        else:
+            _logger.error('min samples is None')
         if eps is not None:
             self.eps = eps
+        else:
+            _logger.error('eps is None')
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
+        _logger.debug("Parametrs have been set. Min samples: {0}, eps: {1}, selected features: {2}"
+                      .format(self.min_samples, self.eps, self.selected_features))
         return True
 
     def get_parameters(self):
-        return {'min_samples_DBSCAN': self.min_samples,
+        data = {'min_samples_DBSCAN': self.min_samples,
                 'eps_DBSCAN': self.eps,
                 'features_DBSCAN': self.selected_features}
+        _logger.debug("Parametrs have been got: {0}".format(data))
+        return data
 
     def get_labels(self, data, reprocess=False):
         data = self._preprocessed_data(data)
@@ -51,7 +62,7 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
             self.model.fit(data)
 
         self.labels = self.model.labels_
-
+        _logger.debug("Labels have been got: {0}".format(data))
         return self.labels
 
     # Legacy methods
@@ -68,16 +79,19 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
             eps=parameters.get('eps_DBSCAN') or EPS,
             features=parameters.get('features_DBSCAN') or []
         )
+        _logger.debug("Parametrs have been loaded: {0}".format(parameters))
         return True
 
     def save_results(self):
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(self.labels)) - (1 if -1 in self.labels else 0)
         n_noise_ = list(self.labels).count(-1)
-        return {'results': self.labels.tolist(),
+        data = {'results': self.labels.tolist(),
                 'dump': pickle.dumps(self.model).hex(),
                 'number_of_clusters': n_clusters_,
                 'noise': n_noise_}
+        _logger.debug("Results have been saved: {0}".format(data))
+        return data
 
     def load_results(self, results_dict):
         if 'results' in results_dict and results_dict['results'] is not None:
@@ -88,6 +102,7 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
             self.number_of_clusters = results_dict['number_of_clusters']
         if 'noise' in results_dict and results_dict['noise'] is not None:
             self.noise = results_dict['noise']
+        _logger.debug("Results have been loaded")
         return True
 
     def process_data(self, data):
@@ -100,4 +115,5 @@ class DBScanClustering(baseoperationclass.BaseOperationClass):
 try:
     baseoperationclass.register(DBScanClustering)
 except ValueError as error:
+    _logger.error(error)
     print(repr(error))

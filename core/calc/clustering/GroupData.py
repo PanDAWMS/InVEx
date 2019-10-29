@@ -1,5 +1,10 @@
-from . import baseoperationclass
 import numpy as np
+
+from . import baseoperationclass
+
+from core.calc.logger import ServiceLogger
+
+_logger = ServiceLogger('GroupData').logger
 
 GROUP_ARRAY = []
 
@@ -18,10 +23,12 @@ class GroupData(baseoperationclass.BaseOperationClass):
     def set_parameters(self, feature_name):
         if feature_name is not None:
             self.feature_name = feature_name
+        _logger.debug("Parametrs have been set: {0}".format(feature_name))
         return True
 
     def save_parameters(self):
         result = {'feature_name_GroupData': self.feature_name, 'group_array_GroupData': self.group_array}
+        _logger.debug("Parametrs have been saved: {0}".format(result))
         return result
 
     def load_parameters(self, parameters):
@@ -32,14 +39,18 @@ class GroupData(baseoperationclass.BaseOperationClass):
             self.group_array = parameters["group_array_GroupData"]
         else:
             self.group_array = GROUP_ARRAY
+        _logger.debug("Parametrs have been loaded: {0}".format(parameters))
         return True
 
     def save_results(self):
-        return {'results': self.results.tolist()}
+        data = {'results': self.results.tolist()}
+        _logger.debug("Results have been saved: {0}".format(data))
+        return data
 
     def load_results(self, results_dict):
         if 'results' in results_dict and results_dict['results'] is not None:
             self.results = np.array(results_dict['results'])
+        _logger.debug("Results have been loaded")
         return True
 
     def print_parameters(self):
@@ -54,8 +65,8 @@ class GroupData(baseoperationclass.BaseOperationClass):
             for i in group.index.tolist():
                 try:
                     res.append([idx.index(i), name])
-                except:
-                    pass
+                except Exception as error:
+                    _logger.error(error)
         from operator import itemgetter
         res = np.array(sorted(res, key=itemgetter(0)))
         self.results = res[:, 1]
@@ -64,4 +75,5 @@ class GroupData(baseoperationclass.BaseOperationClass):
 try:
     baseoperationclass.register(GroupData)
 except ValueError as error:
+    _logger.error(error)
     print(repr(error))
