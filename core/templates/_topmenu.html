@@ -7,13 +7,9 @@
     <li class="tabs-title"><a href="#features_panel">Dataset Info</a></li>
 {% endif %}
 {%  if data_is_ready %}
-    <li class="tabs-title"><a href="#print">Print Dataset</a></li>
-    <li class="tabs-title"><a href="#stats">Statistics</a></li>
-    <li class="tabs-title"><a href="#corr">Correlations</a></li>
-{% if cluster_ready %}
-    <li class="tabs-title"><a href="#clusters">Clusters</a></li>
-{% endif %}
+    <li class="tabs-title"><a href="#print">Parallel Coordinates</a></li>
     <li class="tabs-title"><a href="#groups">Groups</a></li>
+    <li class="tabs-title"><a href="#corr">Correlations</a></li>
     <li class="tabs-title hide" id="multichoicelink"><a href="#multichoice">Chosen Data</a></li>
     <li class="tabs-title" style="display:none" id="selected_group_link"><a href="#selected_group">Selected Group</a></li>
 {% endif %}
@@ -67,9 +63,9 @@
 {% endif %}
 {%  if data_is_ready %}
     <div class="tabs-panel" id="print">
-        <button type="button" class="button small" id="printAllBtn">Display All</button>
+        <div id="ParallelCoordinatesGraph"></div>
+        <div id="cluster_stat"></div>
     </div>
-    <div class="tabs-panel" id="stats"></div>
     <div class="tabs-panel" id="corr">
         <div id="corr-matrix">
             <div id="legend"></div>
@@ -84,16 +80,8 @@
     <div class="tabs-panel" id="xcoord"></div>
     <div class="tabs-panel" id="ycoord"></div>
     {% endif %}
-    {% if cluster_ready %}
-    <div class="tabs-panel" id="clusters">
-        <div id="radar_chart_all"></div>
-        <div id="radar_chart_single" class="row"></div>
-        <div id="cluster_stat"></div>
-        <button type="button" class="button small" id="printBtn">Print Results</button>
-    </div>
-    {% endif %}
     <div class="tabs-panel" id="groups">
-        <div id="radar_chart_groups"></div>
+        <div id="chart_groups"></div>
     </div>
     <div class="tabs-panel" id="multichoice"></div>
     <div class="tabs-panel" id="selected_group"></div>

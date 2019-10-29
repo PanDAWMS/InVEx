@@ -1,0 +1,158 @@
+body {
+    /*font-family: 'Roboto', Georgia, sans-serif !important;*/
+    /*font-family: 'Lexend Deca', sans-serif !important;*/
+    font-family: 'Quicksand', sans-serif !important;
+}
+
+.top_bg_image {
+    height: 5px;
+    width: 100%;
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,.25);
+    background-image: linear-gradient(to right,#ff9e00 0,#ff4f00 100%);
+    background-repeat: repeat-x;
+}
+
+.bottom_bg_image {
+    height: 2px;
+    width: 100%;
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,.25);
+    background-image: linear-gradient(to right,#ff9e00 0,#ff4f00 100%);
+    background-repeat: repeat-x;
+}
+
+h1,h2,h3,h4,h5,h6 {
+    font-family: 'Saira Stencil One' !important;
+    /*font-family: 'Montserrat', sans-serif !important;*/
+    font-weight: 700 !important;
+    color: #1D2136 !important;
+}
+.vap_container {
+    font-size: 12px !important;
+}
+select {
+    font-size: 12px !important;
+}
+#selected_group {
+    font-size: 12px !important;
+}
+.container {
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+}
+.row {
+    flex-wrap: nowrap !important;
+}
+.mainPicture {
+    min-height: 600px;
+    min-width: 300px;
+    max-height: 99vh;
+}
+.vap-controllers {
+    margin-bottom: 0 !important;
+}
+.vap-controllers label {
+    margin-right: 5px;
+    font-weight: 600;
+}
+button.vap-controllers {
+    margin-top: 5px;
+    margin-bottom: 5px !important;
+}
+#gui_container {
+    position: absolute;
+}
+#gui{
+  transform:translate(0, 0);
+}
+.dg.main .close-button.close-bottom {
+    right: 0;
+    top: 0;
+    font-size: 12px;
+}
+.dg .has-slider input[type=text] {
+    width: 50% !important;
+    line-height: 10px !important;
+}
+.dg .slider {
+    width: 50% !important;
+}
+.dg .c input[type=text] {
+    line-height: 10px !important;
+}
+
+.dg .cr.string input[type=text] {
+    font-size: x-small;
+    padding-bottom: 20px;
+}
+
+.dg .cr.number input[type=text] {
+    font-size: x-small;
+    padding-bottom: 20px !important;
+}
+
+#legend {
+    float:right;
+}​
+
+.hist_row {
+    display : flex;
+    align-items : left;
+    margin-bottom: 10px;
+}
+
+.hist_box {
+  height: 10px;
+  width: 10px;
+  border: 1px solid black;
+  margin-right : 5px;
+}
+
+#features_panel {
+  margin: auto;
+  padding-top: 40px;
+  position: relative;
+  width: 960px;
+}
+
+#controllers {
+    min-width: 320px;
+    max-width: 350px;
+    float: left;
+}
+
+#legend {
+    float: right;
+}
+
+#invex_logo {
+    min-width: 300px;
+}
+
+@media (max-width: 700px), only screen and (orientation: landscape) and (max-device-width:900px) {
+    #controllers {
+        flex: auto;
+        max-width: none;
+    }
+
+    .mainPicture {
+        min-width: 320px;
+    }
+}
+
+.top_hr {
+    height: 30px;
+    background-color:#000;
+    border: 0 none;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+}
+
+.header_hr {
+    width: 312px;
+    background-color:#1D2136;
+    border: 0 none;
+    margin: 0;
+    padding: 0;
+    height: 1px;
+}

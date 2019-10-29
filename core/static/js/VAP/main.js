@@ -144,7 +144,7 @@ class Scene {
 	// #region GUI related
 
     createGui() {
-        this.dims_gui = new dat.GUI({ autoPlace: false, width: 300 });
+        this.dims_gui = new dat.GUI({ autoPlace: false, width: 400 });
         this.dims_gui.domElement.id = 'gui';
         document.getElementById("gui_container").appendChild(this.dims_gui.domElement);
 	}

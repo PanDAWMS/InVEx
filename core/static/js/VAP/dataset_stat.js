@@ -12,35 +12,56 @@ class DatasetStats {
         this.lod_activated = lod_activated;
         this.lod_mode = lod_mode;
         this.lod_value =  lod_value;
-        this.MEASURES = [{'type':'continuous','columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing"]},
-                         {'type':'ordinal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
-                         {'type':'nominal','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
-                         {'type':'range','columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
-                         {'type':'non-categorical','columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
+        this.MEASURES = [{'type':'continuous',
+                          'columns':["feature_name","feature_type","measure_type","min","mean","max","std","percentage_missing",
+                          "q10","q25","q50","q75","q90"]},
+                         {'type':'ordinal',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
+                         {'type':'nominal',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","distribution"]},
+                         {'type':'range',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","unique_values","percentage_missing"]},
+                         {'type':'non-categorical',
+                          'columns':["feature_name","feature_type","measure_type","unique_number","percentage_missing","unique_values"]}];
         this.lods = [
-              {
+            {
                 'idx': 0,
                 'mode': 'minibatch',
-                'title': 'MiniBatchKMeans(sklearn/python) clusterization',
+                'title': 'MiniBatch K-Means (scikit-learn) clustering',
                 'message': 'Set the number of clusters and select numerical continuous features using "group" selector',
                 'number_of_groups': 'user_defined'
-              },
-              {
+            },
+            {
                 'idx': 1,
+                'mode': 'daal',
+                'title': 'Intel DAAL K-Means (daal4py) clustering',
+                'message': 'Set the number of clusters and select numerical continuous features using "group" selector',
+                'number_of_groups': 'user_defined'
+            },
+            {
+                'idx': 2,
+                'mode': 'kprototypes',
+                'title': 'K-Prototype (kmodes) clustering',
+                'message': 'Set the number of clusters and select features using "group" selector',
+                'number_of_groups': 'user_defined'
+            },
+            {
+                'idx': 3,
                 'mode': 'param_categorical',
                 'title': 'Group by nominal/ordinal parameter(s)',
-                'message': 'Select from one to several categorical features for grouping using "group" selector. ' +
-                'The sequence of checking features = the sequence of grouping',
+                'message': ('Select from one to several categorical features for grouping using "group" selector. ' +
+                            'The sequence of checking features = the sequence of grouping'),
                 'number_of_groups': 'auto'
-              }, 
-              {
-                'idx': 2,
+            },
+            {
+                'idx': 4,
                 'mode': 'param_num_continuous',
-                'title': 'Group by numerical continuous parameter', 
+                'title': 'Group by numerical continuous parameter',
                 'message': 'Select single numerical continuous parameter for grouping using "group" selector and ' +
                 'set the number of groups',
                 'number_of_groups': 'user_defined'
-              }
+            },
+
         ];
     }
 
@@ -266,11 +287,28 @@ class DatasetStats {
             _labels.push(k.toString());
             _data.push(distribution_data[k]);
         }
-        var data = [{x: _labels, y: _data, type: 'bar'}];
-        var layout = {
-           xaxis: { type: 'category' }
+
+        var trace = {
+            s: _data,
+            y: _labels,
+            type: 'bar',
+            orientation: 'h',
+            marker: {
+                color: '#99aac9'
+            }
         };
-        Plotly.newPlot(domElement, data, layout, {displayModeBar: false});
+        var data = [trace];
+        var layout = {
+           yaxis: { type: 'category' },
+           autosize: true,
+           showlegend: false,
+          yaxis: {
+            zeroline: false,
+            gridwidth: 2
+          },
+          bargap :0.05
+        };
+        Plotly.newPlot(domElement, data, layout, {displayModeBar: false, responsive: true});
         return domElement;
     }
 
@@ -346,7 +384,7 @@ class DatasetStats {
             var th = document.createElement("th");
             th.textContent = value;
             // add none class to elements which should be displayed as detailed
-            if (['distribution','unique_values'].includes(value))
+            if (['distribution','unique_values','std','measure_type',"q10","q25","q50","q75","q90"].includes(value))
                 th.classList.add("none");
             tr.appendChild(th);
         }
@@ -391,8 +429,9 @@ class DatasetStats {
                         if (name == "distribution") {
                             if (feature["unique_number"] == 1)
                                 td.appendChild(this.values_frequency(feature));
-                            else
-                               td.appendChild(this.generate_chart(feature["distribution"], name));
+                            else {
+                                td.appendChild(this.generate_chart(feature["distribution"], feature["feature_name"]));
+                            }
                         }
                         else if (this.isNumber(feature[name])) {
                             if (name == "percentage_missing")
@@ -447,10 +486,7 @@ class DatasetStats {
                     if (feature[name] === undefined)
                         td.textContent = '';
                     else {
-                        if (["mean"].includes(name))
-                            this.draw_slider(td, feature, name);
-                        else {
-                            var value = feature[name];
+                        var value = feature[name];
                             if (this.isNumber(value)) {
                                 if (name == "percentage_missing")
                                     td.textContent = this.formatNumber(value.toFixed(2)) + "%";
@@ -458,7 +494,6 @@ class DatasetStats {
                                     td.textContent = this.formatNumber(value.toFixed(2));
                             }
                             else td.textContent = value;
-                        }
                     }
                     tr.appendChild(td);
                 }
@@ -485,15 +520,39 @@ class DatasetStats {
         });
 
         var available_measures = this.available_measures();
+
+        // create tabs
+        var accordion_ul = document.createElement("ul");
+        accordion_ul.classList.add("accordion");
+        accordion_ul.setAttribute("data-multi-expand","true");
+        accordion_ul.setAttribute("data-allow-all-closed","true");
+        accordion_ul.setAttribute("data-accordion","");
+        accordion_ul.setAttribute("id","measurement-accordion");
+        root.appendChild(accordion_ul);
+
         for (var i=0;i<this.MEASURES.length;i++) {
             var type = this.MEASURES[i]['type'];
             if (available_measures.includes(type)) {
+                var accordion_li = document.createElement("li");
+                accordion_li.classList.add("accordion-item","text-center");
+                accordion_li.setAttribute("data-accordion-item","");
+                var title_href = document.createElement("a");
+                title_href.classList.add("accordion-title");
+                title_href.setAttribute("href",type);
+                title_href.innerText = type;
+                accordion_li.appendChild(title_href);
+                var accordion_div = document.createElement("div");
+                accordion_div.classList.add("accordion-content");
+                accordion_div.setAttribute("data-tab-content","");
+                accordion_div.setAttribute("id",type);
                 var table = document.createElement("table");
                 table.classList.add("display", "compact");
                 table.setAttribute("id", "features_table_" + type);
                 table.appendChild(this._headers(type));
                 table.appendChild(this._rows(type));
-                root.appendChild(table);
+                accordion_div.appendChild(table);
+                accordion_li.appendChild(accordion_div);
+                accordion_ul.appendChild(accordion_li);
                 $("#features_table_" + type).DataTable({
                     searching: false,
                     paging: false,
@@ -574,10 +633,10 @@ class DatasetStats {
             button_submit.onclick = function (e) {
                 var form = document.createElement("form");
                 form.setAttribute("method", "post");
-                if (typeof(preview_url) !== "undefined")
-                    form.setAttribute("action", "");
+                if (typeof (preview_url) !== "undefined")
+                    form.setAttribute("action", "#print");
                 else
-                    form.setAttribute("action", preview_url);
+                    form.setAttribute("action", preview_url + "#print");
                 form.style.display = "hidden";
 
                 var action = document.createElement("input");
@@ -638,20 +697,6 @@ class DatasetStats {
             fieldset.appendChild(div);
         }
         return fieldset;
-    }
-    
-    draw_slider(td, item, q) {
-        var slider = document.createElement("input");
-        slider.type = "range";
-        slider.setAttribute("min", item["min"]);
-        slider.setAttribute("max", item["max"]);
-        slider.value = item[q];
-        slider.disabled = "true";
-        var div = document.createElement("div");
-        div.textContent = this.formatNumber(item[q].toFixed(2));
-        div.style.marginLeft = "10px";
-        td.appendChild(slider);
-        td.appendChild(div);
     }
     
     print_selector(idx, type) {
