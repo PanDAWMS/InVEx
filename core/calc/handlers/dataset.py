@@ -161,7 +161,7 @@ class DatasetHandler(BaseDataHandler):
             #  (Note: for LoD _origin dataset it might behave differently)
             return _dataset.loc[:, _features]
         elif (self._mode == 'all'):
-            return pd.concat([_dataset, self._auxiliary], axis=1, sort=True)
+            return pd.concat([_dataset, self._auxiliary], axis=1, sort=False)
 
     @property
     def operation_history(self):
