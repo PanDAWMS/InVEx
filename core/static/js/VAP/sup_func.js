@@ -377,7 +377,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                 let current_id = "features_"+curr_algorithm,
                     plus = document.getElementById("button_plus_"+curr_algorithm);
 
-                for(let y=0; y<curr_values[current_id].length; y++){
+                for(let y=0; curr_algorithm !== "GroupData" && y<curr_values[current_id].length; y++){
                     document.getElementById("option_"+curr_values[current_id][y] + "_" + curr_algorithm).selected = true;
                     plus.click();
                 }

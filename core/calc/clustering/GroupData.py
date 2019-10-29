@@ -1,56 +1,30 @@
 from . import baseoperationclass
 import numpy as np
 
-GROUP_ARRAY = []
-
 
 class GroupData(baseoperationclass.BaseOperationClass):
-
     _operation_name = 'Group Data'
     _operation_code_name = 'GroupData'
-    _type_of_operation = 'grouping'
+    _type_of_operation = 'cluster'
 
     def __init__(self):
         super().__init__()
-        self.group_array = GROUP_ARRAY
-        self.results = None
+        self.feature_name = None
+        self.labels = None
 
     def set_parameters(self, feature_name):
         if feature_name is not None:
             self.feature_name = feature_name
         return True
 
-    def save_parameters(self):
-        result = {'feature_name_GroupData': self.feature_name, 'group_array_GroupData': self.group_array}
-        return result
+    def get_parameters(self):
+        return {'feature_name_GroupData': self.feature_name}
 
-    def load_parameters(self, parameters):
-        if "feature_name_GroupData" in parameters and parameters["feature_name_GroupData"] is not None:
-            self.feature_name = parameters["feature_name_GroupData"]
-
-        if "group_array_GroupData" in parameters and parameters["group_array_GroupData"] is not None:
-            self.group_array = parameters["group_array_GroupData"]
-        else:
-            self.group_array = GROUP_ARRAY
-        return True
-
-    def save_results(self):
-        return {'results': self.results.tolist()}
-
-    def load_results(self, results_dict):
-        if 'results' in results_dict and results_dict['results'] is not None:
-            self.results = np.array(results_dict['results'])
-        return True
-
-    def print_parameters(self):
-        result = {'feature_name_GroupData': self.feature_name, 'group_array_GroupData': self.group_array}
-        return result
-
-    def process_data(self, dataset):
+    def get_labels(self, data, reprocess=False):
         res = []
-        grouped_dataset = dataset.groupby(self.feature_name)
-        idx = dataset.index.tolist()
-        for name, group in grouped_dataset:
+        grouped_data = data.groupby(self.feature_name)
+        idx = data.index.tolist()
+        for name, group in grouped_data:
             for i in group.index.tolist():
                 try:
                     res.append([idx.index(i), name])
@@ -58,8 +32,36 @@ class GroupData(baseoperationclass.BaseOperationClass):
                     pass
         from operator import itemgetter
         res = np.array(sorted(res, key=itemgetter(0)))
-        self.results = res[:, 1]
-        return self.results
+        self.labels = res[:, 1]
+
+        return self.labels
+
+    # Legacy methods
+
+    def print_parameters(self):
+        return self.get_parameters()
+
+    def save_parameters(self):
+        return self.get_parameters()
+
+    def load_parameters(self, parameters):
+        self.set_parameters(feature_name=parameters.get('feature_name_GroupData') or None)
+        return True
+
+    def save_results(self):
+        return {'results': self.labels.tolist()}
+
+    def load_results(self, results_dict):
+        if 'results' in results_dict and results_dict['results'] is not None:
+            self.labels = np.array(results_dict['results'])
+        return True
+
+    def process_data(self, data):
+        return self.get_labels(data)
+
+    def predict(self, data):
+        return self.get_labels(data)
+
 
 try:
     baseoperationclass.register(GroupData)
