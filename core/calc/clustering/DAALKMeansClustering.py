@@ -6,7 +6,7 @@ import numpy as np
 
 from core.calc.logger import ServiceLogger
 
-_logger = ServiceLogger('DBSCAN').logger
+_logger = ServiceLogger('DAALKMeans').logger
 
 try:
     import daal4py as d4p

@@ -49,7 +49,7 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
             self.selected_features = list(features)
         if batch_size is not None:
             self.batch_size = batch_size
-        _logger.debug("Parametrs have been set. Num clusters: {0}, selected features: {2}, batch size: {3}"
+        _logger.debug("Parametrs have been set. Num clusters: {0}, selected features: {1}, batch size: {2}"
                       .format(self.num_clusters, self.selected_features, self.batch_size))
         return True  # TODO: "return"-statement should be removed
 

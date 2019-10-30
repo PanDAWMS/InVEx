@@ -12,7 +12,7 @@ from . import baseoperationclass
 from ..util import dissimilarity_python
 from ..util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
 
-_logger = ServiceLogger('KMeans').logger
+_logger = ServiceLogger('KPrototypes').logger
 
 CLUSTER_NUMBER = 5
 CATEGORICAL_WEIGHT = -1

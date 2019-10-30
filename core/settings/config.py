@@ -64,7 +64,7 @@ LOGGING = {
         },
         '': {
             'handlers': ['logfile-django', 'logfile-error', 'console'],
-            'level': "ERROR",
+            'level': "DEBUG",
         },
     },
     'formatters': {
