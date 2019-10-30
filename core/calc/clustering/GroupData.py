@@ -27,19 +27,7 @@ class GroupData(baseoperationclass.BaseOperationClass):
         return {'feature_name_GroupData': self.feature_name}
 
     def get_labels(self, data, reprocess=False):
-        res = []
-        grouped_data = data.groupby(self.feature_name)
-        idx = data.index.tolist()
-        for name, group in grouped_data:
-            for i in group.index.tolist():
-                try:
-                    res.append([idx.index(i), name])
-                except:
-                    pass
-        from operator import itemgetter
-        res = np.array(sorted(res, key=itemgetter(0)))
-        self.labels = res[:, 1]
-
+        self.labels = data[self.feature_name].values
         return self.labels
 
     # Legacy methods
