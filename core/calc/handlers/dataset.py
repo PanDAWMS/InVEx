@@ -309,6 +309,10 @@ class DatasetHandler(BaseDataHandler):
 
         try:
             with h5py.File(self._file_name, 'r') as f:
+
+                self.features_description = json.loads(
+                    f['base']['features_description'][()])
+
                 modified_group = f['base']['modified']
 
                 self._origin = pd.DataFrame.from_records(
