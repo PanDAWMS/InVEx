@@ -27,28 +27,6 @@ logger = logging.getLogger(__name__)
 local_reader = LocalReader()
 
 
-def create_dataset_storage_dir(dataset_id):
-    # TODO: After groups data storing is updated according to hdf5 format,
-    #  then this method should be deleted.
-    """
-    Create directory for service files related to analyzed dataset sample.
-
-    :param dataset_id: Dataset sample id.
-    :type dataset_id: int/str
-    :return: Full path for dataset storage directory.
-    :rtype: str
-    """
-    output = os.path.join(settings.MEDIA_ROOT, str(dataset_id))
-
-    try:
-        os.mkdir(output)
-    except OSError as e:
-        logger.error('[form_reactions.create_dataset_storage_dir] '
-                     f'Failed to create dataset storage: {e}')
-
-    return output
-
-
 def _process_input_data(source_type, source_data, **kwargs):
     """
     Get and process data to prepare data sample (i.e., store at the server).
@@ -66,9 +44,6 @@ def _process_input_data(source_type, source_data, **kwargs):
     err_msg_subj = '[form_reactions._process_input_data]'
 
     did = str(datetime.now().timestamp())
-    # - to be deleted -
-    create_dataset_storage_dir(did)
-    # TODO: scheduled to be deleted (for consistency with groups storing).
 
     try:
         if source_type == 'dataframe':
