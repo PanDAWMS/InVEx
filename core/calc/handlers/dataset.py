@@ -178,9 +178,6 @@ class DatasetHandler(BaseDataHandler):
                         sub_modified_group['default'].attrs['index'],
                         inplace=True)
 
-                    self.features_description = json.loads(
-                        sub_modified_group['features_description'][()])
-
                 else:
 
                     lod = json.loads(modified_group['lod'][()]) or {}
