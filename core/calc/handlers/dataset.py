@@ -109,11 +109,12 @@ class DatasetHandler(BaseDataHandler):
             base_group.create_dataset(
                 name='default',
                 data=np.array(df.to_records(
+                    index=True,
                     column_dtypes=dict(zip(df.columns.to_list(), map(
                         lambda x: h5py.special_dtype(vlen=str)
                         if x in [np.dtype('O'), np.dtype('S'), np.dtype('U')]
                         else x, df.dtypes.to_list()))),
-                    index=True)))
+                    index_dtypes=h5py.special_dtype(vlen=str))))
             base_group['default'].attrs['index'] = df.index.name
 
             # "features_description" dataset
@@ -259,21 +260,26 @@ class DatasetHandler(BaseDataHandler):
                     # "numeric_real" dataset
                     modified_group.create_dataset(
                         name='numeric_real',
-                        data=np.array(self._origin.to_records(index=True)))
+                        data=np.array(self._origin.to_records(
+                            index=True,
+                            index_dtypes=h5py.special_dtype(vlen=str))))
 
                     # "numeric_norm" dataset
                     modified_group.create_dataset(
                         name='numeric_norm',
-                        data=np.array(self._normalized.to_records(index=True)))
+                        data=np.array(self._normalized.to_records(
+                            index=True,
+                            index_dtypes=h5py.special_dtype(vlen=str))))
 
                     # "auxiliary" dataset
                     modified_group.create_dataset(
                         name='auxiliary',
                         data=np.array(self._auxiliary.to_records(
+                            index=True,
                             column_dtypes=dict(map(
                                 lambda x: (x, h5py.special_dtype(vlen=str)),
                                 self._auxiliary.columns.to_list())),
-                            index=True)))
+                            index_dtypes=h5py.special_dtype(vlen=str))))
 
                     # "lod" dataset
                     modified_group.create_dataset(
