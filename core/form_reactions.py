@@ -12,8 +12,6 @@ import pandas as pd
 from datetime import datetime
 from urllib.parse import urlparse
 
-from django.conf import settings
-
 from .settings.base import BASE_DIR
 from .calc import clustering
 
