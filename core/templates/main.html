@@ -176,13 +176,14 @@
 
                     {% include "_clustering_parameters.js" %}
 
-                    var curr_algorithm;
-                    var curr_parameters;
+                    let curr_algorithm, curr_parameters, use_normalized_dataset;
 
                     {%  if algorithm %}
                         curr_algorithm = "{{ algorithm }}";
                         curr_parameters = {{ parameters | safe }};
+                        curr_parameters.use_normalized_dataset = '{{ use_normalized_dataset | safe }}'==='True';
                     {% endif %}
+
                     {% if group_vis is False %}
                         createClusterElements(
                             document.getElementById('clustering'),

@@ -275,8 +275,6 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             inputElement.style.cssFloat = 'right';
             inputElement.dataset.params = cluster_params[k][0];
 
-            //this.cluster_params = cluster_params;
-
             // '+' onclick
             inputElement.onclick = function () {
                 var selectbox = document.getElementById('clusteringSelectBox_' + this.dataset.params);
@@ -347,7 +345,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
 
         // The checkbox
         var use_normalized_input = document.createElement('input');
-        use_normalized_input.id = "normalized_checkbox";
+        use_normalized_input.id = 'normalized_checkbox_' + cluster_params[k][0];
         use_normalized_input.name = "use_normalized_dataset";
         use_normalized_input.type = 'checkbox';
         use_normalized_input.checked = false;
@@ -381,6 +379,9 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                     document.getElementById("option_"+curr_values[current_id][y] + "_" + curr_algorithm).selected = true;
                     plus.click();
                 }
+
+                document.getElementById('normalized_checkbox_' + curr_algorithm).checked =
+                    curr_values['use_normalized_dataset'];
             } else
                 element_div.style.display = 'none';
     }
