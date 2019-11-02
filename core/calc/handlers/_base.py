@@ -32,16 +32,6 @@ class BaseDataHandler:
         """
         return settings.MEDIA_ROOT
 
-    def _get_private_storage_dir_name(self):  # TODO: scheduled to be deleted.
-        """
-        Form full directory name with dataset sample related data
-        (per dataset sample for groups related data).
-
-        :return: Full directory name.
-        :rtype: str
-        """
-        return os.path.join(settings.MEDIA_ROOT, '{}'.format(self._did))
-
     @staticmethod
     def _remove_file(file_name):
         """
