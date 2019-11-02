@@ -5,6 +5,9 @@ the analysis dataset sample.
 
 import json
 
+import h5py
+import numpy as np
+
 from datetime import datetime
 
 from ..clustering import baseoperationclass
@@ -67,7 +70,8 @@ class OperationHandler:
 
             operation_group.create_dataset(
                 name='operation_results',
-                data=self.operation.labels)
+                data=np.array(self.operation.labels).
+                astype(h5py.special_dtype(vlen=str)))
 
             root_group.attrs['operations_count'] += 1
             self.operations_count = root_group.attrs['operations_count']
