@@ -317,12 +317,17 @@ def get_operational_view_data(dataset_id, group_ids, op_number, **kwargs):
         logger.error('[form_reactions.get_operational_view_data] '
                      'The type of the operation is not "cluster": type={}'.
                      format(operation._type_of_operation))
+        # TODO: Should this be deleted?
+        #  (since only grouping/clustering operations are used)
 
     viewdata_hdlr = ViewDataHandler(dataset_handler=dataset_hdlr)
     viewdata_hdlr.set_dataset_description(with_full_set=True)
     viewdata_hdlr.set_clustering_data(
         operation=operation,
+        use_normalized_dataset=dataset_hdlr.
+        operation_handler.use_normalized_dataset,
         camera_params=dataset_hdlr.operation_handler.visual_parameters)
+
     if 'preview_url' in kwargs:
         viewdata_hdlr.set_preview_url(kwargs['preview_url'])
     viewdata_hdlr.set_data_readiness()
@@ -427,35 +432,36 @@ def clusterize(request, dataset_id, group_ids=None):
         logger.error(f'{err_msg_subj} Request is incorrect: '
                      f'{json.dumps(request.POST)}')
 
-    dataset_hdlr = DatasetHandler(
-        did=dataset_id, group_ids=group_ids,
-        load_history_data=True,
-        use_normalized_dataset='use_normalized_dataset' in request.POST and
-                               request.POST['use_normalized_dataset'] == 'on')
+    dataset_hdlr = DatasetHandler(did=dataset_id, group_ids=group_ids,
+                                  load_history_data=True)
 
     dataset_hdlr._mode = mode
-    clustering_dataset = dataset_hdlr.clustering_dataset
+    is_dataset_normalized = 'use_normalized_dataset' in request.POST and \
+                            request.POST['use_normalized_dataset'] == 'on'
+    clustering_dataset = dataset_hdlr.get_clustering_dataset(
+        is_normalized=is_dataset_normalized)
 
     output_op_number = None
     if operation is not None:
         try:
-            clusters = operation.process_data(clustering_dataset)
+            clusters = operation.get_labels(clustering_dataset)
         except Exception as e:
-            logger.error('{} Failed to perform data clustering: {} - {}'.
-                         format(err_msg_subj, json.dumps(request.POST), e))
+            logger.error(f'{err_msg_subj} Failed to perform data clustering: '
+                         f'{json.dumps(request.POST)} - {e}')
             raise
         else:
             if clusters is not None:
                 dataset_hdlr.operation_handler.set(
                     operation=operation,
+                    use_normalized_dataset=is_dataset_normalized,
                     visual_parameters=request.POST['visualparameters'])
                 dataset_hdlr.save()
 
                 output_op_number = dataset_hdlr.\
                     operation_handler.operations_count - 1
             else:
-                logger.error('{} No clusters were created: {}'.format(
-                    err_msg_subj, json.dumps(operation.save_parameters())))
+                logger.error(f'{err_msg_subj} No clusters were created: '
+                             f'{json.dumps(operation.get_parameters())}')
 
     return output_op_number
 

@@ -15,23 +15,30 @@ class OperationHandler:
     def __init__(self, **kwargs):
         self.operation = None
         self.operations_count = 0
+        self.use_normalized_dataset = False
 
         self.visual_parameters = None
 
         if 'operation' in kwargs:
             self.set(operation=kwargs['operation'],
+                     use_normalized_dataset=kwargs.get(
+                         'use_normalized_dataset', False),
                      visual_parameters=kwargs.get('visual_parameters'))
 
-    def set(self, operation, visual_parameters=None):
+    def set(self, operation, use_normalized_dataset=False,
+            visual_parameters=None):
         """
         Set operation for handling.
 
         :param operation: Analysis operation (clustering/grouping).
-        :type operation: calc.baseoperationclass.BaseOperationClass
+        :type operation: calc.clustering.baseoperationclass.BaseOperationClass
+        :param use_normalized_dataset: Flag to use normalized dataset.
+        :type use_normalized_dataset: bool
         :param visual_parameters: Camera parameters.
         :type visual_parameters: dict
         """
         self.operation = operation
+        self.use_normalized_dataset = use_normalized_dataset
         if visual_parameters is not None:
             self.visual_parameters = visual_parameters
 
@@ -50,6 +57,8 @@ class OperationHandler:
             operation_group.attrs['date'] = str(datetime.utcnow())
             operation_group.attrs['number_of_groups'] = len(
                 set(self.operation.labels))
+            operation_group.attrs['use_normalized_dataset'] = \
+                self.use_normalized_dataset
 
             operation_group.attrs['operation_parameters'] = json.dumps(
                 self.operation.get_parameters())
@@ -85,6 +94,8 @@ class OperationHandler:
 
         self.set(operation=baseoperationclass.get_operation_class(
                  operation_group.attrs['name'])(),
+                 use_normalized_dataset=bool(
+                 operation_group.attrs['use_normalized_dataset']),
                  visual_parameters=json.loads(
                  operation_group.attrs['visual_parameters']))
 

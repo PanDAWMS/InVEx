@@ -48,7 +48,6 @@ class DatasetHandler(BaseDataHandler):
         :keyword load_initial_dataset: Flag to load initial dataset only.
         :keyword process_initial_dataset: Flag to process initial dataset.
         :keyword load_history_data: Flag to load history data.
-        :keyword use_normalized_dataset: Flag to use normalized dataset.
         :keyword operation_id: Operation id to be loaded.
         """
         super().__init__(did=did)
@@ -59,8 +58,6 @@ class DatasetHandler(BaseDataHandler):
         self._property_set = {}
 
         self._mode = 'all'
-        self._use_normalized_dataset = kwargs.get(
-            'use_normalized_dataset', False)
 
         self.features_description = []
         self.operation_handler = OperationHandler()
@@ -232,14 +229,12 @@ class DatasetHandler(BaseDataHandler):
     def _auxiliary(self):
         return self._modifications.get('auxiliary')
 
-    @property
-    def clustering_dataset(self):
+    def get_clustering_dataset(self, is_normalized=False):
         if not self._modifications:
-            logger.error('[DatasetHandler.clustering_dataset] '
+            logger.error('[DatasetHandler.get_clustering_dataset] '
                          'Dataset for clustering is not prepared')
 
-        _dataset = self._normalized if self._use_normalized_dataset \
-            else self._origin
+        _dataset = self._normalized if is_normalized else self._origin
 
         if self._mode == 'numeric':
             _set = set(_dataset.columns.tolist())

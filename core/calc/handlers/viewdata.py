@@ -50,6 +50,7 @@ CONTEXT_DATA_DEFAULT = {
     # clustering
     'algorithm': None,
     'parameters': {},
+    'use_normalized_dataset': False,
     'clusters': [],
     'count_of_clusters': None,  # TODO: Check that this parameter is in use.
     'cluster_ready': False,
@@ -236,12 +237,15 @@ class ViewDataHandler(BaseDataHandler):
                 if feature['feature_name'] in lod_features:
                     feature['lod_enabled'] = 'true'
 
-    def set_clustering_data(self, operation, camera_params):
+    def set_clustering_data(self, operation, use_normalized_dataset,
+                            camera_params):
         """
         Set parameters related to the clustering process.
 
         :param operation: Applied operation of clustering (with result labels).
-        :type operation: baseoperationclass.BaseOperationClass
+        :type operation: calc.clustering.baseoperationclass.BaseOperationClass
+        :param use_normalized_dataset: Flag to use normalized dataset.
+        :type use_normalized_dataset: bool
         :param camera_params: Camera parameters.
         :type camera_params: dict
         """
@@ -249,6 +253,7 @@ class ViewDataHandler(BaseDataHandler):
         self._data.update({
             'algorithm': operation._operation_code_name,
             'parameters': operation.get_parameters(),
+            'use_normalized_dataset': use_normalized_dataset,
             'clusters': cluster_labels,
             'count_of_clusters': len(set(cluster_labels)),
             'cluster_ready': True,
