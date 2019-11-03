@@ -48,7 +48,7 @@ def _process_input_data(source_type, source_data, **kwargs):
             df = source_data
 
         elif source_type == 'file':
-            df = pd.read_csv(source_data)
+            df = pd.read_csv(source_data, index_col=0, header=0)
 
         elif source_type == 'json' and 'index_name' in kwargs:
             df = pd.read_json(json.dumps(source_data))
