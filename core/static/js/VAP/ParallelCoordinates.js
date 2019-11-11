@@ -161,16 +161,22 @@ class ParallelCoordinates {
         this._selectBox.data('select2').$container.css("display", "block");
 
         // Append an SVG to draw lines on
-        this._graph = d3.select("#" + this.element_id)
+        let container = d3.select("#" + this.element_id)
             .append('div')
-                .style('display', 'block')
+                .style('display', 'flex')
                 .style('width', 'auto')
-                .style('overflow', 'auto')
+                .style('overflow', 'auto'),
+            svg_container = container.append("div")
+                .style('width', 'auto');
+
+        this._graph = svg_container
             .append("svg")
                 .style("overflow", "auto");
 
         // A hint on how to use
-        d3.select("#" + this.element_id).append('p')
+        //d3.select("#" + this.element_id)
+        svg_container
+            .append('p')
             .html('Use the Left Mouse Button to select a curve and the corresponding line in the table <br>' +
                 'Hover over the lines with mouse to see the row in the table');
 
@@ -178,9 +184,11 @@ class ParallelCoordinates {
         this._selected_line = -1;
 
         // Add the table below the ParCoords
-        d3.select("#" + this.element_id)
+        //d3.select("#" + this.element_id)
+        container
             .append("div")
-                .attr("id", "t" + this.element_id + "_wrapper");
+                .attr("id", "t" + this.element_id + "_wrapper")
+                .style("overflow", "auto");
 
         // Draw the graph and the table
         this._createGraph();
@@ -401,7 +409,7 @@ class ParallelCoordinates {
                 this._theader_array.unshift(this.options.draw['cluster_tab_name']);
             else this._theader_array.unshift('Cluster');
         this._theader_array.unshift('ID');
-        this._theader_array = this._theader_array.concat(this._aux_features);
+        if (this._aux_features !== null) this._theader_array = this._theader_array.concat(this._aux_features);
 
         // Map headers for the tables
         this._theader = this._theader_array.map(row => {
@@ -423,10 +431,10 @@ class ParallelCoordinates {
                 [row[0]]
                     .concat((this.options.draw['mode'] === "cluster") ? [this._color[i]] : [])
                     .concat(row[1].map(String))
-                    .concat(this._aux_data[i][1].map(String))
+                    .concat((this._aux_data !== null)?this._aux_data[i][1].map(String):[])
                     .concat((this.options.draw['mode'] === "cluster") ?
                         [rgbToHex(this._clusters_color_scheme[this._color[i]])] : [])
-            ),
+            );
 
             // Vars for table and its datatable
             this._table = $('#t' + this.element_id),
@@ -449,7 +457,7 @@ class ParallelCoordinates {
                 "rowCallback": (row, data) => {
                     if (this.options.draw['mode'] === "cluster")
                         $(row).children().css('background', data[data.length - 1] + "33");
-
+					
                     $(row).children().css('white-space', 'nowrap');
                 },
 
