@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<!-- Set the viewport width to device width for mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>InVEx</title>
+
+<!-- Included base CSS Files -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/scroller/2.0.0/css/scroller.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.foundation.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.foundation.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.1.5/css/fixedHeader.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.5.1/css/colReorder.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/css/select2.min.css" />
+
+	<link rel="stylesheet" href="css/foundation/foundation.css">
+	<link rel="stylesheet" href="css/foundation/foundation-icons/foundation-icons.css">
+	
+	<link href="css/spa.css" rel="stylesheet">
+	<link href="css/ParallelCoordinates.css" rel="stylesheet">
+
+</head>
+
+<body>
+	<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+	<script src="https://d3js.org/d3.v3.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.foundation.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+	<script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+	<script src="https://cdn.datatables.net/fixedheader/3.1.5/js/dataTables.fixedHeader.min.js"></script>
+	<script src="https://cdn.datatables.net/colreorder/1.5.1/js/dataTables.colReorder.min.js"></script>
+	<script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+	<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+	<script src="https://unpkg.com/simple-statistics@6.1.1/dist/simple-statistics.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js),datatables.mark.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/js/select2.full.js"></script>
+
+	<script src="js/papaparse.js"></script>
+	<script src="js/ParallelCoordinates.js"></script>
+
+	<script src="js/spa.js"></script>
+
+
+	<div id="drop_zone">Drop files here</div>
+	<input type="file" id="files" name="file" />
+	<output id="list"></output>
+
+	<hr>
+
+	<div id="ParallelCoordinatesGraph"></div>
+
+	<script>
+		var theData = {};
+
+		// Setup the dnd listeners.
+		var dropZone = document.getElementById('drop_zone');
+		dropZone.addEventListener('dragover', handleDragOver, false);
+		dropZone.addEventListener('drop', handleFileSelect, false);
+
+		document.getElementById('files').addEventListener('change', handleFileSelect, false);
+	</script>
+
+</body>
+</html>
