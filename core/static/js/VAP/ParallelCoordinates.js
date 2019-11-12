@@ -163,11 +163,14 @@ class ParallelCoordinates {
         // Append an SVG to draw lines on
         let container = d3.select("#" + this.element_id)
             .append('div')
+				.attr('id', 'flex' + this.element_id)
                 .style('display', 'flex')
                 .style('width', 'auto')
-                .style('overflow', 'auto'),
+                .style('overflow', 'auto')
+				.style('flex-wrap', 'wrap'),
             svg_container = container.append("div")
-                .style('width', 'auto');
+                .style('width', 'auto')
+				.style('flex', '0');
 
         this._graph = svg_container
             .append("svg")
@@ -188,7 +191,10 @@ class ParallelCoordinates {
         container
             .append("div")
                 .attr("id", "t" + this.element_id + "_wrapper")
-                .style("overflow", "auto");
+                .style("overflow", "auto")
+				.style("min-width", "500px")
+				.style("max-width", "max-content")
+				.style('flex', '1');
 
         // Draw the graph and the table
         this._createGraph();
