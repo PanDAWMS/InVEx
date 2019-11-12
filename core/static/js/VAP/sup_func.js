@@ -749,80 +749,132 @@ function toHex(n) {
       + "0123456789ABCDEF".charAt(n%16);
 }
 
-function cluster_selector(clusters_color_scheme, controls_parent, table_parent) {
-    var selector = document.getElementById(controls_parent);
-    
-    var label = document.createElement("label");
-    label.innerHTML = "Choose Cluster";
-    var btnGroup = document.createElement("div");
-    btnGroup.classList.add("small");
-    btnGroup.classList.add("button-group");
-    for (var cluster in clusters_color_scheme) {
-        var color = clusters_color_scheme[cluster];
-        var a = document.createElement("a");
-        a.setAttribute("href","#")
-        a.classList.add("button");
-        a.innerHTML = cluster;
-        a.style.background = rgbToHex(color);
-        a.onclick=function(event) {
-            event.preventDefault();
-            var cluster_stat = document.getElementById(table_parent);
-            while (cluster_stat.firstChild) {
-                cluster_stat.removeChild(cluster_stat.firstChild);
-            }
-            var parent = document.getElementById(table_parent);
-            var h3 = document.createElement("h3");
-            h3.innerText = "Cluster №" + parseInt(event.target.innerText) + " statistics";
-            h3.style.background = event.target.style.background;
-            parent.appendChild(h3);
-            printClusterStats(scene.realData, scene.clusters, parseInt(event.target.innerText), scene.dimNames, table_parent);
-        };
-        btnGroup.appendChild(a);
-    }
-    selector.appendChild(label);
-    selector.appendChild(btnGroup);
+// Add buttons to print the cluster information
+function cluster_selector(clusters_color_scheme, parent) {
+    // Add a div to hold a label and buttons
+    d3.select("#" + parent)
+        .append('div')
+            .attr('id', 'c' + parent)
+            .style('padding-right', '15px')
+            // Add 'Choose Cluster' text to it
+            .append('label')
+                .text("Choose Cluster")
+                .style('white-space', 'nowrap');
+
+    // Add a div for the table
+    d3.select("#" + parent).append('div')
+        .attr('id', 't' + parent);
+
+    //Add a div to hold the buttons after the label
+    d3.select("#c" + parent)
+        .append('div')
+            .attr({'id': 'buttons_' + parent,
+                    'class': 'small button-group'})
+            .style({'flex-wrap': 'wrap',
+                    'max-height': '550px'})
+
+        // Add corresponding buttons to every color
+        .selectAll("a")
+            .data(d3.keys(clusters_color_scheme))
+            .enter().append('a')
+                .attr('class', 'button')
+                .style({'width': '40px',
+                        'height': '33px',
+                        'background': id => rgbToHex(clusters_color_scheme[id])})
+                .text(id => id)
+                .on("click", () => {
+                        d3.event.preventDefault();
+
+                        // Change the layout of the menu:
+                        // Make the elements side by side (buttons | table)
+                        d3.select('#' + parent).style('display', 'flex');
+                        // Make buttons vertical
+                        d3.select("#buttons_" + parent)
+                            .style({'flex-direction': 'column',
+                                    'align-items': 'center'});
+                        // Fix the div with the buttons a little bit
+                        d3.select("#c" + parent).style({'width': '100%',
+                                                        'max-width': '135px'})
+                            .select('label').style('text-align', 'center');
+
+                        // Clean all children
+                        d3.select("#t" + parent)
+                            .style('width', '100%')
+                            .html('');
+
+                        // Add 'Cluster # statistics' text
+                        d3.select("#t" + parent)
+                            .append('h3')
+                            .text("Cluster №" + d3.event.target.innerText + " statistics")
+                            .style('background', d3.event.target.style.background);
+
+                        // Print the stats
+                        printClusterStats(scene.realData, scene.clusters, d3.event.target.innerText, scene.dimNames, 't'+parent);
+                });
 }
 
 function printClusterStats(realdata, clusters, cluster_number, dimNames, parent_element) {
-    var cluster_list = [];
-    for (var i = 0; i < clusters.length; i++ ) {
-        if (clusters[i] == cluster_number)
-            cluster_list.push(i);
-    }
-    var data_cluster = [];
-    for (var j = 0; j < realdata.length; j++) {
-        if (cluster_list.includes(j) === true)
-            data_cluster.push(realdata[j][1]);
-    }
-    var result = Array.from({ length: data_cluster[0].length }, function(x, row) {
-      return Array.from({ length: data_cluster.length }, function(x, col) {
-        return data_cluster[col][row];
-      });
-    });
-    var count = result[0].length;
-    var stat = [];
-    stat.push(["Min", "Max", "Mean", "Std"]);
-    var means = [];
-    var maxs = [];
-    var mins = [];
-    var stds = [];
-    for (var i = 0; i < result.length; i++) {
-        var mean = ss.mean(result[i]),
-        std = ss.standardDeviation(result[i]),
-        min = ss.min(result[i]),
-        max = ss.max(result[i]);
-        means.push(mean);
-        maxs.push(max);
-        mins.push(min);
-        stds.push(std);
-    }
-    stat.push([mins, maxs, means, stds]);
-    var count_info = document.createElement("h5");
-    count_info.innerText = "Number of elements: " + count.toString();
-    var parent = document.getElementById(parent_element);
-    parent.appendChild(count_info);
+    let header = ['', "Min", "Mean", "Max", "Median", "Deviation"].map(x => { return {
+        title : x,
 
-    printStats(stat, dimNames, parent_element);
+        // Add spaces and remove too much numbers after the comma
+        "render": function (data, type, full) {
+            if (type === 'display' && !isNaN(data))
+                return numberWithSpaces(parseFloat(Number(data).toFixed(2)));
+
+            return data;
+        }}}),
+        cluster_data = realdata.filter((x, i) => clusters[i] === cluster_number),
+        cells = dimNames.map((x, i) => [
+            x,
+            d3.min(cluster_data, row => row[1][i]),
+            d3.mean(cluster_data, row => row[1][i]),
+            d3.max(cluster_data, row => row[1][i]),
+            d3.median(cluster_data, row => row[1][i]),
+            d3.deviation(cluster_data, row => row[1][i])
+        ]);
+
+    d3.select("#" + parent_element)
+        .append('h5')
+        .text('Number of elements: ' + cluster_data.length);
+
+    d3.select("#" + parent_element)
+        .append('table')
+        .attr('id', 't' + parent_element);
+
+    let table = $('#t' + parent_element).DataTable({
+        data: cells,
+        columns: header,
+        mark: true,
+        dom: 'Alfrtip',
+        colReorder: true,
+        buttons: ['colvis'],
+        "search": {"regex": true}
+    });
+
+    $('#t' + parent_element + ' tbody')
+        .on("mouseover", 'tr', function (d, i) {
+            $(table.rows().nodes()).removeClass('table-selected-line');
+            $(table.row(this).nodes()).addClass('table-selected-line');
+        })
+        .on("mouseout", 'tr', function (d) {
+            $(table.rows().nodes()).removeClass('table-selected-line');
+        });
+
+    // Bug fixes related to css
+    d3.select('#t' + parent_element)
+        .style({'display': 'block',
+                'width': 'auto',
+                'overflow': 'auto'});
+
+    d3.select('#t' + parent_element + '_paginate')
+        .style({'display': 'flex',
+                'justify-content': 'flex-end',
+                'float': 'none'});
+
+    document.getElementById('t' + parent_element + '_length').children[0].style = 'font-size: 12px !important;';
+    document.getElementById('t' + parent_element + '_length').children[0].children[0].style = 'height: auto;';
+    document.getElementById('t' + parent_element + '_filter').children[0].style = 'font-size: 12px !important;';
 }
 
 function collect_client_data(form) {

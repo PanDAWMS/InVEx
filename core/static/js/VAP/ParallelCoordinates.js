@@ -1,17 +1,17 @@
 // This function allows to jump to a certain row in a DataTable
 $.fn.dataTable.Api.register('row().show()', function () {
-    var page_info = this.table().page.info();
+    let page_info = this.table().page.info(),
     // Get row index
-    var new_row_index = this.index();
+        new_row_index = this.index(),
     // Row position
-    var row_position = this.table().rows()[0].indexOf(new_row_index);
+        row_position = this.table().rows()[0].indexOf(new_row_index);
     // Already on right page ?
     if (row_position >= page_info.start && row_position < page_info.end) {
         // Return row object
         return this;
     }
     // Find page number
-    var page_to_display = Math.floor(row_position / this.table().page.len());
+    let page_to_display = Math.floor(row_position / this.table().page.len());
     // Go to that page
     this.table().page(page_to_display);
     // Return row object
@@ -28,7 +28,7 @@ d3.selection.prototype.moveToFront = function () {
 };
 d3.selection.prototype.moveToBack = function () {
     return this.each(function () {
-        var firstChild = this.parentNode.firstChild;
+        let firstChild = this.parentNode.firstChild;
         if (firstChild) {
             this.parentNode.insertBefore(this, firstChild);
         }
@@ -36,7 +36,7 @@ d3.selection.prototype.moveToBack = function () {
 };
 
 function numberWithSpaces(x) {
-    var parts = x.toString().split(".");
+    let parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     return parts.join(".");
 }
@@ -133,16 +133,15 @@ class ParallelCoordinates {
             .text('Select the features displayed on the Parallel Coordinates graph:')
 
             .append('select')
-            .attr('class', 'select')
-            .attr('id', 's' + this.element_id);
+            .attr({'class': 'select',
+                    'id': 's' + this.element_id});
 
         // Construct the list with dimentions on graph
         this._graph_features = this._features.filter((elem, i) => {
             if (!('dims' in this.options.skip)) return true;
             if (this.options.skip['dims'].mode === 'none') return true;
             if (this.options.skip['dims'].mode === 'show' && this.options.skip['dims'].values.includes(elem)) return true;
-            if (this.options.skip['dims'].mode === 'hide' && !this.options.skip['dims'].values.includes(elem)) return true;
-            return false;
+            return this.options.skip['dims'].mode === 'hide' && !this.options.skip['dims'].values.includes(elem);
         });
 
         // Options for selectBox
@@ -150,7 +149,7 @@ class ParallelCoordinates {
             closeOnSelect: false,
             data: this._features.map((d, i) => { return { id: d, text: d, selected: this._graph_features.includes(d) }; }),
             multiple: true,
-            width: 600
+			width: 'auto'
         })
             // If the list changes - redraw the graph
             .on("change.select2", () => {
@@ -164,13 +163,13 @@ class ParallelCoordinates {
         let container = d3.select("#" + this.element_id)
             .append('div')
 				.attr('id', 'flex' + this.element_id)
-                .style('display', 'flex')
-                .style('width', 'auto')
-                .style('overflow', 'auto')
-				.style('flex-wrap', 'wrap'),
+                .style({'display': 'flex',
+                        'width': 'auto',
+                        'overflow': 'auto',
+				        'flex-wrap': 'wrap'}),
             svg_container = container.append("div")
-                .style('width', 'auto')
-				.style('flex', '0');
+                .style({'width': 'auto',
+                        'flex': '0'});
 
         this._graph = svg_container
             .append("svg")
@@ -191,10 +190,10 @@ class ParallelCoordinates {
         container
             .append("div")
                 .attr("id", "t" + this.element_id + "_wrapper")
-                .style("overflow", "auto")
-				.style("min-width", "500px")
-				.style("max-width", "max-content")
-				.style('flex', '1');
+                .style({"overflow": "auto",
+				        "min-width": "500px",
+				        "max-width": "max-content",
+				        'flex': '1'});
 
         // Draw the graph and the table
         this._createGraph();
@@ -398,8 +397,8 @@ class ParallelCoordinates {
         // Add table to wrapper
         d3.select("#t" + this.element_id + "_wrapper")
             .append("table")
-                .attr("id", "t" + this.element_id)
-                .attr("class", "table hover");
+                .attr({"id": "t" + this.element_id,
+                        "class": "table hover"});
 
         // 'visible' data array with lines on foreground (not filtered by a brush)
         //  possible values: ["all"] or ["id in _data", ...]
@@ -430,59 +429,54 @@ class ParallelCoordinates {
                     return data;
                 }
             };
-        }),
+        });
 
-            // Array with table cell data
-            this._tcells = this._data.map((row, i) =>
-                [row[0]]
-                    .concat((this.options.draw['mode'] === "cluster") ? [this._color[i]] : [])
-                    .concat(row[1].map(String))
-                    .concat((this._aux_data !== null)?this._aux_data[i][1].map(String):[])
-                    .concat((this.options.draw['mode'] === "cluster") ?
-                        [rgbToHex(this._clusters_color_scheme[this._color[i]])] : [])
-            );
+        // Array with table cell data
+        this._tcells = this._data.map((row, i) =>
+            [row[0]]
+                .concat((this.options.draw['mode'] === "cluster") ? [this._color[i]] : [])
+                .concat(row[1].map(String))
+                .concat((this._aux_data !== null)?this._aux_data[i][1].map(String):[])
+                .concat((this.options.draw['mode'] === "cluster") ?
+                    [rgbToHex(this._clusters_color_scheme[this._color[i]])] : [])
+        );
 
-            // Vars for table and its datatable
-            this._table = $('#t' + this.element_id),
-            this._datatable = this._table.DataTable({
-                data: this._tcells,
-                columns: this._theader,
+        // Vars for table and its datatable
+        this._table = $('#t' + this.element_id);
+        this._datatable = this._table.DataTable({
+            data: this._tcells,
+            columns: this._theader,
 
-                mark: true,
-                dom: 'Blfrtip',
-                colReorder: true,
-                buttons: [
-                    'colvis'
-                ],
+            mark: true,
+            dom: 'Blfrtip',
+            colReorder: true,
+            buttons: ['colvis'],
+            "search": {"regex": true},
 
-                "search": {
-                    "regex": true
-                },
+            // Make colors lighter for readability
+            "rowCallback": (row, data) => {
+                if (this.options.draw['mode'] === "cluster")
+                    $(row).children().css('background', data[data.length - 1] + "33");
 
-                // Make colors lighter for readability
-                "rowCallback": (row, data) => {
-                    if (this.options.draw['mode'] === "cluster")
-                        $(row).children().css('background', data[data.length - 1] + "33");
-					
-                    $(row).children().css('white-space', 'nowrap');
-                },
+                $(row).children().css('white-space', 'nowrap');
+            },
 
-                // Redraw lines on ParCoords when table is ready
-                "fnDrawCallback": () => {
-                    _PCobject._on_table_ready(_PCobject);
-                }
-            });
+            // Redraw lines on ParCoords when table is ready
+            "fnDrawCallback": () => {
+                _PCobject._on_table_ready(_PCobject);
+            }
+        });
 
         // Bug fixes related to css 
         d3.select('#t' + this.element_id)
-            .style('display', 'block')
-            .style('width', 'auto')
-            .style('overflow', 'auto');
+            .style({'display': 'block',
+                    'width': 'auto',
+                    'overflow': 'auto'});
 
         d3.select('#t' + this.element_id + '_paginate')
-            .style('display', 'flex')
-            .style('justify-content', 'flex-end')
-            .style('float', 'none');
+            .style({'display': 'flex',
+                    'justify-content': 'flex-end',
+                    'float': 'none'});
 
         document.getElementById('t' + this.element_id + '_length').children[0].style = 'font-size: 12px !important;';
         document.getElementById('t' + this.element_id + '_length').children[0].children[0].style = 'height: auto;';
@@ -496,9 +490,14 @@ class ParallelCoordinates {
                 let line = _PCobject._foreground[0][_PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])];
                 $(line).addClass("bold");
                 d3.select(line).moveToFront();
+
+                $(_PCobject._datatable.rows().nodes()).removeClass('table-selected-line');
+                $(_PCobject._datatable.row(this).nodes()).addClass('table-selected-line');
             })
             .on("mouseout", 'tr', function (d) {
                 if (_PCobject._selected_line !== -1) return;
+
+                $(_PCobject._datatable.rows().nodes()).removeClass('table-selected-line');
 
                 $(_PCobject._foreground[0][
                     _PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])

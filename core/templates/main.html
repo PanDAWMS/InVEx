@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.9/css/select2.min.css" />
 
     <link rel="stylesheet" href="{% static "css/spectrum.css" %}">
+    <link rel="stylesheet" href="{% static "css/dataTables.alphabetSearch.css" %}">
     <link rel="stylesheet" href="{% static "css/ParallelCoordinates.css" %}">
 {% endblock %}
 
@@ -63,6 +64,8 @@
 
 <script src="{% static "js/controls/OrbitControls.js" %}"></script>
 <script src="{% static "js/controls/DragControls.js" %}"></script>
+
+<script src="{% static "js/VAP/dataTables.alphabetSearch.js" %}"></script>
 
 <script src="{% static "js/VAP/sup_func.js" %}"></script>
 <script src="{% static "js/VAP/cookies.js" %}"></script>
@@ -234,7 +237,7 @@
                         }
                     });
                 
-                cluster_selector(scene.clusters_color_scheme, "print", "cluster_stat");
+                cluster_selector(scene.clusters_color_scheme, "cluster_stat");
             {% endif %}
 
             {% if norm_dataset %}
