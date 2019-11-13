@@ -436,8 +436,10 @@ def clusterize(request, dataset_id, group_ids=None):
                                   load_history_data=True)
 
     dataset_hdlr._mode = mode
-    is_dataset_normalized = 'use_normalized_dataset' in request.POST and \
-                            request.POST['use_normalized_dataset'] == 'on'
+
+    normalized_name = 'use_normalized_dataset_' + request.POST['algorithm']
+    is_dataset_normalized = normalized_name in request.POST and \
+                            request.POST[normalized_name] == 'on'
     clustering_dataset = dataset_hdlr.get_clustering_dataset(
         is_normalized=is_dataset_normalized)
 

@@ -346,7 +346,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
         // The checkbox
         var use_normalized_input = document.createElement('input');
         use_normalized_input.id = 'normalized_checkbox_' + cluster_params[k][0];
-        use_normalized_input.name = "use_normalized_dataset";
+        use_normalized_input.name = "use_normalized_dataset_" + cluster_params[k][0];
         use_normalized_input.type = 'checkbox';
         use_normalized_input.checked = false;
         use_normalized_div.appendChild(use_normalized_input);
