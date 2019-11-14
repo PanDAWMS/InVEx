@@ -35,18 +35,34 @@ d3.selection.prototype.moveToBack = function () {
     });
 };
 
+// Add spaces and a dot to the number
+// '1234567.1234 -> 1 234 567.12'
 function numberWithSpaces(x) {
     let parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     return parts.join(".");
 }
 
+// RGB color object to hex string
+function rgbToHex(color) {
+  return "#" + ((1 << 24) + (color.r * 255 << 16) + (color.g * 255 << 8)
+      + color.b * 255).toString(16).slice(1);
+}
+
+// Ability to count a number of a certain element in an array
+Object.defineProperties(Array.prototype, {
+    count: {
+        value: function(value) {
+            return this.filter(x => x==value).length;
+        }
+    }
+});
+
 class ParallelCoordinates {
     // ********
     // Constructor
     // 
     // Passes all arguments to updateData(...)
-    //
     // ********
     constructor(element_id, dimension_names, data_array, clusters_list, clusters_color_scheme,
         aux_features, aux_data_array, options = {}) {
@@ -101,6 +117,7 @@ class ParallelCoordinates {
         else if (typeof this.options === 'undefined') this.options = options;
             else if (options.hasOwnProperty('draw')) this.options.draw = options.draw;
 
+        // Throw an error if a wrong draw mode selected
         if (!["print", "cluster"].includes(this.options.draw['mode'])) 
             throw "Wrong mode value! Possible values: 'print', 'cluster', got: '"+ value + "'";
             
@@ -117,10 +134,10 @@ class ParallelCoordinates {
         else if (options.hasOwnProperty('skip')) this.options.skip = options.skip;
 
         // Initiate the arrays and draw the stuff
-        this._prepareGraphAndTable();
+        this._prepareGraphAndTables();
     }
     
-    _prepareGraphAndTable() {
+    _prepareGraphAndTables() {
         // A link to this ParCoord object
         var _PCobject = this;
         
@@ -130,11 +147,11 @@ class ParallelCoordinates {
         // A selectBox with chosen features
         d3.select("#" + this.element_id)
             .append('p')
-            .text('Select the features displayed on the Parallel Coordinates graph:')
+                .text('Select the features displayed on the Parallel Coordinates graph:')
 
-            .append('select')
-            .attr({'class': 'select',
-                    'id': 's' + this.element_id});
+                .append('select')
+                    .attr({'class': 'select',
+                            'id': 's' + this.element_id});
 
         // Construct the list with dimentions on graph
         this._graph_features = this._features.filter((elem, i) => {
@@ -198,6 +215,11 @@ class ParallelCoordinates {
         // Draw the graph and the table
         this._createGraph();
         this._createTable();
+
+        if(this.options.draw['mode'] === 'cluster'){
+            this._ci_div = d3.select("#" + this.element_id).append('div');
+            this._createClusterInfo();
+        }
 
         // trash bin :)
         
@@ -467,20 +489,7 @@ class ParallelCoordinates {
             }
         });
 
-        // Bug fixes related to css 
-        d3.select('#t' + this.element_id)
-            .style({'display': 'block',
-                    'width': 'auto',
-                    'overflow': 'auto'});
-
-        d3.select('#t' + this.element_id + '_paginate')
-            .style({'display': 'flex',
-                    'justify-content': 'flex-end',
-                    'float': 'none'});
-
-        document.getElementById('t' + this.element_id + '_length').children[0].style = 'font-size: 12px !important;';
-        document.getElementById('t' + this.element_id + '_length').children[0].children[0].style = 'height: auto;';
-        document.getElementById('t' + this.element_id + '_filter').children[0].style = 'font-size: 12px !important;';
+        this._fix_css_in_table('t' + this.element_id);
 
         // Add bold effect to lines when a line is hovered over in the table
         $('#t' + this.element_id + ' tbody')
@@ -516,13 +525,16 @@ class ParallelCoordinates {
                     _PCobject._datatable.rows(this).nodes().to$().addClass('table-selected-line');
                 }
                 else if (_PCobject._selected_line === _PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])) {
+                    let line = _PCobject._foreground[0][_PCobject._selected_line];
+                    $(line).removeClass("bold");
+
                     _PCobject._selected_line = -1;
                     _PCobject._datatable.rows(this).nodes().to$().removeClass('table-selected-line');
                 }  
             });
 
         // Add footer elements
-        $('#t' + this.element_id).append(
+        this._table.append(
             $('<tfoot/>').append($('#t' + this.element_id + ' thead tr').clone())
         );
 
@@ -558,6 +570,152 @@ class ParallelCoordinates {
         );
     }
 
+    // Create cluster info buttons (which call the table creation)
+    _createClusterInfo() {
+        // Add a div to hold a label and buttons
+        this._ci_buttons_div = this._ci_div
+            .append('div')
+                .style({'margin-right': '15px',
+                        'flex-shrink': '0'});
+
+        // Add 'Choose Cluster' text to it
+        this._ci_buttons_div
+            .append('label')
+                .text("Choose Cluster");
+
+        // Add a div for the table
+        this._ci_table_div = this._ci_div.append('div');
+
+        //Add a div to hold the buttons after the label
+        this._ci_buttons = this._ci_buttons_div
+            .append('div')
+                .attr({'class': 'ci-button-group',
+                        'id': 'ci_buttons_' + this.element_id});
+
+        let cluster_count = d3.keys(this._clusters_color_scheme).map(x => this._color.count(x)),
+            scale = d3.scale.sqrt()
+                .domain([Math.min(...cluster_count), Math.max(...cluster_count)])
+                .range([11, 0]);
+
+        // Add corresponding buttons to every color
+        this._ci_buttons
+            .selectAll("a")
+                .data(d3.keys(this._clusters_color_scheme))
+                .enter().append('a')
+                    .attr({'class': 'ci-button',
+                            'title': id => "Cluster " + id + ".\nElement count: " + cluster_count[id] + "."})
+                    .style({'background': id => rgbToHex(this._clusters_color_scheme[id]),
+                            'box-shadow': id => 'inset 0px 0px 0px ' + scale(cluster_count[id]) + 'px #fff'})
+                    .text(id => id)
+                    .on("click", () => {
+                        d3.event.preventDefault();
+
+                        // Change the layout of the menu
+                        // (only if the screen is wide enough)
+                        if (!window.matchMedia("(max-width: 700px)").matches) {
+                            // Make the elements side by side (buttons | table)
+                            this._ci_div.style('display', 'flex');
+
+                            // Make buttons vertical
+                            this._ci_buttons
+                                .style({'flex-direction': 'column',
+                                        'align-items': 'center'});
+
+                            // Calculate the Number Of Columns with buttons
+                            let noc = Math.ceil(Object.keys(this._clusters_color_scheme).length / 11);
+
+                            // Fix the div with the buttons a little bit
+                            this._ci_buttons_div
+                                .style('width', (noc * 46) + 'px')
+                                .select('label')
+                                    .style('text-align', 'center');
+                        }
+
+                        // Clean all children
+                        this._ci_table_div
+                            .style({'width': '100%',
+                                    'white-space': 'nowrap'})
+                            .html('');
+
+                        // Add 'Cluster # statistics' text
+                        this._ci_table_div
+                            .append('h3')
+                                .text("Cluster №" + d3.event.target.innerText + " statistics")
+                                .style({'background': d3.event.target.style.background,
+                                        'text-shadow': '0 1px 0 #aaa, 1px 0 0 #aaa, 0 -1px 0 #aaa, -1px 0 0 #aaa'});
+
+                        // Print the stats
+                        this._createClusterStatsTable();
+                    });
+
+        $('#ci_buttons_' + this.element_id).tooltip({
+            track: true,
+            tooltipClass: "ci-tooltip"
+        });
+    }
+
+    // Creates a table with cluster info
+    // The function must be call from onClick, it uses d3.event.target
+    _createClusterStatsTable() {
+        // Make the header array
+        this._ci_header = ['', "Min", "Mean", "Max", "Median", "Deviation"].map(x => { return {
+            title : x,
+
+            // Add spaces and remove too much numbers after the comma
+            "render": function (data, type, full) {
+                if (type === 'display' && !isNaN(data))
+                    return numberWithSpaces(parseFloat(Number(data).toFixed(2)));
+
+                return data;
+            }
+        }});
+
+        // Prepare cells
+        this._ci_cluster_data = this._data.filter((x, i) => this._color[i] === d3.event.target.innerText);
+        this._ci_cells = this._features.map((x, i) => [
+                x,
+                d3.min(this._ci_cluster_data, row => row[1][i]),
+                d3.mean(this._ci_cluster_data, row => row[1][i]),
+                d3.max(this._ci_cluster_data, row => row[1][i]),
+                d3.median(this._ci_cluster_data, row => row[1][i]),
+                (this._ci_cluster_data.length > 1) ? d3.deviation(this._ci_cluster_data, row => row[1][i]) : '-'
+            ]);
+
+        // Add 'Number of elements: N' text
+        this._ci_table_div
+            .append('h5')
+            .text('Number of elements: ' + this._ci_cluster_data.length);
+
+        // Create the table
+        this._ci_table_div
+            .append('table')
+            .attr('id', 'ci_table_' + this.element_id);
+
+        // Add the data to the table
+        let table = $('#ci_table_' + this.element_id).DataTable({
+            data: this._ci_cells,
+            columns: this._ci_header,
+            mark: true,
+            dom: 'Alfrtip',
+            colReorder: true,
+            buttons: ['colvis'],
+            "search": {"regex": true}
+        });
+
+        // Add line getting darker on mouse hover
+        $('#ci_table_' + this.element_id + ' tbody')
+            .on("mouseover", 'tr', function (d, i) {
+                $(table.rows().nodes()).removeClass('table-selected-line');
+                $(table.row(this).nodes()).addClass('table-selected-line');
+            })
+            .on("mouseout", 'tr', function (d) {
+                $(table.rows().nodes()).removeClass('table-selected-line');
+            });
+
+        // Fix the css
+        this._fix_css_in_table('ci_table_' + this.element_id);
+    }
+
     // Functions to perform id transformation
     _tableToParcoords(index) { return this._ids.indexOf(index); }
     _parcoordsToTable(index) { return this._ids[index]; }
@@ -569,6 +727,23 @@ class ParallelCoordinates {
 
             return isVisible && object._search_results.includes(object._parcoordsToTable(j)) ? null : "none";
         });
+    }
+
+    // Bug fixes related to css
+    _fix_css_in_table(id){
+        d3.select('#' + id)
+            .style({'display': 'block',
+                    'width': 'auto',
+                    'overflow': 'auto'});
+
+        d3.select('#' + id + '_paginate')
+            .style({'display': 'flex',
+                    'justify-content': 'flex-end',
+                    'float': 'none'});
+
+        document.getElementById(id + '_length').children[0].style = 'font-size: 12px !important;';
+        document.getElementById(id + '_length').children[0].children[0].style = 'height: auto;';
+        document.getElementById(id + '_filter').children[0].style = 'font-size: 12px !important;';
     }
 
     // Functions for lines and brushes

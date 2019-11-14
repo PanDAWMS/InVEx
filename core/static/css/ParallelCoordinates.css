@@ -1,5 +1,9 @@
-/* Fonts, lines and brushes */
+/* Select part */
+.select2-container, .select2-choice, .select2-results__option {
+    font-size: 12px !important;
+}
 
+/* The SVG part */
 svg {
     font: 10px sans-serif;
 }
@@ -38,6 +42,7 @@ svg {
     filter: brightness(250%);
 }
 
+/* The tables part */
 mark {
     background: orange;
     color: black;
@@ -48,6 +53,37 @@ mark {
     color: #fff;
 }
 
-.select2-container, .select2-choice, .select2-results__option {
-    font-size: 12px !important;
+/* Clusters part */
+.ci-button-group::before ::after{
+    display: table;
+    content: ' ';
+    order: 1;
+    clear: both;
+}
+
+.ci-button-group{
+    display: flex;
+    flex-wrap: wrap;
+    max-height: 550px;
+}
+
+.ci-button {
+    padding: 1em 1em;
+    outline: 1px dashed lightgray;
+    text-shadow: #000000 1px 1px 0, 0px 0px 1px rgba(215, 142, 131, 0);
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.6;
+    color: #fefefe;
+    width: 45px;
+    height: 45px;
+}
+
+.ci-tooltip{
+    border-width: 1px;
+    border-radius: 0;
+    -webkit-box-shadow: none;
+	box-shadow: none;
+    white-space: pre-line;
 }
