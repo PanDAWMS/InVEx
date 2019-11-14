@@ -41,7 +41,7 @@ class LoDGenerator:
         self.dataset = dataset.copy()
         self.num_initial_elements = self.dataset.shape[0]
         self.grouped_dataset = None
-        self.grouping_key = 'group_id'
+        self.grouping_key = '_group_id'
 
         self._init_metadata = {'mode': mode or MODE_DEFAULT,
                                'value': num_groups or NUM_GROUPS_DEFAULT,
@@ -159,7 +159,8 @@ class LoDGenerator:
 
     def get_full_metadata(self):
         output = dict(self._init_metadata)
-        output['groups'] = self._groups_metadata
+        output.update({'groups': self._groups_metadata,
+                       'index': self.grouping_key})
         return output
 
     def get_groups_metadata(self):

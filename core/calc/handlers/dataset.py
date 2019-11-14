@@ -264,7 +264,7 @@ class DatasetHandler(BaseDataHandler):
             self._origin = local_reader.get_numeric_data(lod.grouped_dataset)
             self._modifications['auxiliary'] = lod.grouped_dataset.drop(
                 self._origin.columns.tolist(), 1)
-            self._property_set['lod']['groups'] = lod.get_groups_metadata()
+            self._property_set['lod'].update(lod.get_full_metadata())
         else:
             self._origin = local_reader.get_numeric_data(dataset)
             _set = set(self._origin.columns.tolist())
@@ -371,10 +371,20 @@ class DatasetHandler(BaseDataHandler):
                 self.features_description = json.loads(
                     base_group['features_description'][()])
 
+                self._property_set.update({
+                    'features': json.loads(
+                        modified_group.attrs['selected_features']),
+                    'lod': json.loads(
+                        modified_group['lod'][()])})
+
+                if self._property_set['lod'].get('index') is not None:
+                    df_index = self._property_set['lod']['index']
+                else:
+                    df_index = base_group['default'].attrs['index']
+
                 self._origin = pd.DataFrame.from_records(
                     modified_group['numeric_real'][()])
-                self._origin.set_index(
-                    base_group['default'].attrs['index'], inplace=True)
+                self._origin.set_index(df_index, inplace=True)
 
                 self._modifications.update({
                     'normalized': pd.DataFrame.from_records(
@@ -382,16 +392,8 @@ class DatasetHandler(BaseDataHandler):
                     'auxiliary': pd.DataFrame.from_records(
                         modified_group['auxiliary'][()])})
 
-                self._normalized.set_index(
-                    base_group['default'].attrs['index'], inplace=True)
-                self._auxiliary.set_index(
-                    base_group['default'].attrs['index'], inplace=True)
-
-                self._property_set.update({
-                    'features': json.loads(
-                        modified_group.attrs['selected_features']),
-                    'lod': json.loads(
-                        modified_group['lod'][()])})
+                self._normalized.set_index(df_index, inplace=True)
+                self._auxiliary.set_index(df_index, inplace=True)
 
                 if kwargs.get('operation_id') is not None:
                     self.operation_handler.load_from_hdf5(
