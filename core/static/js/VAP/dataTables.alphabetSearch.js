@@ -82,7 +82,7 @@ function bin ( data ) {
 function draw ( table, alphabet )
 {
 	alphabet.empty();
-	alphabet.append( 'Search by letter: ' );
+	alphabet.append( 'Filter by letter: ' );
 
 	var columnData = table.column(0).data();
 	var bins = bin( columnData );

@@ -607,12 +607,12 @@ class ParallelCoordinates {
                     .style({'background': id => rgbToHex(this._clusters_color_scheme[id]),
                             'box-shadow': id => 'inset 0px 0px 0px ' + scale(cluster_count[id]) + 'px #fff'})
                     .text(id => id)
-                    .on("click", () => {
+                    .on("click", id => {
                         d3.event.preventDefault();
 
                         // Change the layout of the menu
                         // (only if the screen is wide enough)
-                        if (!window.matchMedia("(max-width: 700px)").matches) {
+                        if (!window.matchMedia("(max-width: 800px)").matches) {
                             // Make the elements side by side (buttons | table)
                             this._ci_div.style('display', 'flex');
 
@@ -633,33 +633,41 @@ class ParallelCoordinates {
 
                         // Clean all children
                         this._ci_table_div
-                            .style({'width': '100%',
-                                    'white-space': 'nowrap'})
+                            .style('border', "5px dashed " + rgbToHex(this._clusters_color_scheme[id]) + "33")
+                            .attr('class', 'ci-table')
                             .html('');
+
+                        // Add the 'selected' decoration
+                        this._ci_buttons_div.selectAll('*').classed('ci-selected', false);
+                        d3.select(d3.event.target).classed('ci-selected', true);
 
                         // Add 'Cluster # statistics' text
                         this._ci_table_div
                             .append('h3')
-                                .text("Cluster №" + d3.event.target.innerText + " statistics")
-                                .style({'background': d3.event.target.style.background,
-                                        'text-shadow': '0 1px 0 #aaa, 1px 0 0 #aaa, 0 -1px 0 #aaa, -1px 0 0 #aaa'});
+                                .text("Cluster " + d3.event.target.innerText + " statistics");
 
                         // Print the stats
                         this._createClusterStatsTable();
                     });
 
-        $('#ci_buttons_' + this.element_id).tooltip({
+        $('.ci-button').tooltip({
             track: true,
-            tooltipClass: "ci-tooltip"
+            tooltipClass: "ci-tooltip",
+            show: false,
+            hide: false
         });
     }
 
     // Creates a table with cluster info
     // The function must be call from onClick, it uses d3.event.target
     _createClusterStatsTable() {
+        // A link to this ParCoord object
+        var _PCobject = this;
+
         // Make the header array
-        this._ci_header = ['', "Min", "Mean", "Max", "Median", "Deviation"].map(x => { return {
+        this._ci_header = ['', "Min", "Mean", "Max", "Median", "Deviation"].map((x, i) => { return {
             title : x,
+            className: (i === 0)? 'firstCol':'',
 
             // Add spaces and remove too much numbers after the comma
             "render": function (data, type, full) {
@@ -671,15 +679,33 @@ class ParallelCoordinates {
         }});
 
         // Prepare cells
-        this._ci_cluster_data = this._data.filter((x, i) => this._color[i] === d3.event.target.innerText);
-        this._ci_cells = this._features.map((x, i) => [
+        this._ci_cluster_data = this._data
+            .filter((x, i) => this._color[i] === d3.event.target.innerText)
+            .map((x, i) => x[1].concat(this._aux_data[i][1]));
+
+        this._ci_cells = this._features.concat(this._aux_features).map((x, i) =>
+            (this._features.includes(x)) ?
+            [
                 x,
-                d3.min(this._ci_cluster_data, row => row[1][i]),
-                d3.mean(this._ci_cluster_data, row => row[1][i]),
-                d3.max(this._ci_cluster_data, row => row[1][i]),
-                d3.median(this._ci_cluster_data, row => row[1][i]),
-                (this._ci_cluster_data.length > 1) ? d3.deviation(this._ci_cluster_data, row => row[1][i]) : '-'
-            ]);
+                d3.min(this._ci_cluster_data, row => row[i]),
+                d3.mean(this._ci_cluster_data, row => row[i]),
+                d3.max(this._ci_cluster_data, row => row[i]),
+                d3.median(this._ci_cluster_data, row => row[i]),
+                (this._ci_cluster_data.length > 1) ? d3.deviation(this._ci_cluster_data, row => row[i]) : '-'
+            ] : [x + ' <i>(click to expand)</i>', '-','-','-','-','-']);
+
+
+        this._ci_stats = this._aux_features.map((f, i) =>
+        {
+            let values = this._aux_data
+                    .filter((x, j) => this._color[j] === d3.event.target.innerText)
+                    .map((data) => data[1][i]),
+                stat = [...new Set(values)].map((x)=>[x, values.count(x)]);
+
+            return [f, stat];
+        });
+
+        console.log(this._aux_features, this._aux_data, this._ci_stats);
 
         // Add 'Number of elements: N' text
         this._ci_table_div
@@ -710,6 +736,32 @@ class ParallelCoordinates {
             })
             .on("mouseout", 'tr', function (d) {
                 $(table.rows().nodes()).removeClass('table-selected-line');
+            })
+            // Add event listener for opening and closing details
+            .on('click', 'td.firstCol', function(){
+                if (!this.innerText.endsWith(' (click to expand)')) return;
+
+                let id = _PCobject._aux_features.indexOf(this.innerText.replace(' (click to expand)', '')),
+                    tr = $(this).closest('tr'),
+                    row = table.row( tr ),
+                    text = '<table style="width:min-content">';
+
+                for(let i = 0; i<_PCobject._ci_stats[id][1].length; i++)
+                    text += '<tr><td>' +
+                        _PCobject._ci_stats[id][1][i][0] + '</td><td> ' +
+                        _PCobject._ci_stats[id][1][i][1] + '</td></tr>';
+
+                text+='</table>';
+
+                if(row.child.isShown()){
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    // Open this row
+                    row.child(text).show();
+                    tr.addClass('shown');
+                }
             });
 
         // Fix the css
