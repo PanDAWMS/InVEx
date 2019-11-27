@@ -492,7 +492,7 @@ class ParallelCoordinates {
         this._fix_css_in_table('t' + this.element_id);
 
         // Add bold effect to lines when a line is hovered over in the table
-        $('#t' + this.element_id + ' tbody')
+        $(this._datatable.table().body())
             .on("mouseover", 'tr', function (d, i) {
                 if (_PCobject._selected_line !== -1) return;
 
@@ -705,8 +705,6 @@ class ParallelCoordinates {
             return [f, stat];
         });
 
-        console.log(this._aux_features, this._aux_data, this._ci_stats);
-
         // Add 'Number of elements: N' text
         this._ci_table_div
             .append('h5')
@@ -729,7 +727,7 @@ class ParallelCoordinates {
         });
 
         // Add line getting darker on mouse hover
-        $('#ci_table_' + this.element_id + ' tbody')
+        $(table.table().body())
             .on("mouseover", 'tr', function (d, i) {
                 $(table.rows().nodes()).removeClass('table-selected-line');
                 $(table.row(this).nodes()).addClass('table-selected-line');
@@ -744,12 +742,13 @@ class ParallelCoordinates {
                 let id = _PCobject._aux_features.indexOf(this.innerText.replace(' (click to expand)', '')),
                     tr = $(this).closest('tr'),
                     row = table.row( tr ),
-                    text = '<table style="width:min-content">';
+                    text = '<table class="ci_aux_table" style="width:min-content">';
 
                 for(let i = 0; i<_PCobject._ci_stats[id][1].length; i++)
                     text += '<tr><td>' +
                         _PCobject._ci_stats[id][1][i][0] + '</td><td> ' +
-                        _PCobject._ci_stats[id][1][i][1] + '</td></tr>';
+                        _PCobject._ci_stats[id][1][i][1] +
+                        '</td></tr>';
 
                 text+='</table>';
 
@@ -761,6 +760,24 @@ class ParallelCoordinates {
                     // Open this row
                     row.child(text).show();
                     tr.addClass('shown');
+
+                    let table = $('.ci_aux_table').DataTable({
+                        columns:[
+                            {title:_PCobject._aux_features[id]},
+                            {title:"Count"}
+                            ],
+                        dom: 't',
+                        order: [[1, "desc"]]
+                    });
+
+                    $(table.table().body())
+                        .on("mouseover", 'tr', function (d, i) {
+                            $(table.rows().nodes()).removeClass('table-selected-line');
+                            $(table.row(this).nodes()).addClass('table-selected-line');
+                        })
+                        .on("mouseout", 'tr', function (d) {
+                            $(table.rows().nodes()).removeClass('table-selected-line');
+                        });
                 }
             });
 
@@ -791,7 +808,12 @@ class ParallelCoordinates {
         d3.select('#' + id + '_paginate')
             .style({'display': 'flex',
                     'justify-content': 'flex-end',
-                    'float': 'none'});
+                    'float': 'right',
+                    'width': 'max-content'});
+
+        d3.select('#' + id + '_info')
+            .style({'display': 'inline-block',
+                    'width': 'max-content'});
 
         document.getElementById(id + '_length').children[0].style = 'font-size: 12px !important;';
         document.getElementById(id + '_length').children[0].children[0].style = 'height: auto;';

@@ -61,6 +61,10 @@ mark {
     color: #fff;
 }
 
+.paginate_button{
+    font-size: 12px !important;
+}
+
 /* Clusters part */
 .ci-button-group::before ::after{
     display: table;
