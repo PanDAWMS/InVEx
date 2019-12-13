@@ -1,5 +1,17 @@
-/* Fonts, lines and brushes */
+@font-face {
+  font-family: "Oswald script=all rev=1";
+  src: url("https://fonts.gstatic.com/s/oswald/v29/TK3_WkUHHAIjg75cFRf3bXL8LICs1xZosUZiZQ.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  unicode-range: U+0-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
+/* Select part */
+.select2-container, .select2-choice, .select2-results__option {
+    font-size: 12px !important;
+}
+
+/* The SVG part */
 svg {
     font: 10px sans-serif;
 }
@@ -35,18 +47,88 @@ svg {
 .bold {
     stroke-width: 3;
     stroke-opacity: 1.0;
-    filter: brightness(150%);
+    filter: brightness(250%);
 }
 
+/* The tables part */
 mark {
     background: orange;
     color: black;
 }
 
 .table-selected-line {
-    background: #ddd !important;
+    background: #555 !important;
+    color: #fff;
 }
 
-.select2-container, .select2-choice, .select2-results__option {
+.paginate_button{
     font-size: 12px !important;
+}
+
+/* Clusters part */
+.ci-button-group::before ::after{
+    display: table;
+    content: ' ';
+    order: 1;
+    clear: both;
+}
+
+.ci-button-group{
+    display: flex;
+    flex-wrap: wrap;
+    max-height: 550px;
+}
+
+.ci-button {
+    padding: 1em 1em;
+    outline: 1px dashed lightgray;
+    text-shadow: #000000 1px 1px 0, 0px 0px 1px rgba(215, 142, 131, 0);
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.6;
+    color: #fefefe;
+    width: 45px;
+    height: 45px;
+
+    margin-left: 1px;
+    margin-top: 1px;
+}
+
+.ci-button:hover{
+    outline-width: 2px;
+    outline-color: gray;
+    z-index: 1;
+}
+
+.ci-button-group :last-child{
+    margin-bottom: 3px;
+}
+
+.ci-selected{
+    outline: 2px dashed black;
+    z-index: 1;
+}
+
+.ci-tooltip{
+    border-width: 1px;
+    border-radius: 0;
+    -webkit-box-shadow: none;
+	box-shadow: none;
+    white-space: pre-line;
+}
+
+.ci-table{
+    width: 100%;
+    white-space: nowrap;
+    padding: 10px;
+}
+
+.ci-table h3,h5{
+    font-family: 'Oswald script=all rev=1' !important;
+    text-shadow: #ddd 1px 1px 0;
+}
+
+.ci-table h3{
+    font-size: 2.3rem;
 }
