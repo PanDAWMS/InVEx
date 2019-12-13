@@ -694,8 +694,7 @@ class ParallelCoordinates {
                 (this._ci_cluster_data.length > 1) ? d3.deviation(this._ci_cluster_data, row => row[i]) : '-'
             ] : [x + ' <i>(click to expand)</i>', '-','-','-','-','-']);
 
-
-        this._ci_stats = this._aux_features.map((f, i) =>
+        this._ci_aux_stats = this._aux_features.map((f, i) =>
         {
             let values = this._aux_data
                     .filter((x, j) => this._color[j] === d3.event.target.innerText)
@@ -744,10 +743,10 @@ class ParallelCoordinates {
                     row = table.row( tr ),
                     text = '<table class="ci_aux_table" style="width:min-content">';
 
-                for(let i = 0; i<_PCobject._ci_stats[id][1].length; i++)
+                for(let i = 0; i<_PCobject._ci_aux_stats[id][1].length; i++)
                     text += '<tr><td>' +
-                        _PCobject._ci_stats[id][1][i][0] + '</td><td> ' +
-                        _PCobject._ci_stats[id][1][i][1] +
+                        _PCobject._ci_aux_stats[id][1][i][0] + '</td><td> ' +
+                        _PCobject._ci_aux_stats[id][1][i][1] +
                         '</td></tr>';
 
                 text+='</table>';
