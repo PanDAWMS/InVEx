@@ -1,8 +1,11 @@
-from . import baseoperationclass
+
 import numpy as np
+
+from . import baseoperationclass
 
 
 class GroupData(baseoperationclass.BaseOperationClass):
+
     _operation_name = 'Group Data'
     _operation_code_name = 'GroupData'
     _type_of_operation = 'cluster'
@@ -15,7 +18,10 @@ class GroupData(baseoperationclass.BaseOperationClass):
     def set_parameters(self, feature_name):
         if feature_name is not None:
             self.feature_name = feature_name
-        return True
+
+    def load_parameters(self, **kwargs):
+        self.set_parameters(
+            feature_name=kwargs.get('feature_name_GroupData'))
 
     def get_parameters(self):
         return {'feature_name_GroupData': self.feature_name}
@@ -31,10 +37,6 @@ class GroupData(baseoperationclass.BaseOperationClass):
 
     def save_parameters(self):
         return self.get_parameters()
-
-    def load_parameters(self, parameters):
-        self.set_parameters(feature_name=parameters.get('feature_name_GroupData') or None)
-        return True
 
     def save_results(self):
         return {'results': self.labels.tolist()}

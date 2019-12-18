@@ -15,7 +15,6 @@ EXTRA_PARAMS_DEFAULT = {
     # 'tol': 1e-5,
     # 'max_no_improvement': None
 }
-CLUST_ARRAY = []
 
 
 class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
@@ -44,7 +43,14 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
             self.selected_features = list(features)
         if batch_size is not None:
             self.batch_size = batch_size
-        return True  # TODO: "return"-statement should be removed
+
+    def load_parameters(self, **kwargs):
+        self.set_parameters(
+            num_clusters=kwargs.get('numclusters_MiniBatchKMeans') or
+            NUM_CLUSTERS_DEFAULT,
+            features=kwargs.get('features_MiniBatchKMeans') or [],
+            batch_size=kwargs.get('batchsize_MiniBatchKMeans') or
+            BATCH_SIZE_DEFAULT)
 
     def get_parameters(self):
         return {'numclusters_MiniBatchKMeans': self.num_clusters,
@@ -75,13 +81,6 @@ class MiniBatchKMeansClustering(baseoperationclass.BaseOperationClass):
 
     def save_parameters(self):
         return self.get_parameters()
-
-    def load_parameters(self, parameters):
-        self.set_parameters(
-            num_clusters=parameters.get('numclusters_MiniBatchKMeans') or NUM_CLUSTERS_DEFAULT,
-            features=parameters.get('features_MiniBatchKMeans') or [],
-            batch_size=parameters.get('batchsize_MiniBatchKMeans' or BATCH_SIZE_DEFAULT))
-        return True
 
     def save_results(self):
         return {'results': self.labels.tolist(),

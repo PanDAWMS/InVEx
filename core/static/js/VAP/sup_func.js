@@ -275,8 +275,6 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
             inputElement.style.cssFloat = 'right';
             inputElement.dataset.params = cluster_params[k][0];
 
-            //this.cluster_params = cluster_params;
-
             // '+' onclick
             inputElement.onclick = function () {
                 var selectbox = document.getElementById('clusteringSelectBox_' + this.dataset.params);
@@ -347,7 +345,7 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
 
         // The checkbox
         var use_normalized_input = document.createElement('input');
-        use_normalized_input.id = "normalized_checkbox";
+        use_normalized_input.id = 'normalized_checkbox_' + cluster_params[k][0];
         use_normalized_input.name = "use_normalized_dataset";
         use_normalized_input.type = 'checkbox';
         use_normalized_input.checked = false;
@@ -381,6 +379,9 @@ function createClusterElements(divElement, formElement, cluster_params, curr_alg
                     document.getElementById("option_"+curr_values[current_id][y] + "_" + curr_algorithm).selected = true;
                     plus.click();
                 }
+
+                document.getElementById('normalized_checkbox_' + curr_algorithm).checked =
+                    curr_values['use_normalized_dataset'];
             } else
                 element_div.style.display = 'none';
     }
@@ -746,82 +747,6 @@ function toHex(n) {
  n = Math.max(0,Math.min(n,255));
  return "0123456789ABCDEF".charAt((n-n%16)/16)
       + "0123456789ABCDEF".charAt(n%16);
-}
-
-function cluster_selector(clusters_color_scheme, controls_parent, table_parent) {
-    var selector = document.getElementById(controls_parent);
-    
-    var label = document.createElement("label");
-    label.innerHTML = "Choose Cluster";
-    var btnGroup = document.createElement("div");
-    btnGroup.classList.add("small");
-    btnGroup.classList.add("button-group");
-    for (var cluster in clusters_color_scheme) {
-        var color = clusters_color_scheme[cluster];
-        var a = document.createElement("a");
-        a.setAttribute("href","#")
-        a.classList.add("button");
-        a.innerHTML = cluster;
-        a.style.background = rgbToHex(color);
-        a.onclick=function(event) {
-            event.preventDefault();
-            var cluster_stat = document.getElementById(table_parent);
-            while (cluster_stat.firstChild) {
-                cluster_stat.removeChild(cluster_stat.firstChild);
-            }
-            var parent = document.getElementById(table_parent);
-            var h3 = document.createElement("h3");
-            h3.innerText = "Cluster №" + parseInt(event.target.innerText) + " statistics";
-            h3.style.background = event.target.style.background;
-            parent.appendChild(h3);
-            printClusterStats(scene.realData, scene.clusters, parseInt(event.target.innerText), scene.dimNames, table_parent);
-        };
-        btnGroup.appendChild(a);
-    }
-    selector.appendChild(label);
-    selector.appendChild(btnGroup);
-}
-
-function printClusterStats(realdata, clusters, cluster_number, dimNames, parent_element) {
-    var cluster_list = [];
-    for (var i = 0; i < clusters.length; i++ ) {
-        if (clusters[i] == cluster_number)
-            cluster_list.push(i);
-    }
-    var data_cluster = [];
-    for (var j = 0; j < realdata.length; j++) {
-        if (cluster_list.includes(j) === true)
-            data_cluster.push(realdata[j][1]);
-    }
-    var result = Array.from({ length: data_cluster[0].length }, function(x, row) {
-      return Array.from({ length: data_cluster.length }, function(x, col) {
-        return data_cluster[col][row];
-      });
-    });
-    var count = result[0].length;
-    var stat = [];
-    stat.push(["Min", "Max", "Mean", "Std"]);
-    var means = [];
-    var maxs = [];
-    var mins = [];
-    var stds = [];
-    for (var i = 0; i < result.length; i++) {
-        var mean = ss.mean(result[i]),
-        std = ss.standardDeviation(result[i]),
-        min = ss.min(result[i]),
-        max = ss.max(result[i]);
-        means.push(mean);
-        maxs.push(max);
-        mins.push(min);
-        stds.push(std);
-    }
-    stat.push([mins, maxs, means, stds]);
-    var count_info = document.createElement("h5");
-    count_info.innerText = "Number of elements: " + count.toString();
-    var parent = document.getElementById(parent_element);
-    parent.appendChild(count_info);
-
-    printStats(stat, dimNames, parent_element);
 }
 
 function collect_client_data(form) {

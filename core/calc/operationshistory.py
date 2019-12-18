@@ -1,3 +1,5 @@
+# TODO: Scheduled to be deleted (!) (after LoD info will be moved to HDF5)
+
 from .clustering import baseoperationclass
 import json
 

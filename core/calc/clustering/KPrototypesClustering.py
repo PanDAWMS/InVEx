@@ -1,3 +1,4 @@
+
 import numpy as np
 import pickle
 
@@ -5,10 +6,12 @@ from random import randint
 
 from kmodes.kprototypes import KPrototypes
 from kmodes.util.dissim import matching_dissim
-from . import baseoperationclass
-from ..util import dissimilarity_python
-from ..util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
 
+from ..util import dissimilarity_python
+from ..util import (
+    get_categorical_indices, encode_nominal_parameters, normalized_dataset)
+
+from . import baseoperationclass
 
 CLUSTER_NUMBER = 5
 CATEGORICAL_WEIGHT = -1
@@ -33,14 +36,22 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
         return data if not self.selected_features \
             else data.loc[:, self.selected_features]
 
-    def set_parameters(self, cluster_number, categorical_weight=None, features=None):
+    def set_parameters(self, cluster_number, categorical_weight=None,
+                       features=None):
         if cluster_number is not None:
             self.cluster_number = cluster_number
         if categorical_weight is not None:
             self.categorical_weight = categorical_weight
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
-        return True
+
+    def load_parameters(self, **kwargs):
+        self.set_parameters(
+            cluster_number=kwargs.get('cluster_number_KPrototypes') or
+            CLUSTER_NUMBER,
+            categorical_weight=kwargs.
+            get('categorical_data_weight_KPrototypes') or CATEGORICAL_WEIGHT,
+            features=kwargs.get('features_KPrototypes') or [])
 
     def get_parameters(self):
         return {'cluster_number_KPrototypes': self.cluster_number,
@@ -122,14 +133,6 @@ class KPrototypesClustering(baseoperationclass.BaseOperationClass):
 
     def save_parameters(self):
         return self.get_parameters()
-
-    def load_parameters(self, parameters):
-        self.set_parameters(
-            cluster_number=parameters.get('cluster_number_KPrototypes') or CLUSTER_NUMBER,
-            categorical_weight=parameters.get('categorical_data_weight_KPrototypes') or CATEGORICAL_WEIGHT,
-            features=parameters.get('features_KPrototypes') or []
-        )
-        return True
 
     def save_results(self):
         return {'results': self.labels.tolist(),

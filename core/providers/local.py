@@ -44,10 +44,32 @@ class LocalReader(BaseReader):
             if file_format not in self.SOURCE_FILE_FORMATS:
                 raise Exception('File format is incorrect.')
 
+        data = None
+
         if file_format == 'csv':
-            data = self._from_csv(file_path=file_path, **kwargs)
+            data = pd.read_csv(file_path, **kwargs)
+
         elif file_format == 'json':
-            data = self._from_json(file_path=file_path, **kwargs)
+            if kwargs.get('orient'):
+                # used if the original DatFrame was saved with "df.to_json"
+                try:
+                    data = pd.read_json(file_path, orient=kwargs.get('orient'))
+                except:
+                    pass
+
+            if data is None:
+                # used if json-file contains list of dict-records
+                try:
+                    with open(file_path) as fd:
+                        data = json.load(fd)
+                        if 'jobs' in data:
+                            data = data['jobs']
+                        data = self.to_df(data=data, **kwargs)
+                except:
+                    pass
+
+        if data is None:
+            data = pd.DataFrame()
 
         # check the consistency of data
         # self._check_data_format(data=data)
@@ -56,59 +78,6 @@ class LocalReader(BaseReader):
         # self._post_process(data=data)
 
         return data
-
-    def _from_csv(self, file_path, **kwargs):
-        """
-        Read data of DataFrame format from csv-file.
-
-        :param file_path: Full file path.
-        :type file_path: str
-        :param kwargs: Additional parameters.
-        :type kwargs: dict
-
-        :keyword index_col: 0 (1st column is used as index), None (no indices).
-        :keyword header: 0 (1st row is used as names), None (no column names).
-
-        :return: Data for analysis.
-        :rtype: DataFrame
-        """
-        return pd.read_csv(file_path, **kwargs)
-
-    def _from_json(self, file_path, **kwargs):
-        """
-        Read data of DataFrame format from json-file.
-
-        :param file_path: Full file path.
-        :type file_path: str
-        :param kwargs: Additional parameters.
-        :type kwargs: dict
-
-        :keyword orient: Indication of expected JSON string format.
-
-        :return: Data for analysis.
-        :rtype: DataFrame
-        """
-        output = None
-
-        if kwargs.get('orient'):
-            # used if the original DatFrame was saved with "df.to_json"
-            try:
-                output = pd.read_json(file_path, orient=kwargs.get('orient'))
-            except:
-                pass
-
-        if output is None:
-            # used if json-file contains list of dict-records
-            try:
-                with open(file_path) as fd:
-                    data = json.load(fd)
-                    if 'jobs' in data:
-                        data = data['jobs']
-                    output = self.to_df(data=data, **kwargs)
-            except:
-                output = pd.DataFrame()
-
-        return output
 
     def _check_data_format(self, data):
         # TODO: check the consistency of the provided data.

@@ -1,11 +1,14 @@
+
 import numpy as np
+
 from functools import partial
 
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 
-from . import baseoperationclass
-from ..util import get_categorical_indices, encode_nominal_parameters, normalized_dataset
+from ..util import (
+    get_categorical_indices, encode_nominal_parameters, normalized_dataset)
 
+from . import baseoperationclass
 
 CLUSTER_NUMBER = 5
 CATEGORICAL_WEIGHT = -1
@@ -37,7 +40,14 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
             self.categorical_weight = categorical_weight
         if features is not None and isinstance(features, (list, tuple)):
             self.selected_features = list(features)
-        return True
+
+    def load_parameters(self, **kwargs):
+        self.set_parameters(
+            cluster_number=kwargs.get('cluster_number_Hierarchical') or
+            CLUSTER_NUMBER,
+            categorical_weight=kwargs.
+            get('categorical_data_weight_Hierarchical') or CATEGORICAL_WEIGHT,
+            features=kwargs.get('features_Hierarchical') or [])
 
     def get_parameters(self):
         return {"cluster_number_Hierarchical": self.cluster_number,
@@ -83,14 +93,6 @@ class HierarchicalClustering(baseoperationclass.BaseOperationClass):
 
     def save_parameters(self):
         return self.get_parameters()
-
-    def load_parameters(self, parameters):
-        self.set_parameters(
-            cluster_number=parameters.get('cluster_number_Hierarchical') or CLUSTER_NUMBER,
-            categorical_weight=parameters.get('categorical_data_weight_Hierarchical') or CATEGORICAL_WEIGHT,
-            features=parameters.get('features_Hierarchical') or []
-        )
-        return True
 
     def save_results(self):
         return {'results': self.labels.tolist(),

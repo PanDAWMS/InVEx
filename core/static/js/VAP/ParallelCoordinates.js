@@ -1,17 +1,17 @@
 // This function allows to jump to a certain row in a DataTable
 $.fn.dataTable.Api.register('row().show()', function () {
-    var page_info = this.table().page.info();
+    let page_info = this.table().page.info(),
     // Get row index
-    var new_row_index = this.index();
+        new_row_index = this.index(),
     // Row position
-    var row_position = this.table().rows()[0].indexOf(new_row_index);
+        row_position = this.table().rows()[0].indexOf(new_row_index);
     // Already on right page ?
     if (row_position >= page_info.start && row_position < page_info.end) {
         // Return row object
         return this;
     }
     // Find page number
-    var page_to_display = Math.floor(row_position / this.table().page.len());
+    let page_to_display = Math.floor(row_position / this.table().page.len());
     // Go to that page
     this.table().page(page_to_display);
     // Return row object
@@ -28,25 +28,41 @@ d3.selection.prototype.moveToFront = function () {
 };
 d3.selection.prototype.moveToBack = function () {
     return this.each(function () {
-        var firstChild = this.parentNode.firstChild;
+        let firstChild = this.parentNode.firstChild;
         if (firstChild) {
             this.parentNode.insertBefore(this, firstChild);
         }
     });
 };
 
+// Add spaces and a dot to the number
+// '1234567.1234 -> 1 234 567.12'
 function numberWithSpaces(x) {
-    var parts = x.toString().split(".");
+    let parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     return parts.join(".");
 }
+
+// RGB color object to hex string
+function rgbToHex(color) {
+  return "#" + ((1 << 24) + (color.r * 255 << 16) + (color.g * 255 << 8)
+      + color.b * 255).toString(16).slice(1);
+}
+
+// Ability to count a number of a certain element in an array
+Object.defineProperties(Array.prototype, {
+    count: {
+        value: function(value) {
+            return this.filter(x => x==value).length;
+        }
+    }
+});
 
 class ParallelCoordinates {
     // ********
     // Constructor
     // 
     // Passes all arguments to updateData(...)
-    //
     // ********
     constructor(element_id, dimension_names, data_array, clusters_list, clusters_color_scheme,
         aux_features, aux_data_array, options = {}) {
@@ -101,6 +117,7 @@ class ParallelCoordinates {
         else if (typeof this.options === 'undefined') this.options = options;
             else if (options.hasOwnProperty('draw')) this.options.draw = options.draw;
 
+        // Throw an error if a wrong draw mode selected
         if (!["print", "cluster"].includes(this.options.draw['mode'])) 
             throw "Wrong mode value! Possible values: 'print', 'cluster', got: '"+ value + "'";
             
@@ -117,10 +134,10 @@ class ParallelCoordinates {
         else if (options.hasOwnProperty('skip')) this.options.skip = options.skip;
 
         // Initiate the arrays and draw the stuff
-        this._prepareGraphAndTable();
+        this._prepareGraphAndTables();
     }
     
-    _prepareGraphAndTable() {
+    _prepareGraphAndTables() {
         // A link to this ParCoord object
         var _PCobject = this;
         
@@ -130,19 +147,18 @@ class ParallelCoordinates {
         // A selectBox with chosen features
         d3.select("#" + this.element_id)
             .append('p')
-            .text('Select the features displayed on the Parallel Coordinates graph:')
+                .text('Select the features displayed on the Parallel Coordinates graph:')
 
-            .append('select')
-            .attr('class', 'select')
-            .attr('id', 's' + this.element_id);
+                .append('select')
+                    .attr({'class': 'select',
+                            'id': 's' + this.element_id});
 
         // Construct the list with dimentions on graph
         this._graph_features = this._features.filter((elem, i) => {
             if (!('dims' in this.options.skip)) return true;
             if (this.options.skip['dims'].mode === 'none') return true;
             if (this.options.skip['dims'].mode === 'show' && this.options.skip['dims'].values.includes(elem)) return true;
-            if (this.options.skip['dims'].mode === 'hide' && !this.options.skip['dims'].values.includes(elem)) return true;
-            return false;
+            return this.options.skip['dims'].mode === 'hide' && !this.options.skip['dims'].values.includes(elem);
         });
 
         // Options for selectBox
@@ -150,7 +166,7 @@ class ParallelCoordinates {
             closeOnSelect: false,
             data: this._features.map((d, i) => { return { id: d, text: d, selected: this._graph_features.includes(d) }; }),
             multiple: true,
-            width: 600
+			width: 'auto'
         })
             // If the list changes - redraw the graph
             .on("change.select2", () => {
@@ -161,16 +177,25 @@ class ParallelCoordinates {
         this._selectBox.data('select2').$container.css("display", "block");
 
         // Append an SVG to draw lines on
-        this._graph = d3.select("#" + this.element_id)
+        let container = d3.select("#" + this.element_id)
             .append('div')
-                .style('display', 'block')
-                .style('width', 'auto')
-                .style('overflow', 'auto')
+				.attr('id', 'flex' + this.element_id)
+                .style({'display': 'flex',
+                        'width': 'auto',
+                        'overflow': 'auto',
+				        'flex-wrap': 'wrap'}),
+            svg_container = container.append("div")
+                .style({'width': 'auto',
+                        'flex': '0'});
+
+        this._graph = svg_container
             .append("svg")
                 .style("overflow", "auto");
 
         // A hint on how to use
-        d3.select("#" + this.element_id).append('p')
+        //d3.select("#" + this.element_id)
+        svg_container
+            .append('p')
             .html('Use the Left Mouse Button to select a curve and the corresponding line in the table <br>' +
                 'Hover over the lines with mouse to see the row in the table');
 
@@ -178,13 +203,23 @@ class ParallelCoordinates {
         this._selected_line = -1;
 
         // Add the table below the ParCoords
-        d3.select("#" + this.element_id)
+        //d3.select("#" + this.element_id)
+        container
             .append("div")
-                .attr("id", "t" + this.element_id + "_wrapper");
+                .attr("id", "t" + this.element_id + "_wrapper")
+                .style({"overflow": "auto",
+				        "min-width": "500px",
+				        "max-width": "max-content",
+				        'flex': '1'});
 
         // Draw the graph and the table
         this._createGraph();
         this._createTable();
+
+        if(this.options.draw['mode'] === 'cluster'){
+            this._ci_div = d3.select("#" + this.element_id).append('div');
+            this._createClusterInfo();
+        }
 
         // trash bin :)
         
@@ -384,8 +419,8 @@ class ParallelCoordinates {
         // Add table to wrapper
         d3.select("#t" + this.element_id + "_wrapper")
             .append("table")
-                .attr("id", "t" + this.element_id)
-                .attr("class", "table hover");
+                .attr({"id": "t" + this.element_id,
+                        "class": "table hover"});
 
         // 'visible' data array with lines on foreground (not filtered by a brush)
         //  possible values: ["all"] or ["id in _data", ...]
@@ -401,7 +436,7 @@ class ParallelCoordinates {
                 this._theader_array.unshift(this.options.draw['cluster_tab_name']);
             else this._theader_array.unshift('Cluster');
         this._theader_array.unshift('ID');
-        this._theader_array = this._theader_array.concat(this._aux_features);
+        if (this._aux_features !== null) this._theader_array = this._theader_array.concat(this._aux_features);
 
         // Map headers for the tables
         this._theader = this._theader_array.map(row => {
@@ -416,75 +451,62 @@ class ParallelCoordinates {
                     return data;
                 }
             };
-        }),
+        });
 
-            // Array with table cell data
-            this._tcells = this._data.map((row, i) =>
-                [row[0]]
-                    .concat((this.options.draw['mode'] === "cluster") ? [this._color[i]] : [])
-                    .concat(row[1].map(String))
-                    .concat(this._aux_data[i][1].map(String))
-                    .concat((this.options.draw['mode'] === "cluster") ?
-                        [rgbToHex(this._clusters_color_scheme[this._color[i]])] : [])
-            ),
+        // Array with table cell data
+        this._tcells = this._data.map((row, i) =>
+            [row[0]]
+                .concat((this.options.draw['mode'] === "cluster") ? [this._color[i]] : [])
+                .concat(row[1].map(String))
+                .concat((this._aux_data !== null)?this._aux_data[i][1].map(String):[])
+                .concat((this.options.draw['mode'] === "cluster") ?
+                    [rgbToHex(this._clusters_color_scheme[this._color[i]])] : [])
+        );
 
-            // Vars for table and its datatable
-            this._table = $('#t' + this.element_id),
-            this._datatable = this._table.DataTable({
-                data: this._tcells,
-                columns: this._theader,
+        // Vars for table and its datatable
+        this._table = $('#t' + this.element_id);
+        this._datatable = this._table.DataTable({
+            data: this._tcells,
+            columns: this._theader,
 
-                mark: true,
-                dom: 'Blfrtip',
-                colReorder: true,
-                buttons: [
-                    'colvis'
-                ],
+            mark: true,
+            dom: 'Blfrtip',
+            colReorder: true,
+            buttons: ['colvis'],
+            "search": {"regex": true},
 
-                "search": {
-                    "regex": true
-                },
+            // Make colors lighter for readability
+            "rowCallback": (row, data) => {
+                if (this.options.draw['mode'] === "cluster")
+                    $(row).children().css('background', data[data.length - 1] + "33");
 
-                // Make colors lighter for readability
-                "rowCallback": (row, data) => {
-                    if (this.options.draw['mode'] === "cluster")
-                        $(row).children().css('background', data[data.length - 1] + "33");
+                $(row).children().css('white-space', 'nowrap');
+            },
 
-                    $(row).children().css('white-space', 'nowrap');
-                },
+            // Redraw lines on ParCoords when table is ready
+            "fnDrawCallback": () => {
+                _PCobject._on_table_ready(_PCobject);
+            }
+        });
 
-                // Redraw lines on ParCoords when table is ready
-                "fnDrawCallback": () => {
-                    _PCobject._on_table_ready(_PCobject);
-                }
-            });
-
-        // Bug fixes related to css 
-        d3.select('#t' + this.element_id)
-            .style('display', 'block')
-            .style('width', 'auto')
-            .style('overflow', 'auto');
-
-        d3.select('#t' + this.element_id + '_paginate')
-            .style('display', 'flex')
-            .style('justify-content', 'flex-end')
-            .style('float', 'none');
-
-        document.getElementById('t' + this.element_id + '_length').children[0].style = 'font-size: 12px !important;';
-        document.getElementById('t' + this.element_id + '_length').children[0].children[0].style = 'height: auto;';
-        document.getElementById('t' + this.element_id + '_filter').children[0].style = 'font-size: 12px !important;';
+        this._fix_css_in_table('t' + this.element_id);
 
         // Add bold effect to lines when a line is hovered over in the table
-        $('#t' + this.element_id + ' tbody')
+        $(this._datatable.table().body())
             .on("mouseover", 'tr', function (d, i) {
                 if (_PCobject._selected_line !== -1) return;
 
                 let line = _PCobject._foreground[0][_PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])];
                 $(line).addClass("bold");
                 d3.select(line).moveToFront();
+
+                $(_PCobject._datatable.rows().nodes()).removeClass('table-selected-line');
+                $(_PCobject._datatable.row(this).nodes()).addClass('table-selected-line');
             })
             .on("mouseout", 'tr', function (d) {
                 if (_PCobject._selected_line !== -1) return;
+
+                $(_PCobject._datatable.rows().nodes()).removeClass('table-selected-line');
 
                 $(_PCobject._foreground[0][
                     _PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])
@@ -503,13 +525,16 @@ class ParallelCoordinates {
                     _PCobject._datatable.rows(this).nodes().to$().addClass('table-selected-line');
                 }
                 else if (_PCobject._selected_line === _PCobject._tableToParcoords(_PCobject._datatable.row(this).data()[0])) {
+                    let line = _PCobject._foreground[0][_PCobject._selected_line];
+                    $(line).removeClass("bold");
+
                     _PCobject._selected_line = -1;
                     _PCobject._datatable.rows(this).nodes().to$().removeClass('table-selected-line');
                 }  
             });
 
         // Add footer elements
-        $('#t' + this.element_id).append(
+        this._table.append(
             $('<tfoot/>').append($('#t' + this.element_id + ' thead tr').clone())
         );
 
@@ -545,6 +570,220 @@ class ParallelCoordinates {
         );
     }
 
+    // Create cluster info buttons (which call the table creation)
+    _createClusterInfo() {
+        // Add a div to hold a label and buttons
+        this._ci_buttons_div = this._ci_div
+            .append('div')
+                .style({'margin-right': '15px',
+                        'flex-shrink': '0'});
+
+        // Add 'Choose Cluster' text to it
+        this._ci_buttons_div
+            .append('label')
+                .text("Choose Cluster");
+
+        // Add a div for the table
+        this._ci_table_div = this._ci_div.append('div');
+
+        //Add a div to hold the buttons after the label
+        this._ci_buttons = this._ci_buttons_div
+            .append('div')
+                .attr({'class': 'ci-button-group',
+                        'id': 'ci_buttons_' + this.element_id});
+
+        let cluster_count = d3.keys(this._clusters_color_scheme).map(x => this._color.count(x)),
+            scale = d3.scale.sqrt()
+                .domain([Math.min(...cluster_count), Math.max(...cluster_count)])
+                .range([11, 0]);
+
+        // Add corresponding buttons to every color
+        this._ci_buttons
+            .selectAll("a")
+                .data(d3.keys(this._clusters_color_scheme))
+                .enter().append('a')
+                    .attr({'class': 'ci-button',
+                            'title': id => "Cluster " + id + ".\nElement count: " + cluster_count[id] + "."})
+                    .style({'background': id => rgbToHex(this._clusters_color_scheme[id]),
+                            'box-shadow': id => 'inset 0px 0px 0px ' + scale(cluster_count[id]) + 'px #fff'})
+                    .text(id => id)
+                    .on("click", id => {
+                        d3.event.preventDefault();
+
+                        // Change the layout of the menu
+                        // (only if the screen is wide enough)
+                        if (!window.matchMedia("(max-width: 800px)").matches) {
+                            // Make the elements side by side (buttons | table)
+                            this._ci_div.style('display', 'flex');
+
+                            // Make buttons vertical
+                            this._ci_buttons
+                                .style({'flex-direction': 'column',
+                                        'align-items': 'center'});
+
+                            // Calculate the Number Of Columns with buttons
+                            let noc = Math.ceil(Object.keys(this._clusters_color_scheme).length / 11);
+
+                            // Fix the div with the buttons a little bit
+                            this._ci_buttons_div
+                                .style('width', (noc * 46) + 'px')
+                                .select('label')
+                                    .style('text-align', 'center');
+                        }
+
+                        // Clean all children
+                        this._ci_table_div
+                            .style('border', "5px dashed " + rgbToHex(this._clusters_color_scheme[id]) + "33")
+                            .attr('class', 'ci-table')
+                            .html('');
+
+                        // Add the 'selected' decoration
+                        this._ci_buttons_div.selectAll('*').classed('ci-selected', false);
+                        d3.select(d3.event.target).classed('ci-selected', true);
+
+                        // Add 'Cluster # statistics' text
+                        this._ci_table_div
+                            .append('h3')
+                                .text("Cluster " + d3.event.target.innerText + " statistics");
+
+                        // Print the stats
+                        this._createClusterStatsTable();
+                    });
+
+        $('.ci-button').tooltip({
+            track: true,
+            tooltipClass: "ci-tooltip",
+            show: false,
+            hide: false
+        });
+    }
+
+    // Creates a table with cluster info
+    // The function must be call from onClick, it uses d3.event.target
+    _createClusterStatsTable() {
+        // A link to this ParCoord object
+        var _PCobject = this;
+
+        // Make the header array
+        this._ci_header = ['', "Min", "Mean", "Max", "Median", "Deviation"].map((x, i) => { return {
+            title : x,
+            className: (i === 0)? 'firstCol':'',
+
+            // Add spaces and remove too much numbers after the comma
+            "render": function (data, type, full) {
+                if (type === 'display' && !isNaN(data))
+                    return numberWithSpaces(parseFloat(Number(data).toFixed(2)));
+
+                return data;
+            }
+        }});
+
+        // Prepare cells
+        this._ci_cluster_data = this._data
+            .filter((x, i) => this._color[i] === d3.event.target.innerText)
+            .map((x, i) => x[1].concat(this._aux_data[i][1]));
+
+        this._ci_cells = this._features.concat(this._aux_features).map((x, i) =>
+            (this._features.includes(x)) ?
+            [
+                x,
+                d3.min(this._ci_cluster_data, row => row[i]),
+                d3.mean(this._ci_cluster_data, row => row[i]),
+                d3.max(this._ci_cluster_data, row => row[i]),
+                d3.median(this._ci_cluster_data, row => row[i]),
+                (this._ci_cluster_data.length > 1) ? d3.deviation(this._ci_cluster_data, row => row[i]) : '-'
+            ] : [x + ' <i>(click to expand)</i>', '-','-','-','-','-']);
+
+        this._ci_aux_stats = this._aux_features.map((f, i) =>
+        {
+            let values = this._aux_data
+                    .filter((x, j) => this._color[j] === d3.event.target.innerText)
+                    .map((data) => data[1][i]),
+                stat = [...new Set(values)].map((x)=>[x, values.count(x)]);
+
+            return [f, stat];
+        });
+
+        // Add 'Number of elements: N' text
+        this._ci_table_div
+            .append('h5')
+            .text('Number of elements: ' + this._ci_cluster_data.length);
+
+        // Create the table
+        this._ci_table_div
+            .append('table')
+            .attr('id', 'ci_table_' + this.element_id);
+
+        // Add the data to the table
+        let table = $('#ci_table_' + this.element_id).DataTable({
+            data: this._ci_cells,
+            columns: this._ci_header,
+            mark: true,
+            dom: 'Alfrtip',
+            colReorder: true,
+            buttons: ['colvis'],
+            "search": {"regex": true}
+        });
+
+        // Add line getting darker on mouse hover
+        $(table.table().body())
+            .on("mouseover", 'tr', function (d, i) {
+                $(table.rows().nodes()).removeClass('table-selected-line');
+                $(table.row(this).nodes()).addClass('table-selected-line');
+            })
+            .on("mouseout", 'tr', function (d) {
+                $(table.rows().nodes()).removeClass('table-selected-line');
+            })
+            // Add event listener for opening and closing details
+            .on('click', 'td.firstCol', function(){
+                if (!this.innerText.endsWith(' (click to expand)')) return;
+
+                let id = _PCobject._aux_features.indexOf(this.innerText.replace(' (click to expand)', '')),
+                    tr = $(this).closest('tr'),
+                    row = table.row( tr ),
+                    text = '<table class="ci_aux_table" style="width:min-content">';
+
+                for(let i = 0; i<_PCobject._ci_aux_stats[id][1].length; i++)
+                    text += '<tr><td>' +
+                        _PCobject._ci_aux_stats[id][1][i][0] + '</td><td> ' +
+                        _PCobject._ci_aux_stats[id][1][i][1] +
+                        '</td></tr>';
+
+                text+='</table>';
+
+                if(row.child.isShown()){
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    // Open this row
+                    row.child(text).show();
+                    tr.addClass('shown');
+
+                    let table = $('.ci_aux_table').DataTable({
+                        columns:[
+                            {title:_PCobject._aux_features[id]},
+                            {title:"Count"}
+                            ],
+                        dom: 't',
+                        order: [[1, "desc"]]
+                    });
+
+                    $(table.table().body())
+                        .on("mouseover", 'tr', function (d, i) {
+                            $(table.rows().nodes()).removeClass('table-selected-line');
+                            $(table.row(this).nodes()).addClass('table-selected-line');
+                        })
+                        .on("mouseout", 'tr', function (d) {
+                            $(table.rows().nodes()).removeClass('table-selected-line');
+                        });
+                }
+            });
+
+        // Fix the css
+        this._fix_css_in_table('ci_table_' + this.element_id);
+    }
+
     // Functions to perform id transformation
     _tableToParcoords(index) { return this._ids.indexOf(index); }
     _parcoordsToTable(index) { return this._ids[index]; }
@@ -556,6 +795,28 @@ class ParallelCoordinates {
 
             return isVisible && object._search_results.includes(object._parcoordsToTable(j)) ? null : "none";
         });
+    }
+
+    // Bug fixes related to css
+    _fix_css_in_table(id){
+        d3.select('#' + id)
+            .style({'display': 'block',
+                    'width': 'auto',
+                    'overflow': 'auto'});
+
+        d3.select('#' + id + '_paginate')
+            .style({'display': 'flex',
+                    'justify-content': 'flex-end',
+                    'float': 'right',
+                    'width': 'max-content'});
+
+        d3.select('#' + id + '_info')
+            .style({'display': 'inline-block',
+                    'width': 'max-content'});
+
+        document.getElementById(id + '_length').children[0].style = 'font-size: 12px !important;';
+        document.getElementById(id + '_length').children[0].children[0].style = 'height: auto;';
+        document.getElementById(id + '_filter').children[0].style = 'font-size: 12px !important;';
     }
 
     // Functions for lines and brushes
