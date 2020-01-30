@@ -66,10 +66,18 @@ class ParallelCoordinates {
     // ********
     constructor(element_id, dimension_names, data_array, clusters_list, clusters_color_scheme,
         aux_features, aux_data_array, options = {}) {
+        // Save the time for debug purposes
+        this._timeStart =  Date.now();
+
         // Update data and draw the graph
         if (arguments.length > 0) 
+        {
             this.updateData(element_id, dimension_names, data_array, clusters_list, clusters_color_scheme,
                 aux_features, aux_data_array, options);
+
+            if (this._debug)
+                console.log("Parallel Coordinates creation finished in %ims", Date.now() - this._timeStart);
+        }
     }
 
     // ********
@@ -88,6 +96,9 @@ class ParallelCoordinates {
     // ********
     updateData(element_id, feature_names, data_array, clusters_list, clusters_color_scheme,
         aux_features, aux_data_array, options = {}) {
+        // Save the time for debug purposes
+        this._timeUpdate =  Date.now();
+
         // Store the new values
         this.element_id = element_id;
 
@@ -98,6 +109,12 @@ class ParallelCoordinates {
         this._clusters_color_scheme = clusters_color_scheme;
         this._aux_features = aux_features;
         this._aux_data = aux_data_array;
+
+        // Debug statistics counters
+        this._search_quantity = 0;
+        this._search_time = 0;
+        this._search_time_min = -1;
+        this._search_time_max = -1;
 
         // Arrays with (line id)<->(id in realData)
         this._ids = this._data.map((row) => row[0]);
@@ -133,8 +150,17 @@ class ParallelCoordinates {
             };
         else if (options.hasOwnProperty('skip')) this.options.skip = options.skip;
 
+        // Check debug settings
+        if (options.hasOwnProperty('debug')) this._debug = options.debug;
+            else if (!this.hasOwnProperty('_debug')) this._debug = false;
+
         // Initiate the arrays and draw the stuff
         this._prepareGraphAndTables();
+
+        // Show update time when debug enabled
+        if (this._debug)
+            console.log("Parallel Coordinates updated in %ims (%ims from creation)",
+                Date.now() - this._timeUpdate, Date.now() - this._timeStart);
     }
     
     _prepareGraphAndTables() {
@@ -318,6 +344,8 @@ class ParallelCoordinates {
             .on("mouseover", function (d, i) {
                 if (_PCobject._selected_line !== -1) return;
 
+                let time = Date.now();
+
                 $(this).addClass("bold");
                 d3.select(this).moveToFront();
 
@@ -325,6 +353,28 @@ class ParallelCoordinates {
 
                 row.show().draw(false);
                 _PCobject._datatable.rows(row).nodes().to$().addClass('table-selected-line');
+
+                // In case of debug enabled
+                // Write time to complete the search, average time, minimum and maximum
+                if (_PCobject._debug)
+                {
+                    time = Date.now() - time;
+                    _PCobject._search_time += time;
+                    _PCobject._search_quantity += 1;
+
+                    if (_PCobject._search_time_min === -1)
+                    {
+                        _PCobject._search_time_min = time;
+                        _PCobject._search_time_max = time;
+                    }
+
+                    if (_PCobject._search_time_min > time) _PCobject._search_time_min = time;
+                        else if (_PCobject._search_time_max < time) _PCobject._search_time_max = time;
+
+                    console.log("Search completed for %ims, average: %sms [%i; %i].",
+                        time, (_PCobject._search_time/_PCobject._search_quantity).toFixed(2),
+                        _PCobject._search_time_min, _PCobject._search_time_max);
+                }
             })
 
             // When mouse is away, clear the effect
@@ -659,7 +709,7 @@ class ParallelCoordinates {
     }
 
     // Creates a table with cluster info
-    // The function must be call from onClick, it uses d3.event.target
+    // The function must be called from onClick, as it uses the d3.event.target
     _createClusterStatsTable() {
         // A link to this ParCoord object
         var _PCobject = this;

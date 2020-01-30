@@ -155,14 +155,18 @@
                 var realData = {{ real_dataset|safe }};
                 var new_realData = fix_array(realData);
                 scene.setRealData(new_realData);
-            {% if data_is_ready %} 
+            {% if data_is_ready %}
                 scene._coord = new ParallelCoordinates("ParallelCoordinatesGraph",
                     scene.dimNames,
                     scene.realData,
                     [],
                     [],
                     scene.auxNames,
-                    scene.auxData);
+                    scene.auxData,
+                    {
+                        //debug: true
+                    }
+                );
                 {% endif %}
             {% endif %}
 
