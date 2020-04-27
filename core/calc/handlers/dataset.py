@@ -273,7 +273,8 @@ class DatasetHandler(BaseDataHandler):
             self._modifications['auxiliary'] = dataset.drop(
                 self._origin.columns.tolist(), 1)
 
-        self._modifications['normalized'] = local_reader.scaler(self._origin)
+        self._modifications['normalized'] = pd.DataFrame() if self._origin.shape[1] == 0 else local_reader.scaler(self._origin)
+
 
     def _save_to_hdf5(self, reprocess=False):
         """
@@ -504,6 +505,7 @@ class DatasetHandler(BaseDataHandler):
         :param reprocess: Flag to force re-creation of dataset modifications.
         :type reprocess: bool
         """
-        if (self._origin is not None and
-                self._modifications and self._property_set):
-            self._save_to_hdf5(reprocess=reprocess)
+        # if (self._origin is not None and
+        #         self._modifications and self._property_set):
+        #     self._save_to_hdf5(reprocess=reprocess)
+        self._save_to_hdf5(reprocess=reprocess)

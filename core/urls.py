@@ -26,8 +26,5 @@ urlpatterns = [
     re_path('^v/(?P<maindatasetuid>[0-9]+.?[0-9]*)/(?P<groups>(g/[0-9]+/)*)(o/(?P<operationnumber>[0-9]+)/)?$', core_views.visualization_data, name='regular_visualization_data'),
     re_path('^v/(?P<maindatasetuid>[0-9]+.?[0-9]*)/(?P<groups>(g/[0-9]+/)*)o/(?P<operationnumber>[0-9]+)/$', core_views.visualization_data, name='regular_visualization_data_operation'),
     re_path('^v/(?P<maindatasetuid>[0-9]+.?[0-9]*)/(?P<groups>(g/[0-9]+/)*)g/NEWGROUPID/$', core_views.visualization_data, name='regular_visualization_data_new_group'),
-    path('site2site', core_views.site_to_site, name='site_to_site'),
-    path('test', core_views.performance_test, name='performance_test'),
-    path('testframe', core_views.performance_test_frame, name='performance_test_frame'),
     path('testmodule/', include('core.testmodule.urls'))
 ]

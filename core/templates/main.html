@@ -173,9 +173,6 @@
             {% if real_metrics %}
                 var statistics_real = {{ real_metrics|safe }};
                 scene.setRealStats(statistics_real);
-{#                {% if data_is_ready %}#}
-{#                    printStats(statistics_real, dimNames, "stats");#}
-{#                {% endif %}#}
             {% endif %}
 
             {% if type == "datavisualization" %}
@@ -237,7 +234,7 @@
                     {
                         draw: {
                             framework: "d3",
-                            mode: "cluster" 
+                            mode: "cluster"
                         }
                     });
             {% endif %}

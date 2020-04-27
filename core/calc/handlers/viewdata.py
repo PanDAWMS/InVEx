@@ -172,9 +172,12 @@ class ViewDataHandler(BaseDataHandler):
         _normalized = self._dataset_handler._normalized
         _auxiliary = self._dataset_handler._auxiliary
 
-        df = _origin.copy()
-        if _auxiliary is not None:
-            df = df.join(_auxiliary)
+        if _origin.shape[1] == 0:
+            df = _auxiliary
+        else:
+            df = _origin.copy()
+            if _auxiliary is not None:
+                df = df.join(_auxiliary)
         # TODO: Check - is it necessary to apply "dropNA"?
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
@@ -199,18 +202,22 @@ class ViewDataHandler(BaseDataHandler):
                     'dim_names': _normalized.columns.tolist(),
                     'aux_names': _auxiliary.columns.tolist()})
 
-                ds_origin_stats = BasicStatistics().process_data(_origin)
-                ds_stats_values = []
-                for i in range(len(ds_origin_stats)):
-                    ds_stats_values.append(ds_origin_stats[i].tolist())
-                self._data['real_metrics'] = [STAT_DESCRIPTION, ds_stats_values]
-                # TODO: Re-work this.
-                # TODO: Data should be taken from "features_description"
 
-                corr_matrix = _origin.corr()
-                corr_matrix.dropna(axis=0, how='all', inplace=True)
-                corr_matrix.dropna(axis=1, how='all', inplace=True)
-                self._data['corr_matrix'] = corr_matrix.values.tolist()
+                if _origin.shape[1] > 0:
+                    ds_origin_stats = BasicStatistics().process_data(_origin)
+                    ds_stats_values = []
+                    for i in range(len(ds_origin_stats)):
+                        ds_stats_values.append(ds_origin_stats[i].tolist())
+                    self._data['real_metrics'] = [STAT_DESCRIPTION, ds_stats_values]
+                    # TODO: Re-work this.
+                    # TODO: Data should be taken from "features_description"
+
+                    corr_matrix = _origin.corr()
+                    corr_matrix.dropna(axis=0, how='all', inplace=True)
+                    corr_matrix.dropna(axis=1, how='all', inplace=True)
+                    self._data['corr_matrix'] = corr_matrix.values.tolist()
+                else:
+                    self._data['real_metrics'] = None
 
             except Exception as e:
                 logger.error(f'{err_msg_subj} Failed to prepare basics of '''
